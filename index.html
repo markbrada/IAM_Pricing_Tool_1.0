@@ -30,18 +30,18 @@
     #sheetButtons > button:hover {
       background-color: #0056b3;
     }
-    /* Sheet Container – apply header styling only inside #sheetContainer */
+    /* Main Sheet Table Styling inside #sheetContainer */
     #sheetContainer table {
       border-collapse: collapse;
       width: 100%;
     }
-    /* Header row for main sheet table only (in #sheetContainer) */
+    /* Header row for main sheet table only */
     #sheetContainer table tr:first-child td {
       text-align: center;
       background-color: #e0e0e0;
       font-weight: bold;
     }
-    /* Data rows in main sheet table */
+    /* Data rows in main sheet table – left aligned */
     #sheetContainer table tr:not(:first-child) td {
       text-align: left;
     }
@@ -49,10 +49,34 @@
       border: 1px solid #aaa;
       padding: 0.5rem;
     }
+    /* More pronounced hover color for main sheet rows */
     #sheetContainer table tbody tr:hover {
-      background-color: #f9f9f9;
+      background-color: #dddddd;
     }
-    /* Basket Container (original styling) */
+    /* Visual feedback for copy-to-clipboard */
+    .copied-cell {
+      background-color: #c8e6c9 !important;
+      transition: background-color 0.3s ease;
+    }
+    /* Search Container – extra spacing to stand out */
+    .search-container {
+      margin-bottom: 1rem;
+      padding: 0.5rem;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .search-label {
+      font-weight: bold;
+      margin-right: 0.5rem;
+    }
+    .search-input {
+      padding: 0.4rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 200px;
+    }
+    /* Basket Container (Original styling) */
     #basketContainer {
       display: none;
       padding: 1rem;
@@ -90,7 +114,7 @@
       font-weight: bold;
       cursor: pointer;
     }
-    /* Green "Add to basket" button (for main sheet table) */
+    /* Green "Add to basket" button for main table */
     .add-button {
       background-color: #28a745;
       border: none;
@@ -113,7 +137,7 @@
 <div id="sheetButtons"></div>
 <div id="sheetContainer"></div>
 
-<!-- Basket Section (Original) -->
+<!-- Original Basket Section -->
 <div id="basketContainer">
   <h3>Quote Basket</h3>
   <div class="basket-actions">
@@ -176,18 +200,24 @@ fetch("myFile.xlsx")
 /* ----------------- SHOW SHEET & BUILD MAIN TABLE ----------------- */
 function showSheet(workbook, sheetName) {
   const sheet = workbook.Sheets[sheetName];
-  let rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", blankrows: true });
+  let rows = XLSX.utils.sheet_to_json(sheet, {
+    header: 1,
+    defval: "",
+    blankrows: true
+  });
   const maxCols = Math.max(...rows.map(r => r.length));
-  rows.forEach(row => { while (row.length < maxCols) row.push(""); });
-  
+  rows.forEach(row => {
+    while (row.length < maxCols) row.push("");
+  });
   sheetContainer.innerHTML = "";
   const wrapper = document.createElement("div");
   wrapper.classList.add("sheet-view");
   sheetContainer.appendChild(wrapper);
   
-  // Create search container
+  // Search container with extra spacing
   const searchDiv = document.createElement("div");
   searchDiv.classList.add("search-container");
+  searchDiv.style.marginBottom = "1rem";
   const searchLabel = document.createElement("label");
   searchLabel.classList.add("search-label");
   searchLabel.textContent = "Search items:";
@@ -199,11 +229,10 @@ function showSheet(workbook, sheetName) {
   searchDiv.appendChild(searchInput);
   wrapper.appendChild(searchDiv);
   
-  // Table container for main sheet table
   const tableContainer = document.createElement("div");
   wrapper.appendChild(tableContainer);
   
-  // First row is header
+  // Get headers from first row
   const headers = rows.length > 0 ? rows[0].map(h => String(h).trim()) : [];
   
   function buildTable(filteredRows) {
@@ -213,8 +242,7 @@ function showSheet(workbook, sheetName) {
     
     filteredRows.forEach((row, rowIndex) => {
       const tr = document.createElement("tr");
-      
-      // For data rows (not header), add the green "Add to basket" button at the far left.
+      // For data rows (rowIndex > 0), add the green "Add to basket" button at the far left.
       if (rowIndex > 0) {
         const addCell = document.createElement("td");
         const addBtn = document.createElement("button");
@@ -230,22 +258,21 @@ function showSheet(workbook, sheetName) {
         tr.appendChild(emptyCell);
       }
       
-      // Loop through each cell in the row.
+      // Now add the rest of the cells.
       row.forEach((cellValue, colIndex) => {
         const td = document.createElement("td");
-        // For price columns, set bold (only for data rows)
-        if (rowIndex > 0 && headers[colIndex] && 
+        // For price columns in data rows, make text bold.
+        if (rowIndex > 0 && headers[colIndex] &&
             (headers[colIndex].toLowerCase().includes("ex. gst") ||
              headers[colIndex].toLowerCase().includes("inc. gst"))) {
           td.style.fontWeight = "bold";
         }
         td.textContent = formatIfPrice(rowIndex, headers[colIndex], cellValue);
-        // Implement copy on click.
+        // Implement click-to-copy with visual feedback.
         td.onclick = (e) => {
-          // Prevent triggering add-to-basket if clicking the button cell.
-          navigator.clipboard.writeText(td.textContent)
-            .then(() => console.log("Copied:", td.textContent))
-            .catch(err => console.error("Clipboard error:", err));
+          // Prevent the event if the add button cell was clicked.
+          if (e.target.tagName.toLowerCase() === "button") return;
+          copyCellText(td);
         };
         tr.appendChild(td);
       });
@@ -258,12 +285,14 @@ function showSheet(workbook, sheetName) {
   
   buildTable(rows);
   
-  // Add filter functionality.
   searchInput.addEventListener("input", () => {
     const filterVal = searchInput.value.trim().toLowerCase();
-    if (!filterVal) { buildTable(rows); return; }
+    if (!filterVal) {
+      buildTable(rows);
+      return;
+    }
     const filtered = rows.filter((r, i) => {
-      if (i === 0) return true;
+      if (i === 0) return true; // always include header row
       return r.some(cell => String(cell).toLowerCase().includes(filterVal));
     });
     buildTable(filtered);
@@ -280,9 +309,20 @@ function formatIfPrice(rowIndex, colHeader, cellValue) {
   return cellValue;
 }
 
+/* ----------------- CLICK-TO-COPY FUNCTION ----------------- */
+function copyCellText(td) {
+  const text = td.textContent;
+  navigator.clipboard.writeText(text)
+    .then(() => {
+      td.classList.add("copied-cell");
+      setTimeout(() => td.classList.remove("copied-cell"), 300);
+      console.log("Copied:", text);
+    })
+    .catch(err => console.error("Clipboard error:", err));
+}
+
 /* ----------------- BASKET CODE (Original) ----------------- */
 function addToBasket(row, headers) {
-  // Prevent header row from being added.
   const itemName = row[0] || "Untitled";
   let exPrice = null;
   let incPrice = null;
@@ -296,7 +336,6 @@ function addToBasket(row, headers) {
       incPrice = val;
     }
   }
-  // Check if item already exists; if so, increment quantity.
   const existing = basket.find(it => it.itemName === itemName);
   if (existing) {
     existing.quantity = parseFloat(existing.quantity) + 1;
@@ -322,13 +361,11 @@ function renderBasket() {
   let totalInc = 0;
   basket.forEach((item, index) => {
     const tr = document.createElement("tr");
-    
     // Item Name
     const nameTd = document.createElement("td");
     nameTd.textContent = item.itemName;
     tr.appendChild(nameTd);
-    
-    // Quantity with +/- and numeric input (allows decimals)
+    // Quantity with +/- buttons and input (allows decimals)
     const qtyTd = document.createElement("td");
     const qtyControls = document.createElement("div");
     qtyControls.classList.add("qty-controls");
@@ -405,7 +442,7 @@ function renderBasket() {
     }
     tr.appendChild(lineIncTd);
     
-    // Remove Button
+    // Remove button
     const removeTd = document.createElement("td");
     const removeBtn = document.createElement("span");
     removeBtn.textContent = "X";
