@@ -52,9 +52,17 @@
       color: red;
       cursor: pointer;
     }
-    /* Buttons in the quantity cell */
+    /* Buttons and input in the quantity cell */
+    .qty-controls {
+      display: flex;
+      align-items: center;
+    }
     .qty-controls button {
       margin: 0 5px;
+    }
+    .qty-input {
+      width: 60px;
+      text-align: center;
     }
   </style>
 </head>
@@ -264,7 +272,7 @@ function showSheet(workbook, sheetName) {
 ------------------------------------------------------------------ */
 function addToBasket(row, headers) {
   // "row" is an array of cell values
-  // You might want the item name from column 0 (or whichever column).
+  // We'll assume item name is in column 0
   const itemName = row[0];
   
   // Find the price from known PRICE_COLUMNS
@@ -312,12 +320,12 @@ function renderBasket() {
   basket.forEach((item, index) => {
     const tr = document.createElement("tr");
 
-    // Item name
+    // 1) Item name
     const nameTd = document.createElement("td");
     nameTd.textContent = item.itemName;
     tr.appendChild(nameTd);
 
-    // Quantity with +/- buttons
+    // 2) Quantity: +/- plus a number input
     const qtyTd = document.createElement("td");
     const qtyControls = document.createElement("div");
     qtyControls.classList.add("qty-controls");
@@ -330,10 +338,19 @@ function renderBasket() {
       renderBasket();
     };
 
-    // Displayed quantity
-    const qtySpan = document.createElement("span");
-    qtySpan.textContent = item.quantity;
-    qtySpan.style.margin = "0 8px";
+    // Numeric input
+    const qtyInput = document.createElement("input");
+    qtyInput.type = "number";
+    qtyInput.min = "1";
+    qtyInput.value = item.quantity;
+    qtyInput.classList.add("qty-input");
+    // When user types a new value
+    qtyInput.onchange = () => {
+      // If user enters 0 or negative, fallback to 1
+      const val = parseInt(qtyInput.value, 10);
+      item.quantity = val > 0 ? val : 1;
+      renderBasket();
+    };
 
     // Plus button
     const plusBtn = document.createElement("button");
@@ -344,23 +361,23 @@ function renderBasket() {
     };
 
     qtyControls.appendChild(minusBtn);
-    qtyControls.appendChild(qtySpan);
+    qtyControls.appendChild(qtyInput);
     qtyControls.appendChild(plusBtn);
     qtyTd.appendChild(qtyControls);
     tr.appendChild(qtyTd);
 
-    // Unit price
+    // 3) Unit price
     const priceTd = document.createElement("td");
     priceTd.textContent = item.unitPrice.toFixed(2);
     tr.appendChild(priceTd);
 
-    // Line total
+    // 4) Line total
     const lineTotal = item.quantity * item.unitPrice;
     const totalTd = document.createElement("td");
     totalTd.textContent = lineTotal.toFixed(2);
     tr.appendChild(totalTd);
 
-    // Remove item
+    // 5) Remove item
     const removeTd = document.createElement("td");
     const removeBtn = document.createElement("span");
     removeBtn.textContent = "X";
