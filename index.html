@@ -1,570 +1,558 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>InAMinnit Pricing Sheet</title>
-
-  <!-- Milligram CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/milligram/dist/milligram.min.css">
+  <!-- 1) Implement Water.css (light theme) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
 
   <style>
-    /* Override some default margins in Milligram */
+    /* 3) Color highlights, 6) Hover effects, 7) Clear hierarchy */
+
+    /* Give the page some margins */
     body {
-      margin: 2rem;
-    }
-    
-    /* 3) Color highlights and small styling improvements */
-    /* Make table headers a subtle highlight */
-    thead tr {
-      background-color: #f0f0f0;
+      margin: 1rem;
     }
 
-    /* 6) Smoother interactions: table row hover effect */
-    tbody tr:hover {
+    /* Title styling */
+    h1 {
+      margin-bottom: 0.2rem;
+    }
+    p.subtitle {
+      color: #555;
+      font-size: 0.9rem;
+      margin-top: 0;
+      margin-bottom: 1rem;
+    }
+
+    /* Group the sheet buttons together with some spacing */
+    #sheetButtons {
+      margin-bottom: 1rem;
+    }
+    #sheetButtons button {
+      /* Subtle color highlight on these sheet buttons */
+      background-color: #d8e7ff;
+      border: 1px solid #7792f5;
+      transition: background-color 0.2s ease;
+    }
+    #sheetButtons button:hover {
+      /* Smoother interaction: hover highlight */
+      background-color: #b4ccff;
+      cursor: pointer;
+    }
+
+    /* Make the search label stand out a bit */
+    .search-label {
+      font-weight: bold;
+      margin-right: 0.5rem;
+    }
+    /* Increase search box size for clarity */
+    .sheet-view input[type="text"] {
+      padding: 0.4rem;
+      border-radius: 4px;
+      width: 40%;
+      max-width: 300px;
+    }
+
+    /* Table: highlight header, smoother row hover */
+    table thead tr {
+      background-color: #d3d3d3;
+    }
+    table tbody tr:hover {
       background-color: #f9f9f9;
     }
 
-    /* 7) Clearer visual hierarchy: 
-       - Let's place the search in a highlighted box,
-       - Give basket container a subtle border, 
-       - Style the "Add to basket" and export buttons more boldly.
-    */
-    .search-box {
-      background: #fdfdfd;
-      border: 1px solid #ddd;
-      padding: 1rem;
-      margin-bottom: 1rem;
-      border-radius: 0.25rem;
+    /* Replace “Add to basket” with a + symbol, and style that button */
+    td .add-to-basket {
+      background-color: #b2e7b0;
+      border: 1px solid #81c781;
+      color: #3e6b37;
+      font-size: 1.2rem;
+      padding: 0.1rem 0.5rem;
+      transition: background-color 0.2s ease;
+    }
+    td .add-to-basket:hover {
+      background-color: #9cd59a;
+      cursor: pointer;
     }
 
-    .sheet-view {
-      margin-bottom: 2rem;
-    }
-
+    /* 7) Visually separate the basket container with a border or background */
     #basketContainer {
-      border: 1px solid #ccc;
+      border: 2px solid #ccc;
       padding: 1rem;
       margin-top: 2rem;
-      border-radius: 0.25rem;
+      background-color: #fefefe;
     }
 
-    .basket-actions {
-      margin-bottom: 1rem;
-    }
-
-    /* Buttons: 
-       - Milligram gives us a default .button class
-       - We'll highlight add-to-basket as .button-outline
-    */
-    .add-basket-btn {
-      margin-left: 1rem;
-    }
-
-    /* Quantity controls: keep them aligned and spaced */
+    /* Quantity +/- plus text input styling */
     .qty-controls {
       display: flex;
       align-items: center;
     }
     .qty-controls button {
       margin: 0 5px;
-      min-width: 2rem;
-      text-align: center;
+      padding: 0.2rem 0.5rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    .qty-controls button:hover {
+      background-color: #e2e2e2;
     }
     .qty-input {
-      width: 60px;
+      width: 70px;
       text-align: center;
     }
 
-    /* Red "X" for removing items */
+    /* Remove (X) button styling */
     .remove-btn {
-      color: #e74c3c; /* a nice red from many UI palettes */
-      cursor: pointer;
+      color: red;
       font-weight: bold;
+      cursor: pointer;
+      transition: color 0.2s ease;
     }
     .remove-btn:hover {
-      text-decoration: underline;
+      color: #ad0000;
     }
-
   </style>
 </head>
 <body>
 
-  <h1>InAMinnit Pricing Sheet</h1>
-  <p><em>Early Alpha version - only for test purposes</em></p>
+<h1>InAMinnit Pricing Sheet</h1>
+<p class="subtitle">Early Alpha version - only for test purposes</p>
 
-  <!-- Buttons for each sheet (populated by JS) -->
-  <div id="sheetButtons"></div>
+<div id="sheetButtons"></div>
+<div id="sheetContainer"></div>
 
-  <!-- Container where each sheet's table + search box is displayed -->
-  <div id="sheetContainer"></div>
-
-  <!-- Basket Section (initially hidden) -->
-  <div id="basketContainer" style="display: none;">
-    <h3>Quote Basket</h3>
-    <div class="basket-actions">
-      <button class="button" id="exportCsvBtn">Export CSV</button>
-      <button class="button" id="exportPdfBtn">Export PDF</button>
-    </div>
-
-    <table id="basketTable">
-      <thead>
-        <tr>
-          <th>Item</th>
-          <th>Quantity</th>
-          <th>Price Ex. GST</th>
-          <th>Price Inc. GST</th>
-          <th>Line Total Ex. GST</th>
-          <th>Line Total Inc. GST</th>
-          <th>Remove</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Basket items go here -->
-      </tbody>
-    </table>
-
-    <p>
-      <strong>Grand Total (Ex. GST):</strong> 
-      $<span id="grandEx">0.00</span>
-    </p>
-    <p>
-      <strong>Grand Total (Inc. GST):</strong> 
-      $<span id="grandInc">0.00</span>
-    </p>
+<!-- Basket Section -->
+<div id="basketContainer" style="display:none;">
+  <h3>Quote Basket</h3>
+  <div class="basket-actions">
+    <button id="exportCsvBtn">Export CSV</button>
+    <button id="exportPdfBtn">Export PDF</button>
   </div>
+  <table id="basketTable">
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Quantity</th>
+        <th>Price Ex. GST</th>
+        <th>Price Inc. GST</th>
+        <th>Line Total Ex. GST</th>
+        <th>Line Total Inc. GST</th>
+        <th>Remove</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Basket items go here -->
+    </tbody>
+  </table>
+  <p><strong>Grand Total (Ex. GST):</strong> $<span id="grandEx">0.00</span></p>
+  <p><strong>Grand Total (Inc. GST):</strong> $<span id="grandInc">0.00</span></p>
+</div>
 
-  <!-- SheetJS Library -->
-  <script src="xlsx.full.min.js"></script>
-  <!-- jsPDF (for PDF generation) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
-          integrity="sha512-8W9fMc2X8tHEM37fuf//sAlRrVvpU7L8dT8uvY1PoBn+Qm1N+WWNA09O6rOZZ3QtrKXIjhKTkOquFGlH+zcc1A=="
-          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- Include SheetJS -->
+<script src="xlsx.full.min.js"></script>
+<!-- jsPDF for PDF export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+        integrity="sha512-8W9fMc2X8tHEM37fuf//sAlRrVvpU7L8dT8uvY1PoBn+Qm1N+WWNA09O6rOZZ3QtrKXIjhKTkOquFGlH+zcc1A=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-  <script>
-  /* ------------------------------------------------------------------
-    CONFIG
-  ------------------------------------------------------------------ */
-  const PRICE_COLUMNS_EX = ["Rate Ex. GST", "Price Ex. GST"]; 
-  const PRICE_COLUMN_INC = "Price Inc. GST";
+<script>
+/* 
+   Below is the same functionality you already have:
+   - Multi-tab reading
+   - Search filter
+   - Click to copy
+   - Basket with ex/inc prices
+   - CSV/PDF export
 
-  /* ------------------------------------------------------------------
-    GLOBALS
-  ------------------------------------------------------------------ */
-  // Basket item structure:
-  // { itemName, quantity, exPrice, incPrice }
-  let basket = [];
+   The only big changes:
+   - The "Add to basket" button is now just "+" (with a class "add-to-basket").
+   - Some minimal styling is done via Water.css plus the custom CSS above.
+*/
 
-  /* DOM Elements */
-  const sheetButtons = document.getElementById("sheetButtons");
-  const sheetContainer = document.getElementById("sheetContainer");
-  const basketContainer = document.getElementById("basketContainer");
-  const basketTableBody = document.querySelector("#basketTable tbody");
-  const grandExEl = document.getElementById("grandEx");
-  const grandIncEl = document.getElementById("grandInc");
-  const exportCsvBtn = document.getElementById("exportCsvBtn");
-  const exportPdfBtn = document.getElementById("exportPdfBtn");
+/* ------------------------------------------------------------------
+   CONFIG
+------------------------------------------------------------------ */
+const PRICE_COLUMNS_EX = ["Rate Ex. GST", "Price Ex. GST"]; 
+const PRICE_COLUMN_INC = "Price Inc. GST";
 
-  /* ------------------------------------------------------------------
-    FETCH & PARSE EXCEL
-  ------------------------------------------------------------------ */
-  fetch("myFile.xlsx")
-    .then(response => response.arrayBuffer())
-    .then(data => {
-      const workbook = XLSX.read(data, { type: "array" });
-      // Make a button for each sheet
-      Object.keys(workbook.Sheets).forEach(sheetName => {
-        const btn = document.createElement("button");
-        btn.classList.add("button");  // style via Milligram
-        btn.textContent = sheetName;
-        btn.onclick = () => showSheet(workbook, sheetName);
-        sheetButtons.appendChild(btn);
+/* ------------------------------------------------------------------
+   GLOBALS
+------------------------------------------------------------------ */
+let basket = []; // { itemName, quantity, exPrice, incPrice }
+
+/* DOM */
+const sheetButtons = document.getElementById("sheetButtons");
+const sheetContainer = document.getElementById("sheetContainer");
+const basketContainer = document.getElementById("basketContainer");
+const basketTableBody = document.querySelector("#basketTable tbody");
+const grandExEl = document.getElementById("grandEx");
+const grandIncEl = document.getElementById("grandInc");
+const exportCsvBtn = document.getElementById("exportCsvBtn");
+const exportPdfBtn = document.getElementById("exportPdfBtn");
+
+/* ------------------------------------------------------------------
+   FETCH & PARSE EXCEL
+------------------------------------------------------------------ */
+fetch("myFile.xlsx")
+  .then(r => r.arrayBuffer())
+  .then(data => {
+    const workbook = XLSX.read(data, { type: "array" });
+    Object.keys(workbook.Sheets).forEach(sheetName => {
+      const btn = document.createElement("button");
+      btn.textContent = sheetName;
+      btn.onclick = () => showSheet(workbook, sheetName);
+      sheetButtons.appendChild(btn);
+    });
+  })
+  .catch(err => {
+    console.error("Failed to fetch Excel file:", err);
+    sheetContainer.textContent = "Error fetching Excel file.";
+  });
+
+/* ------------------------------------------------------------------
+   SHOW SHEET & SEARCH
+------------------------------------------------------------------ */
+function showSheet(workbook, sheetName) {
+  const sheet = workbook.Sheets[sheetName];
+
+  const rows = XLSX.utils.sheet_to_json(sheet, {
+    header: 1,
+    defval: "",
+    blankrows: true
+  });
+
+  // Equalize columns
+  const maxCols = Math.max(...rows.map(r => r.length));
+  rows.forEach(row => { while (row.length < maxCols) row.push(""); });
+
+  // Clear container
+  sheetContainer.innerHTML = "";
+
+  const wrapper = document.createElement("div");
+  wrapper.classList.add("sheet-view");
+  sheetContainer.appendChild(wrapper);
+
+  // Search bar
+  const searchLabel = document.createElement("label");
+  searchLabel.textContent = "Search items:";
+  searchLabel.classList.add("search-label");
+
+  const searchInput = document.createElement("input");
+  searchInput.type = "text";
+  searchInput.placeholder = "Type to filter...";
+
+  wrapper.appendChild(searchLabel);
+  wrapper.appendChild(searchInput);
+
+  const tableContainer = document.createElement("div");
+  wrapper.appendChild(tableContainer);
+
+  // Headers
+  const headers = rows.length > 0 ? rows[0].map(h => String(h).trim()) : [];
+
+  // Build table
+  function buildTable(filteredRows) {
+    tableContainer.innerHTML = "";
+    const table = document.createElement("table");
+
+    filteredRows.forEach((row, rowIndex) => {
+      const tr = document.createElement("tr");
+      row.forEach((cellValue, colIndex) => {
+        const td = document.createElement("td");
+        td.textContent = formatIfPrice(rowIndex, headers[colIndex], cellValue);
+
+        // Click to copy
+        td.onclick = () => {
+          navigator.clipboard.writeText(td.textContent)
+            .then(() => console.log("Copied:", td.textContent))
+            .catch(err => console.error("Clipboard error:", err));
+        };
+        tr.appendChild(td);
       });
-    })
-    .catch(err => {
-      console.error("Failed to fetch Excel file:", err);
-      sheetContainer.textContent = "Error fetching Excel file.";
-    });
 
-  /* ------------------------------------------------------------------
-    SHOW SELECTED SHEET WITH SEARCH & "ADD TO BASKET"
-  ------------------------------------------------------------------ */
-  function showSheet(workbook, sheetName) {
-    const sheet = workbook.Sheets[sheetName];
-
-    // Convert to 2D array
-    const rows = XLSX.utils.sheet_to_json(sheet, {
-      header: 1,
-      defval: "",
-      blankrows: true
-    });
-
-    // Equalize column lengths
-    const maxCols = Math.max(...rows.map(r => r.length));
-    rows.forEach(row => {
-      while (row.length < maxCols) row.push("");
-    });
-
-    // Clear container
-    sheetContainer.innerHTML = "";
-
-    // Create a wrapper for the entire sheet-view
-    const wrapper = document.createElement("div");
-    wrapper.classList.add("sheet-view");
-    sheetContainer.appendChild(wrapper);
-
-    // Create a search box
-    const searchBox = document.createElement("div");
-    searchBox.classList.add("search-box");
-    const searchLabel = document.createElement("label");
-    searchLabel.textContent = "Search items:";
-    const searchInput = document.createElement("input");
-    searchInput.type = "text";
-    searchInput.placeholder = "Type to filter...";
-    // Insert them into the search box
-    searchBox.appendChild(searchLabel);
-    searchBox.appendChild(document.createElement("br"));
-    searchBox.appendChild(searchInput);
-
-    wrapper.appendChild(searchBox);
-
-    // Container for the table
-    const tableContainer = document.createElement("div");
-    wrapper.appendChild(tableContainer);
-
-    // If there's at least one row, treat the first row as headers
-    const headers = rows.length > 0 ? rows[0].map(h => String(h).trim()) : [];
-
-    function buildTable(filteredRows) {
-      tableContainer.innerHTML = "";
-      const table = document.createElement("table");
-      table.classList.add("table"); // Milligram styling
-
-      // Build rows
-      filteredRows.forEach((row, rowIndex) => {
-        const tr = document.createElement("tr");
-        
-        row.forEach((cellValue, colIndex) => {
-          const td = document.createElement("td");
-          if (rowIndex === 0) {
-            // It's the header row
-            td.classList.add("header-cell");
-          }
-          td.textContent = formatIfPrice(rowIndex, headers[colIndex], cellValue);
-
-          // Click to copy the cell's displayed text
-          td.onclick = () => {
-            navigator.clipboard.writeText(td.textContent)
-              .then(() => console.log("Copied:", td.textContent))
-              .catch(err => console.error("Clipboard error:", err));
-          };
-
-          tr.appendChild(td);
-        });
-
-        // Add an "Add to basket" button if not the header row
-        if (rowIndex > 0) {
-          const addCell = document.createElement("td");
-          const addBtn = document.createElement("button");
-          addBtn.textContent = "Add to basket";
-          addBtn.classList.add("button", "button-outline", "add-basket-btn");
-          addBtn.onclick = () => addToBasket(row, headers);
-          addCell.appendChild(addBtn);
-          tr.appendChild(addCell);
-        }
-
-        table.appendChild(tr);
-      });
-
-      tableContainer.appendChild(table);
-    }
-
-    // Build initial table (unfiltered)
-    buildTable(rows);
-
-    // Filter as user types
-    searchInput.addEventListener("input", () => {
-      const filterVal = searchInput.value.trim().toLowerCase();
-      if (!filterVal) {
-        // Show all
-        buildTable(rows);
-        return;
+      // 8) Replace “Add to basket” with a “+” symbol
+      if (rowIndex > 0) {
+        const addCell = document.createElement("td");
+        const addBtn = document.createElement("button");
+        addBtn.textContent = "+";
+        addBtn.classList.add("add-to-basket");
+        addBtn.onclick = () => addToBasket(row, headers);
+        addCell.appendChild(addBtn);
+        tr.appendChild(addCell);
       }
-      // Keep header row + any row that matches
-      const filtered = rows.filter((r, i) => {
-        if (i === 0) return true; // always keep header
-        return r.some(cell => String(cell).toLowerCase().includes(filterVal));
-      });
-      buildTable(filtered);
+
+      table.appendChild(tr);
     });
+    tableContainer.appendChild(table);
   }
 
-  /* ------------------------------------------------------------------
-    FORMAT PRICE COLUMNS (2 DECIMALS)
-  ------------------------------------------------------------------ */
-  function formatIfPrice(rowIndex, colHeader, cellValue) {
-    if (rowIndex === 0) {
-      // It's the header row, just return as-is
-      return cellValue;
-    }
-    // If it's Ex. or Inc. GST, attempt to round
-    const lower = (colHeader || "").toLowerCase();
-    if (lower.includes("ex. gst") || lower.includes("inc. gst")) {
-      const parsed = parseFloat(cellValue);
-      if (!isNaN(parsed)) {
-        return parsed.toFixed(2);
-      }
-    }
-    return cellValue; 
-  }
+  buildTable(rows);
 
-  /* ------------------------------------------------------------------
-    ADD ITEM TO BASKET
-  ------------------------------------------------------------------ */
-  function addToBasket(row, headers) {
-    const itemName = row[0] || "Untitled";
-    let exPrice = null;
-    let incPrice = null;
-
-    for (let i = 0; i < headers.length; i++) {
-      const head = headers[i];
-      const val = parseFloat(row[i]);
-      if (PRICE_COLUMNS_EX.includes(head) && !isNaN(val)) {
-        exPrice = val;
-      }
-      if (head === PRICE_COLUMN_INC && !isNaN(val)) {
-        incPrice = val;
-      }
-    }
-
-    const existing = basket.find(it => it.itemName === itemName);
-    if (existing) {
-      existing.quantity = parseFloat(existing.quantity) + 1;
-    } else {
-      basket.push({
-        itemName,
-        quantity: 1,
-        exPrice,
-        incPrice
-      });
-    }
-    renderBasket();
-  }
-
-  /* ------------------------------------------------------------------
-    RENDER THE BASKET
-  ------------------------------------------------------------------ */
-  function renderBasket() {
-    if (basket.length === 0) {
-      basketContainer.style.display = "none";
+  // Filter logic
+  searchInput.addEventListener("input", () => {
+    const val = searchInput.value.trim().toLowerCase();
+    if (!val) {
+      buildTable(rows);
       return;
     }
-    basketContainer.style.display = "block";
-
-    basketTableBody.innerHTML = "";
-
-    let totalEx = 0;
-    let totalInc = 0;
-
-    basket.forEach((item, index) => {
-      const tr = document.createElement("tr");
-
-      // Item name
-      const nameTd = document.createElement("td");
-      nameTd.textContent = item.itemName;
-      tr.appendChild(nameTd);
-
-      // Quantity
-      const qtyTd = document.createElement("td");
-      const qtyControls = document.createElement("div");
-      qtyControls.classList.add("qty-controls");
-
-      const minusBtn = document.createElement("button");
-      minusBtn.textContent = "-";
-      minusBtn.onclick = () => {
-        let q = parseFloat(item.quantity) || 1;
-        q -= 1;
-        if (q < 1) q = 1;
-        item.quantity = q;
-        renderBasket();
-      };
-
-      const qtyInput = document.createElement("input");
-      qtyInput.type = "number";
-      qtyInput.classList.add("qty-input");
-      qtyInput.value = item.quantity;
-      qtyInput.onchange = () => {
-        let val = parseFloat(qtyInput.value);
-        if (isNaN(val) || val < 1) val = 1;
-        item.quantity = val;
-        renderBasket();
-      };
-
-      const plusBtn = document.createElement("button");
-      plusBtn.textContent = "+";
-      plusBtn.onclick = () => {
-        let q = parseFloat(item.quantity) || 1;
-        q += 1;
-        item.quantity = q;
-        renderBasket();
-      };
-
-      qtyControls.appendChild(minusBtn);
-      qtyControls.appendChild(qtyInput);
-      qtyControls.appendChild(plusBtn);
-      qtyTd.appendChild(qtyControls);
-      tr.appendChild(qtyTd);
-
-      // Price Ex. GST
-      const priceExTd = document.createElement("td");
-      priceExTd.textContent = (item.exPrice !== null)
-        ? item.exPrice.toFixed(2)
-        : "N/A";
-      tr.appendChild(priceExTd);
-
-      // Price Inc. GST
-      const priceIncTd = document.createElement("td");
-      priceIncTd.textContent = (item.incPrice !== null)
-        ? item.incPrice.toFixed(2)
-        : "N/A";
-      tr.appendChild(priceIncTd);
-
-      // Line total ex. GST
-      const lineExTd = document.createElement("td");
-      const q = parseFloat(item.quantity) || 1;
-      if (item.exPrice !== null) {
-        const lineEx = q * item.exPrice;
-        lineExTd.textContent = lineEx.toFixed(2);
-        totalEx += lineEx;
-      } else {
-        lineExTd.textContent = "N/A";
-      }
-      tr.appendChild(lineExTd);
-
-      // Line total inc. GST
-      const lineIncTd = document.createElement("td");
-      if (item.incPrice !== null) {
-        const lineInc = q * item.incPrice;
-        lineIncTd.textContent = lineInc.toFixed(2);
-        totalInc += lineInc;
-      } else {
-        lineIncTd.textContent = "N/A";
-      }
-      tr.appendChild(lineIncTd);
-
-      // Remove
-      const removeTd = document.createElement("td");
-      const removeBtn = document.createElement("span");
-      removeBtn.classList.add("remove-btn");
-      removeBtn.textContent = "X";
-      removeBtn.onclick = () => {
-        basket.splice(index, 1);
-        renderBasket();
-      };
-      removeTd.appendChild(removeBtn);
-      tr.appendChild(removeTd);
-
-      basketTableBody.appendChild(tr);
+    const filtered = rows.filter((r, i) => {
+      if (i === 0) return true; // keep header
+      return r.some(cell => String(cell).toLowerCase().includes(val));
     });
+    buildTable(filtered);
+  });
+}
 
-    // Update grand totals
-    grandExEl.textContent = totalEx.toFixed(2);
-    grandIncEl.textContent = totalInc.toFixed(2);
+/* ------------------------------------------------------------------
+   FORMAT PRICE (2 decimals)
+------------------------------------------------------------------ */
+function formatIfPrice(rowIndex, colHeader, cellValue) {
+  if (rowIndex === 0) return cellValue; // header row
+  const lower = (colHeader || "").toLowerCase();
+  if (lower.includes("ex. gst") || lower.includes("inc. gst")) {
+    const parsed = parseFloat(cellValue);
+    if (!isNaN(parsed)) return parsed.toFixed(2);
+  }
+  return cellValue;
+}
+
+/* ------------------------------------------------------------------
+   ADD TO BASKET
+------------------------------------------------------------------ */
+function addToBasket(row, headers) {
+  const itemName = row[0] || "Untitled";
+  let exPrice = null;
+  let incPrice = null;
+
+  for (let i = 0; i < headers.length; i++) {
+    const head = headers[i];
+    const val = parseFloat(row[i]);
+    if (PRICE_COLUMNS_EX.includes(head) && !isNaN(val)) {
+      exPrice = val;
+    }
+    if (head === PRICE_COLUMN_INC && !isNaN(val)) {
+      incPrice = val;
+    }
   }
 
-  /* ------------------------------------------------------------------
-    EXPORT CSV & PDF
-  ------------------------------------------------------------------ */
-  exportCsvBtn.onclick = () => {
-    if (basket.length === 0) return;
+  const existing = basket.find(x => x.itemName === itemName);
+  if (existing) {
+    existing.quantity = parseFloat(existing.quantity) + 1;
+  } else {
+    basket.push({ itemName, quantity: 1, exPrice, incPrice });
+  }
+  renderBasket();
+}
 
-    const lines = [];
+/* ------------------------------------------------------------------
+   RENDER BASKET
+------------------------------------------------------------------ */
+function renderBasket() {
+  if (basket.length === 0) {
+    basketContainer.style.display = "none";
+    return;
+  }
+  basketContainer.style.display = "block";
+  basketTableBody.innerHTML = "";
+
+  let totalEx = 0;
+  let totalInc = 0;
+
+  basket.forEach((item, index) => {
+    const tr = document.createElement("tr");
+
+    // Item
+    const nameTd = document.createElement("td");
+    nameTd.textContent = item.itemName;
+    tr.appendChild(nameTd);
+
+    // Quantity (+/- and input)
+    const qtyTd = document.createElement("td");
+    const qtyControls = document.createElement("div");
+    qtyControls.classList.add("qty-controls");
+
+    const minusBtn = document.createElement("button");
+    minusBtn.textContent = "-";
+    minusBtn.onclick = () => {
+      let q = parseFloat(item.quantity) || 1;
+      q -= 1; if (q < 1) q = 1;
+      item.quantity = q;
+      renderBasket();
+    };
+
+    const qtyInput = document.createElement("input");
+    qtyInput.type = "number";
+    qtyInput.classList.add("qty-input");
+    qtyInput.value = item.quantity;
+    qtyInput.onchange = () => {
+      let val = parseFloat(qtyInput.value);
+      if (isNaN(val) || val < 1) val = 1;
+      item.quantity = val;
+      renderBasket();
+    };
+
+    const plusBtn = document.createElement("button");
+    plusBtn.textContent = "+";
+    plusBtn.onclick = () => {
+      let q = parseFloat(item.quantity) || 1;
+      q += 1;
+      item.quantity = q;
+      renderBasket();
+    };
+
+    qtyControls.appendChild(minusBtn);
+    qtyControls.appendChild(qtyInput);
+    qtyControls.appendChild(plusBtn);
+    qtyTd.appendChild(qtyControls);
+    tr.appendChild(qtyTd);
+
+    // Price ex. GST
+    const priceExTd = document.createElement("td");
+    priceExTd.textContent = (item.exPrice !== null)
+      ? item.exPrice.toFixed(2)
+      : "N/A";
+    tr.appendChild(priceExTd);
+
+    // Price inc. GST
+    const priceIncTd = document.createElement("td");
+    priceIncTd.textContent = (item.incPrice !== null)
+      ? item.incPrice.toFixed(2)
+      : "N/A";
+    tr.appendChild(priceIncTd);
+
+    // Line total ex. GST
+    let lineEx = "N/A";
+    if (item.exPrice !== null) {
+      lineEx = (parseFloat(item.quantity) * item.exPrice).toFixed(2);
+      totalEx += parseFloat(lineEx);
+    }
+    const lineExTd = document.createElement("td");
+    lineExTd.textContent = lineEx;
+    tr.appendChild(lineExTd);
+
+    // Line total inc. GST
+    let lineInc = "N/A";
+    if (item.incPrice !== null) {
+      lineInc = (parseFloat(item.quantity) * item.incPrice).toFixed(2);
+      totalInc += parseFloat(lineInc);
+    }
+    const lineIncTd = document.createElement("td");
+    lineIncTd.textContent = lineInc;
+    tr.appendChild(lineIncTd);
+
+    // Remove
+    const removeTd = document.createElement("td");
+    const removeBtn = document.createElement("span");
+    removeBtn.textContent = "X";
+    removeBtn.classList.add("remove-btn");
+    removeBtn.onclick = () => {
+      basket.splice(index, 1);
+      renderBasket();
+    };
+    removeTd.appendChild(removeBtn);
+    tr.appendChild(removeTd);
+
+    basketTableBody.appendChild(tr);
+  });
+
+  grandExEl.textContent = totalEx.toFixed(2);
+  grandIncEl.textContent = totalInc.toFixed(2);
+}
+
+/* ------------------------------------------------------------------
+   EXPORT CSV / PDF
+------------------------------------------------------------------ */
+exportCsvBtn.onclick = () => {
+  if (!basket.length) return;
+
+  const lines = [];
+  lines.push([
+    "Item",
+    "Quantity",
+    "Price Ex. GST",
+    "Price Inc. GST",
+    "Line Total Ex. GST",
+    "Line Total Inc. GST"
+  ]);
+
+  let totalEx = 0, totalInc = 0;
+  basket.forEach(item => {
+    const q = parseFloat(item.quantity) || 1;
+    const ex = (item.exPrice !== null) ? item.exPrice : 0;
+    const inc = (item.incPrice !== null) ? item.incPrice : 0;
+    const lineEx = q * ex;
+    const lineInc = q * inc;
+    totalEx += lineEx;
+    totalInc += lineInc;
+
     lines.push([
-      "Item", 
-      "Quantity", 
-      "Price Ex. GST", 
-      "Price Inc. GST", 
-      "Line Total Ex. GST", 
-      "Line Total Inc. GST"
+      item.itemName,
+      q.toString(),
+      (item.exPrice !== null ? ex.toFixed(2) : "N/A"),
+      (item.incPrice !== null ? inc.toFixed(2) : "N/A"),
+      (item.exPrice !== null ? lineEx.toFixed(2) : "N/A"),
+      (item.incPrice !== null ? lineInc.toFixed(2) : "N/A")
     ]);
+  });
 
-    let totalEx = 0;
-    let totalInc = 0;
+  lines.push(["", "", "", "Grand Totals:", totalEx.toFixed(2), totalInc.toFixed(2)]);
+  const csvContent = lines.map(line => line.join(",")).join("\n");
 
-    basket.forEach(item => {
-      const q = parseFloat(item.quantity) || 1;
-      const lineEx = (item.exPrice !== null) ? q * item.exPrice : 0;
-      const lineInc = (item.incPrice !== null) ? q * item.incPrice : 0;
-      totalEx += lineEx;
-      totalInc += lineInc;
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.setAttribute("download", "quote_basket.csv");
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+};
 
-      lines.push([
-        item.itemName,
-        String(q),
-        item.exPrice !== null ? item.exPrice.toFixed(2) : "N/A",
-        item.incPrice !== null ? item.incPrice.toFixed(2) : "N/A",
-        item.exPrice !== null ? lineEx.toFixed(2) : "N/A",
-        item.incPrice !== null ? lineInc.toFixed(2) : "N/A"
-      ]);
-    });
+exportPdfBtn.onclick = () => {
+  if (!basket.length) return;
 
-    lines.push(["", "", "", "Grand Totals:", totalEx.toFixed(2), totalInc.toFixed(2)]);
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(12);
+  doc.text("Quote Basket", 10, 10);
 
-    const csvContent = lines.map(line => line.join(",")).join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", "quote_basket.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  let yPos = 20;
+  doc.text("Item", 10, yPos);
+  doc.text("Qty", 50, yPos);
+  doc.text("Ex. GST", 70, yPos);
+  doc.text("Inc. GST", 95, yPos);
+  doc.text("Line Ex", 125, yPos);
+  doc.text("Line Inc", 150, yPos);
+  yPos += 10;
 
-  exportPdfBtn.onclick = () => {
-    if (basket.length === 0) return;
+  let totalEx = 0, totalInc = 0;
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+  basket.forEach(item => {
+    const q = parseFloat(item.quantity) || 1;
+    const ex = (item.exPrice !== null) ? item.exPrice : 0;
+    const inc = (item.incPrice !== null) ? item.incPrice : 0;
+    const lineEx = ex * q;
+    const lineInc = inc * q;
+    totalEx += lineEx;
+    totalInc += lineInc;
 
-    doc.setFontSize(12);
-    doc.text("Quote Basket", 10, 10);
-
-    let yPos = 20;
-    doc.text("Item", 10, yPos);
-    doc.text("Qty", 40, yPos);
-    doc.text("Ex. GST", 60, yPos);
-    doc.text("Inc. GST", 85, yPos);
-    doc.text("Line Ex", 115, yPos);
-    doc.text("Line Inc", 140, yPos);
-
+    doc.text(String(item.itemName).slice(0,20), 10, yPos);
+    doc.text(String(q), 50, yPos);
+    doc.text((item.exPrice !== null) ? ex.toFixed(2) : "N/A", 70, yPos);
+    doc.text((item.incPrice !== null) ? inc.toFixed(2) : "N/A", 95, yPos);
+    doc.text((item.exPrice !== null) ? lineEx.toFixed(2) : "N/A", 125, yPos);
+    doc.text((item.incPrice !== null) ? lineInc.toFixed(2) : "N/A", 150, yPos);
     yPos += 10;
-    let totalEx = 0;
-    let totalInc = 0;
+  });
 
-    basket.forEach(item => {
-      const q = parseFloat(item.quantity) || 1;
-      const lineEx = (item.exPrice !== null) ? q * item.exPrice : 0;
-      const lineInc = (item.incPrice !== null) ? q * item.incPrice : 0;
-      totalEx += lineEx;
-      totalInc += lineInc;
-
-      doc.text(String(item.itemName).slice(0,20), 10, yPos);
-      doc.text(String(q), 40, yPos);
-      doc.text(item.exPrice !== null ? item.exPrice.toFixed(2) : "N/A", 60, yPos);
-      doc.text(item.incPrice !== null ? item.incPrice.toFixed(2) : "N/A", 85, yPos);
-      doc.text(item.exPrice !== null ? lineEx.toFixed(2) : "N/A", 115, yPos);
-      doc.text(item.incPrice !== null ? lineInc.toFixed(2) : "N/A", 140, yPos);
-
-      yPos += 10;
-    });
-
-    yPos += 10;
-    doc.text(`Grand Total Ex. GST: $${totalEx.toFixed(2)}`, 10, yPos);
-    yPos += 10;
-    doc.text(`Grand Total Inc. GST: $${totalInc.toFixed(2)}`, 10, yPos);
-
-    doc.save("quote_basket.pdf");
-  };
-  </script>
+  yPos += 10;
+  doc.text(`Grand Total Ex. GST: $${totalEx.toFixed(2)}`, 10, yPos);
+  yPos += 10;
+  doc.text(`Grand Total Inc. GST: $${totalInc.toFixed(2)}`, 10, yPos);
+  doc.save("quote_basket.pdf");
+};
+</script>
 </body>
 </html>
