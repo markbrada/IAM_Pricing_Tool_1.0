@@ -28,7 +28,7 @@
       --add-btn-bg: #198754;
       --add-btn-hover-bg: #157347;
       --basket-border: #555;
-      --row-alt: #333;
+      --row-alt: #2a2a2a;
       --container-bg: #333;
       --toast-bg: #0d6efd;
       --toast-text: #fff;
@@ -50,11 +50,11 @@
       margin-bottom: 2rem;
     }
     
-    /* ---------- Dark Mode Toggle Button ---------- */
+    /* ---------- Dark Mode Toggle Button (fixed at top left) ---------- */
     #darkModeToggle {
       position: fixed;
       top: 10px;
-      right: 10px;
+      left: 10px;
       background-color: var(--button-bg);
       color: #fff;
       border: none;
@@ -95,7 +95,7 @@
       border-collapse: collapse;
       width: 100%;
     }
-    /* Use sticky headers for the main table */
+    /* Sticky headers using thead */
     #sheetContainer thead th {
       position: sticky;
       top: 0;
@@ -112,7 +112,7 @@
     }
     /* Zebra striping for main table in all modes */
     #sheetContainer tbody tr:nth-child(even) {
-      background-color: var(--row-alt);
+      background-color: var(--row-alt) !important;
     }
     #sheetContainer tbody tr:hover {
       background-color: #cccccc;
@@ -208,17 +208,20 @@
       text-align: left;
       transition: border-color 0.3s;
     }
-    /* Zebra striping for basket table */
+    /* Zebra striping for basket table in both themes */
     #basketTable tbody tr:nth-child(even) {
-      background-color: var(--row-alt);
+      background-color: var(--row-alt) !important;
     }
     
     /* Sorting handle cell in basket */
     .sort-handle {
       cursor: move;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
       text-align: center;
       font-size: 1.2rem;
-      width: 2em; /* same size as add button */
+      width: 2em;
     }
     
     /* ---------- Quantity Controls in Basket ---------- */
@@ -265,6 +268,12 @@
     .fade-out {
       opacity: 0;
       transform: scale(0.9);
+    }
+    
+    /* ---------- Click-to-Copy Flash Effect ---------- */
+    .copied-cell {
+      background-color: #c8e6c9 !important;
+      transition: background-color 0.15s ease;
     }
   </style>
 </head>
@@ -337,7 +346,6 @@
       const basketContainer = document.getElementById("basketContainer");
       const basketContent = document.getElementById("basketContent");
       const basketTableBody = document.querySelector("#basketTable tbody");
-      const basketTableFoot = document.querySelector("#basketTable tfoot");
       const darkModeToggle = document.getElementById("darkModeToggle");
       const toggleBasketBtn = document.getElementById("toggleBasketBtn");
       const exportCsvBtn = document.getElementById("exportCsvBtn");
@@ -411,7 +419,7 @@
         wrapper.classList.add("sheet-view");
         sheetContainer.appendChild(wrapper);
         
-        // Search Container with extra spacing
+        // Search Container
         const searchDiv = document.createElement("div");
         searchDiv.classList.add("search-container");
         const searchLabel = document.createElement("label");
@@ -531,7 +539,8 @@
         navigator.clipboard.writeText(text)
           .then(() => {
             td.classList.add("copied-cell");
-            setTimeout(() => td.classList.remove("copied-cell"), 300);
+            void td.offsetWidth; // force reflow
+            setTimeout(() => td.classList.remove("copied-cell"), 150);
           })
           .catch(err => console.error("Clipboard error:", err));
       }
@@ -683,25 +692,22 @@
           
           basketTableBody.appendChild(tr);
         });
-        grandExEl.textContent = totalEx.toFixed(2);
-        grandIncEl.textContent = totalInc.toFixed(2);
-        
-        // Create footer row for grand totals, shifted one cell right
+        // Create footer row for grand totals, shifted one cell to the right.
         const tfoot = document.createElement("tfoot");
         const tfootRow = document.createElement("tr");
-        // Create a cell spanning the first 5 columns with label "Grand Totals:"
+        // Span the first 5 columns with the "Grand Totals:" label
         const spanCell = document.createElement("td");
         spanCell.colSpan = 5;
         spanCell.style.textAlign = "right";
         spanCell.style.fontWeight = "bold";
         spanCell.textContent = "Grand Totals:";
         tfootRow.appendChild(spanCell);
-        // Grand Total Ex. GST
+        // Total for Line Total Ex. GST
         const totalExTd = document.createElement("td");
         totalExTd.style.fontWeight = "bold";
         totalExTd.textContent = totalEx.toFixed(2);
         tfootRow.appendChild(totalExTd);
-        // Grand Total Inc. GST
+        // Total for Line Total Inc. GST
         const totalIncTd = document.createElement("td");
         totalIncTd.style.fontWeight = "bold";
         totalIncTd.textContent = totalInc.toFixed(2);
@@ -711,13 +717,13 @@
         tfootRow.appendChild(emptyCell);
         tfoot.appendChild(tfootRow);
         
-        // Remove existing tfoot if present, then append new tfoot
+        // Remove existing footer if present, then append new footer
         const basketTable = document.getElementById("basketTable");
         const existingTfoot = basketTable.querySelector("tfoot");
         if(existingTfoot) basketTable.removeChild(existingTfoot);
         basketTable.appendChild(tfoot);
         
-        // Enable drag-and-drop sorting using SortableJS with handle.
+        // Enable drag-and-drop sorting using SortableJS with a handle.
         Sortable.create(basketTableBody, {
           handle: '.sort-handle',
           onEnd: updateBasketOrder
@@ -727,7 +733,7 @@
       function updateBasketOrder(evt) {
         const newOrder = [];
         Array.from(basketTableBody.children).forEach(row => {
-          // The item name is in the second cell (index 1) because the first is the sort handle.
+          // The item name is in the second cell (index 1) because first cell is the sort handle.
           const itemName = row.children[1].textContent;
           const found = basket.find(item => item.itemName === itemName);
           if(found) newOrder.push(found);
@@ -779,8 +785,7 @@
         }
       }
       
-      /* ---------------- CSV EXPORT FUNCTION (Fixed) ---------------- */
-      // Helper function to enclose fields in quotes and escape inner quotes.
+      /* ---------------- CSV EXPORT FUNCTION (FIELDS ALWAYS QUOTED) ---------------- */
       function csvEscape(value) {
         if (value === null || value === undefined) return '""';
         let str = value.toString();
