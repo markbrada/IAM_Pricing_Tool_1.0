@@ -50,19 +50,18 @@
       margin-bottom: 2rem;
     }
     
-    /* ---------- Dark Mode Toggle Button (fixed at top left) ---------- */
+    /* ---------- Dark Mode Toggle Button ---------- */
+    /* Removed fixed positioning; now will be placed in the search container */
     #darkModeToggle {
-      position: fixed;
-      top: 10px;
-      left: 10px;
+      /* position: fixed; top: 10px; left: 10px; -- removed */
       background-color: var(--button-bg);
       color: #fff;
       border: none;
       padding: 0.5rem 0.75rem;
       border-radius: 4px;
       cursor: pointer;
-      z-index: 3000;
       transition: background-color 0.3s;
+      /* Remove fixed styles so it behaves as an inline element */
     }
     #darkModeToggle:hover {
       background-color: var(--button-hover-bg);
@@ -125,6 +124,9 @@
       background-color: var(--container-bg);
       border: 1px solid var(--basket-border);
       border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     .search-label {
       font-weight: bold;
@@ -208,7 +210,7 @@
       text-align: left;
       transition: border-color 0.3s;
     }
-    /* Zebra striping for basket table in both themes */
+    /* Zebra striping for basket table */
     #basketTable tbody tr:nth-child(even) {
       background-color: var(--row-alt) !important;
     }
@@ -280,7 +282,6 @@
 <body>
   <h1>In A Minnit Pricing Tool 1.0</h1>
   <p><em>Beta version – features subject to change. Always check your work. Report bugs to Marco.</em></p>
-  <button id="darkModeToggle">Toggle Dark Mode</button>
   
   <!-- Tab Navigation for Sheets -->
   <div id="sheetTabs"></div>
@@ -352,19 +353,10 @@
       const toast = document.getElementById("toast");
       
       /* ---------------- THEME TOGGLE ---------------- */
+      // Remove darkModeToggle from its previous location if necessary.
+      // It will be repositioned later if needed.
       darkModeToggle.addEventListener("click", () => {
         document.body.classList.toggle("dark-mode");
-      });
-      
-      /* ---------------- TOGGLE BASKET VISIBILITY ---------------- */
-      toggleBasketBtn.addEventListener("click", () => {
-        if(basketContent.style.display === "none") {
-          basketContent.style.display = "block";
-          toggleBasketBtn.textContent = "Hide Basket";
-        } else {
-          basketContent.style.display = "none";
-          toggleBasketBtn.textContent = "Show Basket";
-        }
       });
       
       /* ---------------- FETCH & PARSE EXCEL ---------------- */
@@ -419,9 +411,16 @@
         wrapper.classList.add("sheet-view");
         sheetContainer.appendChild(wrapper);
         
-        // Search Container
+        // Search Container: using flex to place search input on left and dark mode toggle on right
         const searchDiv = document.createElement("div");
         searchDiv.classList.add("search-container");
+        searchDiv.style.display = "flex";
+        searchDiv.style.justifyContent = "space-between";
+        searchDiv.style.alignItems = "center";
+        
+        const searchLeft = document.createElement("div");
+        searchLeft.style.display = "flex";
+        searchLeft.style.alignItems = "center";
         const searchLabel = document.createElement("label");
         searchLabel.classList.add("search-label");
         searchLabel.textContent = "Search items:";
@@ -429,8 +428,15 @@
         searchInput.type = "text";
         searchInput.placeholder = "Type to filter...";
         searchInput.classList.add("search-input");
-        searchDiv.appendChild(searchLabel);
-        searchDiv.appendChild(searchInput);
+        searchLeft.appendChild(searchLabel);
+        searchLeft.appendChild(searchInput);
+        searchDiv.appendChild(searchLeft);
+        
+        // Append dark mode toggle button to searchDiv on the right
+        searchDiv.appendChild(darkModeToggle);
+        // Ensure dark mode toggle no longer has fixed positioning
+        darkModeToggle.style.position = "static";
+        
         wrapper.appendChild(searchDiv);
         
         // Table Container
@@ -539,7 +545,7 @@
         navigator.clipboard.writeText(text)
           .then(() => {
             td.classList.add("copied-cell");
-            void td.offsetWidth; // force reflow
+            void td.offsetWidth; // force reflow for flash effect
             setTimeout(() => td.classList.remove("copied-cell"), 150);
           })
           .catch(err => console.error("Clipboard error:", err));
@@ -695,7 +701,7 @@
         // Create footer row for grand totals, shifted one cell to the right.
         const tfoot = document.createElement("tfoot");
         const tfootRow = document.createElement("tr");
-        // Span the first 5 columns with the "Grand Totals:" label
+        // Create a cell spanning the first 5 columns with label "Grand Totals:"
         const spanCell = document.createElement("td");
         spanCell.colSpan = 5;
         spanCell.style.textAlign = "right";
@@ -723,7 +729,7 @@
         if(existingTfoot) basketTable.removeChild(existingTfoot);
         basketTable.appendChild(tfoot);
         
-        // Enable drag-and-drop sorting using SortableJS with a handle.
+        // Enable drag-and-drop sorting using SortableJS with handle.
         Sortable.create(basketTableBody, {
           handle: '.sort-handle',
           onEnd: updateBasketOrder
@@ -733,7 +739,7 @@
       function updateBasketOrder(evt) {
         const newOrder = [];
         Array.from(basketTableBody.children).forEach(row => {
-          // The item name is in the second cell (index 1) because first cell is the sort handle.
+          // The item name is in the second cell (index 1) because the first cell is the sort handle.
           const itemName = row.children[1].textContent;
           const found = basket.find(item => item.itemName === itemName);
           if(found) newOrder.push(found);
