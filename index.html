@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>In A Minnit Pricing Tool 1.0</title>
   <style>
-    /* ---------- CSS Variables for Light/Dark Themes ---------- */
+    /* ---------- CSS Variables for Themes ---------- */
     :root {
       --bg-color: #f7f7f7;
       --text-color: #333;
@@ -61,7 +61,7 @@
       padding: 0.5rem 0.75rem;
       border-radius: 4px;
       cursor: pointer;
-      z-index: 2000;
+      z-index: 3000;
       transition: background-color 0.3s;
     }
     #darkModeToggle:hover {
@@ -89,13 +89,12 @@
     
     /* ---------- Main Sheet Container ---------- */
     #sheetContainer {
-      margin-bottom: 160px; /* leave space for fixed basket */
+      margin-bottom: 160px; /* space for fixed basket */
     }
     #sheetContainer table {
       border-collapse: collapse;
       width: 100%;
     }
-    /* Sticky header using thead */
     #sheetContainer thead th {
       position: sticky;
       top: 0;
@@ -110,11 +109,10 @@
       padding: 0.5rem;
       text-align: left;
     }
-    /* Zebra striping for main table (even in light mode) */
+    /* Zebra striping for main table in all modes */
     #sheetContainer tbody tr:nth-child(even) {
       background-color: var(--row-alt);
     }
-    /* More pronounced hover effect */
     #sheetContainer tbody tr:hover {
       background-color: #cccccc;
     }
@@ -144,7 +142,7 @@
       background-color: yellow;
     }
     
-    /* ---------- "Add to Basket" Button (Main Table) ---------- */
+    /* ---------- "Add to Basket" Button in Main Table ---------- */
     .add-button {
       background-color: var(--add-btn-bg);
       border: none;
@@ -174,10 +172,27 @@
       z-index: 1000;
       transition: background-color 0.3s, border-color 0.3s;
     }
-    #basketContainer h3 {
-      margin-top: 0;
+    /* Basket header (always visible) */
+    #basketHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 0.5rem;
     }
+    #toggleBasketBtn {
+      background-color: var(--button-bg);
+      color: #fff;
+      border: none;
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    #toggleBasketBtn:hover {
+      background-color: var(--button-hover-bg);
+    }
+    
+    /* Basket Table */
     #basketTable {
       width: 100%;
       border-collapse: collapse;
@@ -189,16 +204,17 @@
       text-align: left;
       transition: border-color 0.3s;
     }
+    /* Zebra striping for basket table */
     #basketTable tbody tr:nth-child(even) {
       background-color: var(--row-alt);
     }
     
-    /* Add a sorting handle cell in the basket (far left) */
+    /* Sorting handle cell in basket */
     .sort-handle {
       cursor: move;
       text-align: center;
       font-size: 1.2rem;
-      width: 2em; /* Adjust size to match add button */
+      width: 2em;
     }
     
     /* ---------- Quantity Controls in Basket ---------- */
@@ -238,7 +254,7 @@
       opacity: 1;
     }
     
-    /* ---------- Animations for Basket Rows ---------- */
+    /* ---------- Animations ---------- */
     .basket-row {
       transition: all 0.3s ease;
     }
@@ -246,7 +262,6 @@
       opacity: 0;
       transform: scale(0.9);
     }
-    
   </style>
 </head>
 <body>
@@ -262,33 +277,29 @@
   
   <!-- Fixed Basket at Bottom -->
   <div id="basketContainer">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
+    <div id="basketHeader">
       <h3>Quote Basket</h3>
       <button id="toggleBasketBtn">Hide Basket</button>
     </div>
-    <table id="basketTable">
-      <thead>
-        <tr>
-          <th class="sort-handle">≡</th>
-          <th>Item</th>
-          <th>Quantity</th>
-          <th>Price Ex. GST</th>
-          <th>Price Inc. GST</th>
-          <th>Line Total Ex. GST</th>
-          <th>Line Total Inc. GST</th>
-          <th>Remove</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-      <tfoot>
-        <tr>
-          <td colspan="4" style="text-align: right; font-weight: bold;">Grand Totals:</td>
-          <td id="tfootEx" style="font-weight: bold;"></td>
-          <td id="tfootInc" style="font-weight: bold;"></td>
-          <td></td>
-        </tr>
-      </tfoot>
-    </table>
+    <!-- Basket Content -->
+    <div id="basketContent">
+      <table id="basketTable">
+        <thead>
+          <tr>
+            <th class="sort-handle">≡</th>
+            <th>Item</th>
+            <th>Quantity</th>
+            <th>Price Ex. GST</th>
+            <th>Price Inc. GST</th>
+            <th>Line Total Ex. GST</th>
+            <th>Line Total Inc. GST</th>
+            <th>Remove</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot></tfoot>
+      </table>
+    </div>
   </div>
   
   <!-- Toast Notification -->
@@ -306,7 +317,7 @@
       /* ---------------- CONFIGURATION ---------------- */
       const PRICE_COLUMNS_EX = ["Rate Ex. GST", "Price Ex. GST"];
       const PRICE_COLUMN_INC = "Price Inc. GST";
-      const TOAST_DURATION = 3000; // 3 seconds for toast notifications
+      const TOAST_DURATION = 3000; // 3 seconds
       let lastRemovedItem = null;
       let lastAddedItemIndex = null;
       
@@ -318,13 +329,13 @@
       const sheetTabs = document.getElementById("sheetTabs");
       const sheetContainer = document.getElementById("sheetContainer");
       const basketContainer = document.getElementById("basketContainer");
+      const basketContent = document.getElementById("basketContent");
       const basketTableBody = document.querySelector("#basketTable tbody");
-      const tfootEx = document.getElementById("tfootEx");
-      const tfootInc = document.getElementById("tfootInc");
-      const exportCsvBtn = document.getElementById("exportCsvBtn");
-      const toast = document.getElementById("toast");
+      const basketTableFoot = document.querySelector("#basketTable tfoot");
       const darkModeToggle = document.getElementById("darkModeToggle");
       const toggleBasketBtn = document.getElementById("toggleBasketBtn");
+      const exportCsvBtn = document.getElementById("exportCsvBtn");
+      const toast = document.getElementById("toast");
       
       /* ---------------- THEME TOGGLE ---------------- */
       darkModeToggle.addEventListener("click", () => {
@@ -333,11 +344,11 @@
       
       /* ---------------- TOGGLE BASKET VISIBILITY ---------------- */
       toggleBasketBtn.addEventListener("click", () => {
-        if(basketContainer.style.display === "none") {
-          basketContainer.style.display = "block";
+        if(basketContent.style.display === "none") {
+          basketContent.style.display = "block";
           toggleBasketBtn.textContent = "Hide Basket";
         } else {
-          basketContainer.style.display = "none";
+          basketContent.style.display = "none";
           toggleBasketBtn.textContent = "Show Basket";
         }
       });
@@ -394,7 +405,7 @@
         wrapper.classList.add("sheet-view");
         sheetContainer.appendChild(wrapper);
         
-        // Search Container with extra spacing
+        // Search Container
         const searchDiv = document.createElement("div");
         searchDiv.classList.add("search-container");
         const searchLabel = document.createElement("label");
@@ -418,10 +429,10 @@
           tableContainer.innerHTML = "";
           const table = document.createElement("table");
           
-          // Create sticky header using thead
+          // Create thead for sticky header
           const thead = document.createElement("thead");
           const trHead = document.createElement("tr");
-          // Extra empty header cell for add-to-basket column
+          // Extra empty header cell for add-to-basket button
           const emptyTh = document.createElement("th");
           emptyTh.textContent = "";
           trHead.appendChild(emptyTh);
@@ -437,7 +448,8 @@
           const tbody = document.createElement("tbody");
           filteredRows.slice(1).forEach((row, i) => {
             const tr = document.createElement("tr");
-            // Add green add-to-basket button at far left
+            tr.classList.add("basket-row");
+            // Add green "Add to Basket" button at far left
             const addCell = document.createElement("td");
             const addBtn = document.createElement("button");
             addBtn.classList.add("add-button");
@@ -458,10 +470,8 @@
               } else {
                 td.textContent = formatted;
               }
-              // Bold all price-related cells
-              if(headers[colIndex] &&
-                 (headers[colIndex].toLowerCase().includes("ex. gst") ||
-                  headers[colIndex].toLowerCase().includes("inc. gst"))) {
+              // Bold price cells if header contains keywords
+              if(headers[colIndex] && (/price|gst|rate/i).test(headers[colIndex])) {
                 td.style.fontWeight = "bold";
               }
               td.addEventListener("click", (e) => {
@@ -494,11 +504,13 @@
       }
       
       function formatIfPrice(rowIndex, colHeader, cellValue) {
-        if(rowIndex === 1) return cellValue;
+        // For header row, return as-is
+        if(rowIndex === 0) return cellValue;
+        // For any column with price, gst, or rate in the header, round to 2 decimals.
         const lower = (colHeader || "").toLowerCase();
-        if(lower.includes("ex. gst") || lower.includes("inc. gst")) {
-          const parsed = parseFloat(cellValue);
-          if(!isNaN(parsed)) return parsed.toFixed(2);
+        if(/price|gst|rate/i.test(lower)) {
+          const num = parseFloat(cellValue);
+          if(!isNaN(num)) return num.toFixed(2);
         }
         return cellValue;
       }
@@ -564,7 +576,7 @@
           const tr = document.createElement("tr");
           tr.classList.add("basket-row");
           
-          // Sorting handle cell (using "≡" symbol)
+          // Sorting handle cell
           const sortTd = document.createElement("td");
           sortTd.classList.add("sort-handle");
           sortTd.textContent = "≡";
@@ -667,40 +679,41 @@
           
           basketTableBody.appendChild(tr);
         });
-        grandExEl.textContent = totalEx.toFixed(2);
-        grandIncEl.textContent = totalInc.toFixed(2);
         
-        // Render totals as a footer row in the basket table
+        // Create footer for grand totals in basket table
         const tfoot = document.createElement("tfoot");
         const tfootRow = document.createElement("tr");
-        // Create a cell spanning the first four columns with label "Grand Totals:"
+        // Create a cell spanning the first four columns
         const spanCell = document.createElement("td");
         spanCell.colSpan = 4;
         spanCell.style.textAlign = "right";
         spanCell.style.fontWeight = "bold";
         spanCell.textContent = "Grand Totals:";
         tfootRow.appendChild(spanCell);
-        // Then add cells for total Ex and total Inc, and an empty cell for Remove column.
+        // Grand Total Ex. GST
         const totalExTd = document.createElement("td");
         totalExTd.style.fontWeight = "bold";
         totalExTd.textContent = totalEx.toFixed(2);
         tfootRow.appendChild(totalExTd);
+        // Grand Total Inc. GST
         const totalIncTd = document.createElement("td");
         totalIncTd.style.fontWeight = "bold";
         totalIncTd.textContent = totalInc.toFixed(2);
         tfootRow.appendChild(totalIncTd);
+        // Empty cell for Remove column
         const emptyCell = document.createElement("td");
         tfootRow.appendChild(emptyCell);
         tfoot.appendChild(tfootRow);
-        // Append tfoot to basket table
+        
+        // Remove existing footer if present, then add new footer
         const basketTable = document.getElementById("basketTable");
-        // Remove any existing tfoot first
         const existingTfoot = basketTable.querySelector("tfoot");
         if(existingTfoot) basketTable.removeChild(existingTfoot);
         basketTable.appendChild(tfoot);
         
-        // Enable drag-and-drop sorting in basket using SortableJS
+        // Enable drag-and-drop sorting using SortableJS with a handle.
         Sortable.create(basketTableBody, {
+          handle: '.sort-handle',
           onEnd: updateBasketOrder
         });
       }
@@ -708,7 +721,7 @@
       function updateBasketOrder(evt) {
         const newOrder = [];
         Array.from(basketTableBody.children).forEach(row => {
-          // The item name is in the second cell (index 1) because first cell is sort handle
+          // The item name is in the second cell (index 1) because first cell is the sort handle.
           const itemName = row.children[1].textContent;
           const found = basket.find(item => item.itemName === itemName);
           if(found) newOrder.push(found);
