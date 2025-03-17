@@ -89,12 +89,13 @@
     
     /* ---------- Main Sheet Container ---------- */
     #sheetContainer {
-      margin-bottom: 160px; /* space for fixed basket */
+      margin-bottom: 160px; /* leave space for fixed basket */
     }
     #sheetContainer table {
       border-collapse: collapse;
       width: 100%;
     }
+    /* Use sticky headers for the main table */
     #sheetContainer thead th {
       position: sticky;
       top: 0;
@@ -109,7 +110,7 @@
       padding: 0.5rem;
       text-align: left;
     }
-    /* Zebra striping for main table in all modes */
+    /* Enforce zebra striping in all modes */
     #sheetContainer tbody tr:nth-child(even) {
       background-color: var(--row-alt);
     }
@@ -172,14 +173,17 @@
       z-index: 1000;
       transition: background-color 0.3s, border-color 0.3s;
     }
-    /* Basket header (always visible) */
+    /* Basket Header with Export Button and Toggle */
     #basketHeader {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 0.5rem;
     }
-    #toggleBasketBtn {
+    #basketHeader h3 {
+      margin: 0;
+    }
+    #basketHeader button {
       background-color: var(--button-bg);
       color: #fff;
       border: none;
@@ -188,7 +192,7 @@
       cursor: pointer;
       transition: background-color 0.3s;
     }
-    #toggleBasketBtn:hover {
+    #basketHeader button:hover {
       background-color: var(--button-hover-bg);
     }
     
@@ -209,12 +213,12 @@
       background-color: var(--row-alt);
     }
     
-    /* Sorting handle cell in basket */
+    /* Sorting Handle Cell in Basket */
     .sort-handle {
       cursor: move;
       text-align: center;
       font-size: 1.2rem;
-      width: 2em;
+      width: 2em; /* Match the size of the + button in main table */
     }
     
     /* ---------- Quantity Controls in Basket ---------- */
@@ -279,9 +283,11 @@
   <div id="basketContainer">
     <div id="basketHeader">
       <h3>Quote Basket</h3>
-      <button id="toggleBasketBtn">Hide Basket</button>
+      <div>
+        <button id="exportCsvBtn">Export quote CSV</button>
+        <button id="toggleBasketBtn">Hide Basket</button>
+      </div>
     </div>
-    <!-- Basket Content -->
     <div id="basketContent">
       <table id="basketTable">
         <thead>
@@ -317,7 +323,7 @@
       /* ---------------- CONFIGURATION ---------------- */
       const PRICE_COLUMNS_EX = ["Rate Ex. GST", "Price Ex. GST"];
       const PRICE_COLUMN_INC = "Price Inc. GST";
-      const TOAST_DURATION = 3000; // 3 seconds
+      const TOAST_DURATION = 3000; // 3 seconds for toast notifications
       let lastRemovedItem = null;
       let lastAddedItemIndex = null;
       
@@ -405,7 +411,7 @@
         wrapper.classList.add("sheet-view");
         sheetContainer.appendChild(wrapper);
         
-        // Search Container
+        // Search Container with extra spacing
         const searchDiv = document.createElement("div");
         searchDiv.classList.add("search-container");
         const searchLabel = document.createElement("label");
@@ -449,13 +455,13 @@
           filteredRows.slice(1).forEach((row, i) => {
             const tr = document.createElement("tr");
             tr.classList.add("basket-row");
-            // Add green "Add to Basket" button at far left
+            // Add green "Add to Basket" button at far left.
             const addCell = document.createElement("td");
             const addBtn = document.createElement("button");
             addBtn.classList.add("add-button");
             addBtn.textContent = "+";
             addBtn.addEventListener("click", () => {
-              addToBasket(filteredRows[i+1], headers);
+              addToBasket(row, headers);
               showToast("Item added to basket", () => undoLastAddition());
             });
             addCell.appendChild(addBtn);
@@ -470,7 +476,7 @@
               } else {
                 td.textContent = formatted;
               }
-              // Bold price cells if header contains keywords
+              // Bold price cells if header includes "ex. gst", "inc. gst", "price" or "rate"
               if(headers[colIndex] && (/price|gst|rate/i).test(headers[colIndex])) {
                 td.style.fontWeight = "bold";
               }
@@ -504,9 +510,7 @@
       }
       
       function formatIfPrice(rowIndex, colHeader, cellValue) {
-        // For header row, return as-is
-        if(rowIndex === 0) return cellValue;
-        // For any column with price, gst, or rate in the header, round to 2 decimals.
+        if(rowIndex === 1) return cellValue;
         const lower = (colHeader || "").toLowerCase();
         if(/price|gst|rate/i.test(lower)) {
           const num = parseFloat(cellValue);
@@ -683,19 +687,19 @@
         // Create footer for grand totals in basket table
         const tfoot = document.createElement("tfoot");
         const tfootRow = document.createElement("tr");
-        // Create a cell spanning the first four columns
+        // Span first 5 columns with label "Grand Totals:"
         const spanCell = document.createElement("td");
-        spanCell.colSpan = 4;
+        spanCell.colSpan = 5;
         spanCell.style.textAlign = "right";
         spanCell.style.fontWeight = "bold";
         spanCell.textContent = "Grand Totals:";
         tfootRow.appendChild(spanCell);
-        // Grand Total Ex. GST
+        // Total for Line Total Ex. GST
         const totalExTd = document.createElement("td");
         totalExTd.style.fontWeight = "bold";
         totalExTd.textContent = totalEx.toFixed(2);
         tfootRow.appendChild(totalExTd);
-        // Grand Total Inc. GST
+        // Total for Line Total Inc. GST
         const totalIncTd = document.createElement("td");
         totalIncTd.style.fontWeight = "bold";
         totalIncTd.textContent = totalInc.toFixed(2);
@@ -711,7 +715,7 @@
         if(existingTfoot) basketTable.removeChild(existingTfoot);
         basketTable.appendChild(tfoot);
         
-        // Enable drag-and-drop sorting using SortableJS with a handle.
+        // Enable drag-and-drop sorting using SortableJS with handle.
         Sortable.create(basketTableBody, {
           handle: '.sort-handle',
           onEnd: updateBasketOrder
@@ -721,7 +725,7 @@
       function updateBasketOrder(evt) {
         const newOrder = [];
         Array.from(basketTableBody.children).forEach(row => {
-          // The item name is in the second cell (index 1) because first cell is the sort handle.
+          // Item name is in second cell (index 1) because first cell is sort handle.
           const itemName = row.children[1].textContent;
           const found = basket.find(item => item.itemName === itemName);
           if(found) newOrder.push(found);
