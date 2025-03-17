@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>In A Minnit Pricing Tool 1.0</title>
   <style>
-    /* ---------- CSS Variables for Theme ---------- */
+    /* ---------- CSS Variables for Light/Dark Themes ---------- */
     :root {
       --bg-color: #f7f7f7;
       --text-color: #333;
@@ -14,9 +14,9 @@
       --add-btn-bg: #28a745;
       --add-btn-hover-bg: #218838;
       --basket-border: #aaa;
-      --toast-bg: #333;
-      --toast-text: #fff;
       --row-alt: #f9f9f9;
+      --search-bg: #fff;
+      --search-border: #ccc;
     }
     .dark-mode {
       --bg-color: #222;
@@ -28,6 +28,8 @@
       --add-btn-hover-bg: #157347;
       --basket-border: #555;
       --row-alt: #333;
+      --search-bg: #333;
+      --search-border: #666;
     }
     
     /* ---------- Global Styles ---------- */
@@ -46,20 +48,22 @@
       margin-bottom: 2rem;
     }
     
-    /* ---------- Dark Mode Toggle ---------- */
+    /* ---------- Dark Mode Toggle Button ---------- */
     #darkModeToggle {
       position: fixed;
       top: 10px;
       right: 10px;
-      background: var(--button-bg);
+      background-color: var(--button-bg);
       color: #fff;
       border: none;
       padding: 0.5rem 0.75rem;
       border-radius: 4px;
       cursor: pointer;
+      z-index: 2000;
+      transition: background-color 0.3s;
     }
     #darkModeToggle:hover {
-      background: var(--button-hover-bg);
+      background-color: var(--button-hover-bg);
     }
     
     /* ---------- Tab-Based Navigation for Sheets ---------- */
@@ -83,12 +87,13 @@
     
     /* ---------- Main Sheet Container ---------- */
     #sheetContainer {
-      margin-bottom: 160px; /* leave space for fixed basket */
+      margin-bottom: 160px; /* leave space for the fixed basket */
     }
     #sheetContainer table {
       border-collapse: collapse;
       width: 100%;
     }
+    /* Use sticky headers for the main table */
     #sheetContainer thead th {
       position: sticky;
       top: 0;
@@ -103,9 +108,11 @@
       padding: 0.5rem;
       text-align: left;
     }
+    /* Alternating row colors */
     #sheetContainer tbody tr:nth-child(even) {
       background-color: var(--row-alt);
     }
+    /* More pronounced hover effect */
     #sheetContainer tbody tr:hover {
       background-color: #cccccc;
     }
@@ -114,19 +121,22 @@
     .search-container {
       margin-bottom: 1rem;
       padding: 0.5rem;
-      background-color: #fff;
-      border: 1px solid #ccc;
+      background-color: var(--search-bg);
+      border: 1px solid var(--search-border);
       border-radius: 4px;
     }
     .search-label {
       font-weight: bold;
       margin-right: 0.5rem;
+      color: var(--text-color);
     }
     .search-input {
       padding: 0.4rem;
-      border: 1px solid #ccc;
+      border: 1px solid var(--search-border);
       border-radius: 4px;
       width: 200px;
+      color: var(--text-color);
+      background-color: var(--bg-color);
     }
     .highlight {
       background-color: yellow;
@@ -141,6 +151,7 @@
       border-radius: 4px;
       cursor: pointer;
       font-weight: bold;
+      transition: background-color 0.3s;
     }
     .add-button:hover {
       background-color: var(--add-btn-hover-bg);
@@ -152,13 +163,14 @@
       bottom: 0;
       left: 0;
       right: 0;
-      background: #fff;
+      background-color: var(--bg-color);
       border-top: 1px solid var(--basket-border);
       padding: 1rem;
       box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
       max-height: 40%;
       overflow-y: auto;
       z-index: 1000;
+      transition: background-color 0.3s, border-color 0.3s;
     }
     #basketContainer h3 {
       margin-top: 0;
@@ -173,6 +185,7 @@
       border: 1px solid var(--basket-border);
       padding: 0.5rem;
       text-align: left;
+      transition: border-color 0.3s;
     }
     #basketTable tbody tr:nth-child(even) {
       background-color: var(--row-alt);
@@ -203,8 +216,8 @@
       bottom: 60px;
       left: 50%;
       transform: translateX(-50%);
-      background: var(--toast-bg);
-      color: var(--toast-text);
+      background: var(--button-bg);
+      color: #fff;
       padding: 0.75rem 1.5rem;
       border-radius: 4px;
       opacity: 0;
@@ -260,12 +273,12 @@
     <p><strong>Grand Total (Inc. GST):</strong> $<span id="grandInc">0.00</span></p>
   </div>
   
-  <!-- Toast Notification Container -->
+  <!-- Toast Notification -->
   <div id="toast"></div>
   
   <!-- Include SheetJS Library -->
   <script src="xlsx.full.min.js"></script>
-  <!-- Include SortableJS for drag-and-drop (via CDN) -->
+  <!-- Include SortableJS for drag-and-drop in basket -->
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   
   <script>
@@ -275,9 +288,9 @@
       /* ---------------- CONFIGURATION ---------------- */
       const PRICE_COLUMNS_EX = ["Rate Ex. GST", "Price Ex. GST"];
       const PRICE_COLUMN_INC = "Price Inc. GST";
-      const TOAST_DURATION = 3000; // 3 seconds for toast notifications
-      let lastRemovedItem = null; // For undo of removals
-      let lastAddedItemIndex = null; // For undo of last addition
+      const TOAST_DURATION = 3000; // milliseconds
+      let lastRemovedItem = null; // For undo removal
+      let lastAddedItemIndex = null; // For undo last addition
       
       /* ---------------- GLOBAL VARIABLES ---------------- */
       let workbookGlobal = null;
@@ -370,7 +383,7 @@
         wrapper.appendChild(tableContainer);
         
         const headers = rows.length > 0 ? rows[0].map(h => String(h).trim()) : [];
-        
+      
         function buildFilteredTable(filteredRows) {
           tableContainer.innerHTML = "";
           const table = document.createElement("table");
@@ -378,7 +391,7 @@
           // Create sticky header using thead
           const thead = document.createElement("thead");
           const trHead = document.createElement("tr");
-          // Extra empty header cell for add-to-basket column
+          // Extra header cell for add-to-basket column
           const emptyTh = document.createElement("th");
           emptyTh.textContent = "";
           trHead.appendChild(emptyTh);
@@ -394,8 +407,8 @@
           const tbody = document.createElement("tbody");
           filteredRows.slice(1).forEach((row, i) => {
             const tr = document.createElement("tr");
-            tr.classList.add("basket-row"); // for animation purposes later if needed
-            // Add "Add to Basket" button at the far left
+            tr.classList.add("basket-row");
+            // Add green add-to-basket button at far left
             const addCell = document.createElement("td");
             const addBtn = document.createElement("button");
             addBtn.classList.add("add-button");
@@ -418,8 +431,8 @@
               }
               // Bold price cells
               if (headers[colIndex] &&
-                  (headers[colIndex].toLowerCase().includes("ex. gst") ||
-                   headers[colIndex].toLowerCase().includes("inc. gst"))) {
+                 (headers[colIndex].toLowerCase().includes("ex. gst") ||
+                  headers[colIndex].toLowerCase().includes("inc. gst"))) {
                 td.style.fontWeight = "bold";
               }
               td.addEventListener("click", (e) => {
@@ -483,7 +496,7 @@
         const itemName = row[0] || "Untitled";
         let exPrice = null;
         let incPrice = null;
-        for (let i = 0; i < headers.length; i++) {
+        for(let i = 0; i < headers.length; i++) {
           const head = headers[i];
           const val = parseFloat(row[i]);
           if(PRICE_COLUMNS_EX.includes(head) && !isNaN(val)) {
@@ -527,11 +540,10 @@
           nameTd.textContent = item.itemName;
           tr.appendChild(nameTd);
           
-          // Quantity controls
+          // Quantity Controls
           const qtyTd = document.createElement("td");
           const qtyControls = document.createElement("div");
           qtyControls.classList.add("qty-controls");
-          
           const minusBtn = document.createElement("button");
           minusBtn.textContent = "-";
           minusBtn.onclick = () => {
@@ -541,7 +553,6 @@
             item.quantity = q;
             renderBasket();
           };
-          
           const qtyInput = document.createElement("input");
           qtyInput.type = "number";
           qtyInput.step = "0.1";
@@ -553,7 +564,6 @@
             item.quantity = val;
             renderBasket();
           };
-          
           const plusBtn = document.createElement("button");
           plusBtn.textContent = "+";
           plusBtn.onclick = () => {
@@ -562,7 +572,6 @@
             item.quantity = q;
             renderBasket();
           };
-          
           qtyControls.appendChild(minusBtn);
           qtyControls.appendChild(qtyInput);
           qtyControls.appendChild(plusBtn);
@@ -604,19 +613,18 @@
           }
           tr.appendChild(lineIncTd);
           
-          // Remove Button with Undo option
+          // Remove Button with Undo Option
           const removeTd = document.createElement("td");
           const removeBtn = document.createElement("span");
           removeBtn.textContent = "X";
           removeBtn.classList.add("remove-btn");
           removeBtn.onclick = () => {
-            // Animate row removal
             tr.classList.add("fade-out");
             setTimeout(() => {
               lastRemovedItem = { item: item, index: index };
               basket.splice(index, 1);
               renderBasket();
-              showToast("Item removed. Undo?", () => undoRemoval());
+              showToast("Item removed. Click to undo.", () => undoRemoval());
             }, 300);
           };
           removeTd.appendChild(removeBtn);
@@ -627,17 +635,15 @@
         grandExEl.textContent = totalEx.toFixed(2);
         grandIncEl.textContent = totalInc.toFixed(2);
         
-        // Enable drag-and-drop sorting using SortableJS
+        // Enable drag-and-drop sorting in basket using SortableJS
         Sortable.create(basketTableBody, {
           onEnd: updateBasketOrder
         });
       }
       
-      // Update basket order after drag-and-drop
       function updateBasketOrder(evt) {
         const newOrder = [];
         Array.from(basketTableBody.children).forEach(row => {
-          // Assume the first cell contains the item name
           const itemName = row.children[0].textContent;
           const found = basket.find(item => item.itemName === itemName);
           if(found) newOrder.push(found);
@@ -650,7 +656,6 @@
       function showToast(message, undoCallback) {
         toast.textContent = message;
         toast.classList.add("show");
-        // If undoCallback is provided, allow click to undo
         if(undoCallback) {
           toast.style.cursor = "pointer";
           toast.onclick = () => {
@@ -661,11 +666,8 @@
           toast.style.cursor = "default";
           toast.onclick = null;
         }
-        setTimeout(() => {
-          hideToast();
-        }, TOAST_DURATION);
+        setTimeout(() => { hideToast(); }, TOAST_DURATION);
       }
-      
       function hideToast() {
         toast.classList.remove("show");
       }
@@ -678,10 +680,8 @@
           lastRemovedItem = null;
         }
       }
-      
       function undoLastAddition() {
         if(typeof lastAddedItemIndex === "number") {
-          // Remove the last added item (if quantity is 1, remove it; if greater, decrement)
           const item = basket[lastAddedItemIndex];
           if(item) {
             if(item.quantity > 1) {
@@ -699,7 +699,7 @@
       exportCsvBtn.onclick = () => {
         if(basket.length === 0) return;
         const lines = [];
-        lines.push(["Item", "Quantity", "Price Ex. GST", "Price Inc. GST", "Line Ex", "Line Inc"]);
+        lines.push(["Item","Quantity","Price Ex. GST","Price Inc. GST","Line Ex","Line Inc"]);
         let totalEx = 0;
         let totalInc = 0;
         basket.forEach(item => {
@@ -717,7 +717,7 @@
             item.incPrice !== null ? lineInc.toFixed(2) : "N/A"
           ]);
         });
-        lines.push(["", "", "", "Totals:", totalEx.toFixed(2), totalInc.toFixed(2)]);
+        lines.push(["","","","Totals:", totalEx.toFixed(2), totalInc.toFixed(2)]);
         const csvContent = lines.map(line => line.join(",")).join("\n");
         const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
