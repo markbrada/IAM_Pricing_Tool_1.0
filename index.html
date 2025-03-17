@@ -14,17 +14,28 @@
       margin: 1rem;
     }
 
-    /* Sheet container */
-    .sheet-view {
-      margin-bottom: 2rem;
+    /* Let tables expand horizontally and scroll if necessary */
+    table {
+      table-layout: auto; /* allow columns to size based on content */
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+      display: block;       /* so we can scroll horizontally */
+      overflow-x: auto;     /* if columns get too wide */
+      white-space: nowrap;  /* prevent wrapping */
+    }
+    th, td {
+      border: 1px solid #aaa;
+      padding: 0.5rem;
+      cursor: default;
+    }
+    thead tr {
+      background-color: #d3d3d3;
+    }
+    tbody tr:hover {
+      background-color: #f9f9f9;
     }
 
-    /* Buttons for sheet selection */
-    #sheetButtons button {
-      margin-right: 0.5rem;
-      cursor: pointer;
-    }
-    /* Slight color accent for the "Add to basket" or "Export" buttons */
+    /* Slight color accent for "Add to basket" or "Export" buttons */
     button.add-to-basket {
       background-color: #0076d1;
       color: #fff;
@@ -46,25 +57,14 @@
       background-color: #666;
     }
 
-    /* Table improvements */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 0.5rem;
+    #sheetButtons button {
+      margin-right: 0.5rem;
+      cursor: pointer;
     }
-    thead tr {
-      background-color: #d3d3d3;
-    }
-    tbody tr:hover {
-      background-color: #f9f9f9;
-    }
-    td, th {
-      border: 1px solid #aaa;
-      padding: 0.5rem;
-      cursor: default;
-    }
-    td:active {
-      background-color: #f2f2f2; /* Quick visual feedback on click */
+
+    /* Container for each sheet's table + search */
+    .sheet-view {
+      margin-bottom: 2rem;
     }
 
     /* Basket container */
@@ -81,26 +81,18 @@
       cursor: pointer;
     }
 
-    /* Quantity controls: plus/minus + input */
+    /* Quantity input only (no +/- buttons) */
     .qty-controls {
-      display: flex;
-      align-items: center;
-    }
-    .qty-controls button {
-      margin: 0 5px;
-      cursor: pointer;
+      display: inline-block;
     }
     .qty-input {
-      width: 60px;
+      width: 70px;
       text-align: center;
     }
 
-    /* Search box styling */
+    /* Search label spacing */
     .search-label {
       margin-right: 0.5rem;
-    }
-    #sheetContainer {
-      margin-top: 1rem;
     }
   </style>
 </head>
@@ -109,7 +101,7 @@
 <h1>InAMinnit Pricing Sheet</h1>
 <p><em>Early Alpha version - only for test purposes</em></p>
 
-<!-- Sheet selection buttons -->
+<!-- Buttons for each sheet -->
 <div id="sheetButtons"></div>
 
 <!-- Container for the sheet table + search bar -->
@@ -142,7 +134,7 @@
   <p><strong>Grand Total (Inc. GST):</strong> $<span id="grandInc">0.00</span></p>
 </div>
 
-<!-- Include SheetJS library (download xlsx.full.min.js and place next to this file) -->
+<!-- Include SheetJS library -->
 <script src="xlsx.full.min.js"></script>
 
 <!-- jsPDF from CDN (for PDF generation) -->
@@ -154,16 +146,17 @@
 /* ------------------------------------------------------------------
    CONFIG
 ------------------------------------------------------------------ */
+// We'll look for Ex. GST in these headers
 const PRICE_COLUMNS_EX = ["Rate Ex. GST", "Price Ex. GST"];
+// We'll look for Inc. GST in this header
 const PRICE_COLUMN_INC = "Price Inc. GST";
 
 /*
-  The basket will store objects like:
-  {
+  Each basket item: {
     itemName: string,
     quantity: number,
-    exPrice: number|null,
-    incPrice: number|null
+    exPrice: number | null,
+    incPrice: number | null
   }
 */
 let basket = [];
@@ -186,7 +179,7 @@ fetch("myFile.xlsx")
   .then(data => {
     const workbook = XLSX.read(data, { type: "array" });
 
-    // Create a button for each sheet in the workbook
+    // Create a button for each sheet
     Object.keys(workbook.Sheets).forEach(sheetName => {
       const btn = document.createElement("button");
       btn.textContent = sheetName;
@@ -200,7 +193,7 @@ fetch("myFile.xlsx")
   });
 
 /* ------------------------------------------------------------------
-   SHOW SHEET WITH SEARCH AND "ADD TO BASKET"
+   SHOW SHEET + SEARCH + ADD-TO-BASKET
 ------------------------------------------------------------------ */
 function showSheet(workbook, sheetName) {
   const sheet = workbook.Sheets[sheetName];
@@ -212,23 +205,19 @@ function showSheet(workbook, sheetName) {
     blankrows: true
   });
 
-  // Ensure consistent columns
+  // Normalize column lengths
   const maxCols = Math.max(...rows.map(r => r.length));
   rows.forEach(row => {
-    while (row.length < maxCols) {
-      row.push("");
-    }
+    while (row.length < maxCols) row.push("");
   });
 
   // Clear container
   sheetContainer.innerHTML = "";
-
-  // Wrapper for the table + search
   const wrapper = document.createElement("div");
   wrapper.classList.add("sheet-view");
   sheetContainer.appendChild(wrapper);
 
-  // Search label + input
+  // Search bar
   const searchLabel = document.createElement("label");
   searchLabel.textContent = "Search items:";
   searchLabel.classList.add("search-label");
@@ -240,25 +229,25 @@ function showSheet(workbook, sheetName) {
   wrapper.appendChild(searchLabel);
   wrapper.appendChild(searchInput);
 
-  // Container for the table
+  // Table container
   const tableContainer = document.createElement("div");
   wrapper.appendChild(tableContainer);
 
-  // Headers are the first row
+  // Headers are first row
   const headers = rows.length > 0 ? rows[0].map(h => String(h).trim()) : [];
 
+  // Build table function
   function buildTable(filteredRows) {
     tableContainer.innerHTML = "";
     const table = document.createElement("table");
 
-    // Create table header (from row 0)
     filteredRows.forEach((row, rowIndex) => {
       const tr = document.createElement("tr");
 
       row.forEach((cellValue, colIndex) => {
-        const td = document.createElement(rowIndex === 0 ? "th" : "td");
+        const cellTag = (rowIndex === 0) ? "th" : "td";
+        const td = document.createElement(cellTag);
 
-        // Format price columns
         td.textContent = formatIfPrice(rowIndex, headers[colIndex], cellValue);
 
         // Click-to-copy
@@ -271,7 +260,7 @@ function showSheet(workbook, sheetName) {
         tr.appendChild(td);
       });
 
-      // If not header row, add "Add to basket" button
+      // Add "Add to basket" button if not header row
       if (rowIndex > 0) {
         const addCell = document.createElement("td");
         const addBtn = document.createElement("button");
@@ -288,19 +277,18 @@ function showSheet(workbook, sheetName) {
     tableContainer.appendChild(table);
   }
 
-  // Initial table
+  // Initial build
   buildTable(rows);
 
-  // Filter as user types
+  // Filter logic
   searchInput.addEventListener("input", () => {
     const filterVal = searchInput.value.trim().toLowerCase();
     if (!filterVal) {
       buildTable(rows);
       return;
     }
-    // Keep header row + any row that matches
     const filtered = rows.filter((r, i) => {
-      if (i === 0) return true; 
+      if (i === 0) return true; // keep header
       return r.some(cell => String(cell).toLowerCase().includes(filterVal));
     });
     buildTable(filtered);
@@ -308,13 +296,12 @@ function showSheet(workbook, sheetName) {
 }
 
 /* ------------------------------------------------------------------
-   FORMAT PRICE COLUMNS
+   FORMAT PRICE COLUMNS (2 DECIMALS)
 ------------------------------------------------------------------ */
 function formatIfPrice(rowIndex, colHeader, cellValue) {
-  if (rowIndex === 0) return cellValue; // header row, no changes
+  if (rowIndex === 0) return cellValue; // header row
 
   const lowerHead = (colHeader || "").toLowerCase();
-  // If it includes "ex. gst" or "inc. gst", attempt 2-decimal formatting
   if (lowerHead.includes("ex. gst") || lowerHead.includes("inc. gst")) {
     const parsed = parseFloat(cellValue);
     if (!isNaN(parsed)) {
@@ -325,15 +312,15 @@ function formatIfPrice(rowIndex, colHeader, cellValue) {
 }
 
 /* ------------------------------------------------------------------
-   ADD ITEM TO BASKET
+   ADD TO BASKET
 ------------------------------------------------------------------ */
 function addToBasket(row, headers) {
-  // We assume item name is in column 0
+  // Assume item name in column 0
   const itemName = row[0] || "Untitled";
 
-  // Find exPrice (from "Rate Ex. GST" or "Price Ex. GST")
+  // Find exPrice
   let exPrice = null;
-  // Find incPrice (from "Price Inc. GST")
+  // Find incPrice
   let incPrice = null;
 
   for (let i = 0; i < headers.length; i++) {
@@ -347,7 +334,7 @@ function addToBasket(row, headers) {
     }
   }
 
-  // Check if item is already in the basket
+  // Already in basket?
   const existing = basket.find(it => it.itemName === itemName);
   if (existing) {
     existing.quantity = parseFloat(existing.quantity) + 1;
@@ -373,7 +360,7 @@ function renderBasket() {
   }
   basketContainer.style.display = "block";
 
-  // Clear existing
+  // Clear table
   basketTableBody.innerHTML = "";
 
   let totalEx = 0;
@@ -382,30 +369,19 @@ function renderBasket() {
   basket.forEach((item, index) => {
     const tr = document.createElement("tr");
 
-    // Item
+    // 1) Item
     const nameTd = document.createElement("td");
     nameTd.textContent = item.itemName;
     tr.appendChild(nameTd);
 
-    // Quantity
+    // 2) Quantity (no +/-, just a number input with step=1)
     const qtyTd = document.createElement("td");
-    const qtyControls = document.createElement("div");
-    qtyControls.classList.add("qty-controls");
+    const qtyDiv = document.createElement("div");
+    qtyDiv.classList.add("qty-controls");
 
-    // minus
-    const minusBtn = document.createElement("button");
-    minusBtn.textContent = "-";
-    minusBtn.onclick = () => {
-      let q = parseFloat(item.quantity) || 1;
-      q = Math.max(1, q - 1);
-      item.quantity = q;
-      renderBasket();
-    };
-
-    // input
     const qtyInput = document.createElement("input");
     qtyInput.type = "number";
-    qtyInput.step = "0.1"; // let users do decimals
+    qtyInput.step = "1"; // up/down arrows change by 1
     qtyInput.min = "1";
     qtyInput.value = item.quantity;
     qtyInput.classList.add("qty-input");
@@ -416,37 +392,25 @@ function renderBasket() {
       renderBasket();
     };
 
-    // plus
-    const plusBtn = document.createElement("button");
-    plusBtn.textContent = "+";
-    plusBtn.onclick = () => {
-      let q = parseFloat(item.quantity) || 1;
-      q += 1;
-      item.quantity = q;
-      renderBasket();
-    };
-
-    qtyControls.appendChild(minusBtn);
-    qtyControls.appendChild(qtyInput);
-    qtyControls.appendChild(plusBtn);
-    qtyTd.appendChild(qtyControls);
+    qtyDiv.appendChild(qtyInput);
+    qtyTd.appendChild(qtyDiv);
     tr.appendChild(qtyTd);
 
-    // Price Ex
+    // 3) Price Ex
     const priceExTd = document.createElement("td");
     priceExTd.textContent = (item.exPrice !== null)
       ? item.exPrice.toFixed(2)
       : "N/A";
     tr.appendChild(priceExTd);
 
-    // Price Inc
+    // 4) Price Inc
     const priceIncTd = document.createElement("td");
     priceIncTd.textContent = (item.incPrice !== null)
       ? item.incPrice.toFixed(2)
       : "N/A";
     tr.appendChild(priceIncTd);
 
-    // Line total Ex
+    // 5) Line Total Ex
     const lineExTd = document.createElement("td");
     if (item.exPrice !== null) {
       const lineEx = item.exPrice * item.quantity;
@@ -457,7 +421,7 @@ function renderBasket() {
     }
     tr.appendChild(lineExTd);
 
-    // Line total Inc
+    // 6) Line Total Inc
     const lineIncTd = document.createElement("td");
     if (item.incPrice !== null) {
       const lineInc = item.incPrice * item.quantity;
@@ -468,7 +432,7 @@ function renderBasket() {
     }
     tr.appendChild(lineIncTd);
 
-    // Remove
+    // 7) Remove
     const removeTd = document.createElement("td");
     const removeBtn = document.createElement("span");
     removeBtn.textContent = "X";
@@ -562,10 +526,11 @@ exportPdfBtn.onclick = () => {
     const q = parseFloat(item.quantity) || 1;
     const lineEx = (item.exPrice !== null) ? q * item.exPrice : 0;
     const lineInc = (item.incPrice !== null) ? q * item.incPrice : 0;
+
     totalEx += lineEx;
     totalInc += lineInc;
 
-    doc.text(String(item.itemName).slice(0,20), 10, yPos); // limit to 20 chars to avoid overflow
+    doc.text(String(item.itemName).slice(0,20), 10, yPos);
     doc.text(String(q), 50, yPos);
     doc.text(item.exPrice !== null ? item.exPrice.toFixed(2) : "N/A", 70, yPos);
     doc.text(item.incPrice !== null ? item.incPrice.toFixed(2) : "N/A", 95, yPos);
