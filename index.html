@@ -95,7 +95,7 @@
       border-collapse: collapse;
       width: 100%;
     }
-    /* Use sticky headers for the main table */
+    /* Sticky header using thead */
     #sheetContainer thead th {
       position: sticky;
       top: 0;
@@ -110,7 +110,7 @@
       padding: 0.5rem;
       text-align: left;
     }
-    /* Enforce zebra striping in all modes */
+    /* Zebra striping for main table in all modes */
     #sheetContainer tbody tr:nth-child(even) {
       background-color: var(--row-alt);
     }
@@ -173,7 +173,7 @@
       z-index: 1000;
       transition: background-color 0.3s, border-color 0.3s;
     }
-    /* Basket Header with Export Button and Toggle */
+    /* Basket Header with Export & Toggle Buttons */
     #basketHeader {
       display: flex;
       justify-content: space-between;
@@ -218,7 +218,7 @@
       cursor: move;
       text-align: center;
       font-size: 1.2rem;
-      width: 2em; /* Match the size of the + button in main table */
+      width: 2em; /* Match the size of the + button */
     }
     
     /* ---------- Quantity Controls in Basket ---------- */
@@ -435,7 +435,7 @@
           tableContainer.innerHTML = "";
           const table = document.createElement("table");
           
-          // Create thead for sticky header
+          // Create sticky header using thead
           const thead = document.createElement("thead");
           const trHead = document.createElement("tr");
           // Extra empty header cell for add-to-basket button
@@ -455,13 +455,13 @@
           filteredRows.slice(1).forEach((row, i) => {
             const tr = document.createElement("tr");
             tr.classList.add("basket-row");
-            // Add green "Add to Basket" button at far left.
+            // Add green "Add to Basket" button at far left
             const addCell = document.createElement("td");
             const addBtn = document.createElement("button");
             addBtn.classList.add("add-button");
             addBtn.textContent = "+";
             addBtn.addEventListener("click", () => {
-              addToBasket(row, headers);
+              addToBasket(filteredRows[i+1], headers);
               showToast("Item added to basket", () => undoLastAddition());
             });
             addCell.appendChild(addBtn);
@@ -476,7 +476,7 @@
               } else {
                 td.textContent = formatted;
               }
-              // Bold price cells if header includes "ex. gst", "inc. gst", "price" or "rate"
+              // Bold price cells if header includes keywords
               if(headers[colIndex] && (/price|gst|rate/i).test(headers[colIndex])) {
                 td.style.fontWeight = "bold";
               }
@@ -683,11 +683,13 @@
           
           basketTableBody.appendChild(tr);
         });
+        grandExEl.textContent = totalEx.toFixed(2);
+        grandIncEl.textContent = totalInc.toFixed(2);
         
-        // Create footer for grand totals in basket table
+        // Create footer for grand totals in basket table, shifted one cell right
         const tfoot = document.createElement("tfoot");
         const tfootRow = document.createElement("tr");
-        // Span first 5 columns with label "Grand Totals:"
+        // Span the first five columns with the label "Grand Totals:"
         const spanCell = document.createElement("td");
         spanCell.colSpan = 5;
         spanCell.style.textAlign = "right";
@@ -725,7 +727,7 @@
       function updateBasketOrder(evt) {
         const newOrder = [];
         Array.from(basketTableBody.children).forEach(row => {
-          // Item name is in second cell (index 1) because first cell is sort handle.
+          // The item name is in the second cell (index 1) because first cell is the sort handle.
           const itemName = row.children[1].textContent;
           const found = basket.find(item => item.itemName === itemName);
           if(found) newOrder.push(found);
@@ -777,7 +779,12 @@
         }
       }
       
-      /* ---------------- EXPORT CSV FUNCTION ---------------- */
+      /* ---------------- CSV EXPORT FUNCTION (with fields enclosed in quotes) ---------------- */
+      function csvSafe(field) {
+        // Convert field to string, escape any quotes, and wrap in double quotes.
+        return '"' + field.toString().replace(/"/g, '""') + '"';
+      }
+      
       exportCsvBtn.onclick = () => {
         if(basket.length === 0) return;
         const lines = [];
@@ -800,7 +807,8 @@
           ]);
         });
         lines.push(["","","","Totals:", totalEx.toFixed(2), totalInc.toFixed(2)]);
-        const csvContent = lines.map(line => line.join(",")).join("\n");
+        // Enclose every field in quotes for CSV safety.
+        const csvContent = lines.map(line => line.map(csvSafe).join(",")).join("\n");
         const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
