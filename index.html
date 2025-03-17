@@ -40,8 +40,8 @@
 </head>
 <body>
 
-<h2>Online Excel Demo</h2>
-<p>File: <strong>myFile.xlsx</strong></p>
+<h2>InAMinnit Pricing Sheet</h2>
+<p>Early Alpha version - only for test purposes</p>
 
 <div id="sheetButtons"></div>
 <div id="sheetContainer"></div>
@@ -145,7 +145,7 @@ function showSheet(workbook, sheetName) {
       // Hover: show image if rawValue matches a file in /images/
       td.onmouseover = (event) => {
         if (!rawValue) return;
-        // e.g. if rawValue is "Bannister rail", show images/Bannister rail.jpeg
+        // e.g., if rawValue is "Bannister rail", show images/Bannister rail.jpeg
         popupImg.src = `images/${rawValue}.jpeg`;
         popupImg.style.left = (event.pageX + 10) + "px";
         popupImg.style.top = (event.pageY + 10) + "px";
