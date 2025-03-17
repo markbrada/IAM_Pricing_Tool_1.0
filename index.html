@@ -60,7 +60,7 @@
       width: 200px;
     }
 
-    /* Table styling */
+    /* Table styling for sheets */
     table {
       border-collapse: collapse;
       width: 100%;
@@ -72,10 +72,9 @@
       cursor: default;
       text-align: center; 
     }
-    /* First row of data = grey background, plus thead if we decide to separate */
-    thead tr,
-    tr:first-child {
-      background-color: #d3d3d3; /* grey header background */
+    /* First row is grey for the sheet table data or if there's a thead */
+    tbody tr:first-child {
+      background-color: #d3d3d3;
     }
     tbody tr:hover {
       background-color: #f9f9f9; /* subtle row hover */
@@ -124,6 +123,11 @@
       background-color: #138496;
     }
 
+    /* Make only the basket header row dark gray */
+    #basketTable thead tr {
+      background-color: #d3d3d3;
+    }
+
     /* Quantity controls */
     .qty-controls {
       display: flex;
@@ -160,14 +164,9 @@
       text-decoration: underline;
     }
 
-    /* Totals */
-    #basketTable th, #basketTable td {
-      text-align: center;
-    }
-
-    /* Make line total columns grey in the basket */
+    /* Light grey background for only the data cells in the two line total columns */
     .line-total-col {
-      background-color: #d3d3d3; 
+      background-color: #eee; /* lighter grey */
     }
   </style>
 </head>
@@ -184,7 +183,7 @@
   <h3>Quote Basket</h3>
   <div class="basket-actions">
     <button id="exportCsvBtn">Export CSV</button>
-    <!-- Removed Export PDF -->
+    <!-- PDF option removed -->
   </div>
   <table id="basketTable">
     <thead>
@@ -195,8 +194,8 @@
         <th>Quantity</th>
         <th>Price Ex. GST</th>
         <th>Price Inc. GST</th>
-        <th class="line-total-col">Line Total Ex. GST</th>
-        <th class="line-total-col">Line Total Inc. GST</th>
+        <th>Line Total Ex. GST</th>
+        <th>Line Total Inc. GST</th>
         <th>Remove</th>
       </tr>
     </thead>
@@ -208,12 +207,13 @@
 
 <!-- SheetJS library -->
 <script src="xlsx.full.min.js"></script>
-
 <script>
 /*
-  We removed any PDF export references.
-  We moved the + button to the far left in the main sheet display code below.
-  The basket also now has the + button in the far left column.
+  Key changes:
+  - We color only the top row (thead) in the basket as #d3d3d3
+  - The two line total columns in the basket’s data rows have a lighter grey (#eee)
+  - We removed the PDF export
+  - “+” button on the far left
 */
 
 /* ------------------------------------------------------------------
@@ -304,16 +304,12 @@ function showSheet(workbook, sheetName) {
 
     filteredRows.forEach((row, rowIndex) => {
       const tr = document.createElement("tr");
-      
-      if (rowIndex === 0) {
-        // First row is header row: we'll make it light grey in CSS
-      }
 
       // Moved the + button to the far left (except for the header row)
       if (rowIndex === 0) {
         // Add an empty cell for the + button's spot in the header
         const plusHeader = document.createElement("td");
-        plusHeader.textContent = "+"; // or keep it blank
+        plusHeader.textContent = "+"; 
         plusHeader.style.fontWeight = "bold";
         tr.appendChild(plusHeader);
       } else {
@@ -424,10 +420,8 @@ function renderBasket() {
   basket.forEach((item, index) => {
     const tr = document.createElement("tr");
 
-    // Column 1: The + button again (or a placeholder if you wanted) 
+    // Column 1: “+” placeholder or replicate logic
     const plusCell = document.createElement("td");
-    // We'll leave it empty or you can replicate the logic. 
-    // For now, let's just do nothing here, or you can remove it entirely.
     plusCell.textContent = "+";
     plusCell.style.fontWeight = "bold";
     tr.appendChild(plusCell);
@@ -490,7 +484,7 @@ function renderBasket() {
 
     // 6) Line Total Ex. GST
     const lineExTd = document.createElement("td");
-    lineExTd.classList.add("line-total-col"); // grey background
+    lineExTd.classList.add("line-total-col"); // lighter grey
     const q = parseFloat(item.quantity) || 1;
     if (item.exPrice !== null) {
       const lineEx = q * item.exPrice;
@@ -503,7 +497,7 @@ function renderBasket() {
 
     // 7) Line Total Inc. GST
     const lineIncTd = document.createElement("td");
-    lineIncTd.classList.add("line-total-col"); // grey background
+    lineIncTd.classList.add("line-total-col"); // lighter grey
     if (item.incPrice !== null) {
       const lineInc = q * item.incPrice;
       lineIncTd.textContent = lineInc.toFixed(2);
