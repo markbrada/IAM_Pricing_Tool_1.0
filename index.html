@@ -95,7 +95,7 @@
       border-collapse: collapse;
       width: 100%;
     }
-    /* Sticky headers using thead */
+    /* Use sticky headers for the main table */
     #sheetContainer thead th {
       position: sticky;
       top: 0;
@@ -539,7 +539,7 @@
         navigator.clipboard.writeText(text)
           .then(() => {
             td.classList.add("copied-cell");
-            void td.offsetWidth; // force reflow
+            void td.offsetWidth; // force reflow for snappy effect
             setTimeout(() => td.classList.remove("copied-cell"), 150);
           })
           .catch(err => console.error("Clipboard error:", err));
@@ -695,19 +695,19 @@
         // Create footer row for grand totals, shifted one cell to the right.
         const tfoot = document.createElement("tfoot");
         const tfootRow = document.createElement("tr");
-        // Span the first 5 columns with "Grand Totals:" label.
+        // Span first 5 columns with label "Grand Totals:"
         const spanCell = document.createElement("td");
         spanCell.colSpan = 5;
         spanCell.style.textAlign = "right";
         spanCell.style.fontWeight = "bold";
         spanCell.textContent = "Grand Totals:";
         tfootRow.appendChild(spanCell);
-        // Total for Line Total Ex. GST
+        // Grand Total Ex. GST
         const totalExTd = document.createElement("td");
         totalExTd.style.fontWeight = "bold";
         totalExTd.textContent = totalEx.toFixed(2);
         tfootRow.appendChild(totalExTd);
-        // Total for Line Total Inc. GST
+        // Grand Total Inc. GST
         const totalIncTd = document.createElement("td");
         totalIncTd.style.fontWeight = "bold";
         totalIncTd.textContent = totalInc.toFixed(2);
@@ -717,7 +717,7 @@
         tfootRow.appendChild(emptyCell);
         tfoot.appendChild(tfootRow);
         
-        // Remove any existing footer and append the new one.
+        // Remove existing footer if present, then append new footer
         const basketTable = document.getElementById("basketTable");
         const existingTfoot = basketTable.querySelector("tfoot");
         if(existingTfoot) basketTable.removeChild(existingTfoot);
@@ -733,7 +733,7 @@
       function updateBasketOrder(evt) {
         const newOrder = [];
         Array.from(basketTableBody.children).forEach(row => {
-          // The item name is in the second cell (index 1) because first cell is sort handle.
+          // The item name is in the second cell (index 1) because the first cell is the sort handle.
           const itemName = row.children[1].textContent;
           const found = basket.find(item => item.itemName === itemName);
           if(found) newOrder.push(found);
