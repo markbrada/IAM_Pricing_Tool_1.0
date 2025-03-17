@@ -95,7 +95,7 @@
       border-collapse: collapse;
       width: 100%;
     }
-    /* Sticky header using thead */
+    /* Use sticky headers for the main table */
     #sheetContainer thead th {
       position: sticky;
       top: 0;
@@ -173,7 +173,7 @@
       z-index: 1000;
       transition: background-color 0.3s, border-color 0.3s;
     }
-    /* Basket Header with Export & Toggle Buttons */
+    /* Basket Header with Export and Toggle Buttons */
     #basketHeader {
       display: flex;
       justify-content: space-between;
@@ -196,7 +196,7 @@
       background-color: var(--button-hover-bg);
     }
     
-    /* Basket Table */
+    /* ---------- Basket Table ---------- */
     #basketTable {
       width: 100%;
       border-collapse: collapse;
@@ -213,12 +213,12 @@
       background-color: var(--row-alt);
     }
     
-    /* Sorting Handle Cell in Basket */
+    /* Sorting handle cell in basket */
     .sort-handle {
       cursor: move;
       text-align: center;
       font-size: 1.2rem;
-      width: 2em; /* Match the size of the + button */
+      width: 2em; /* same size as add button */
     }
     
     /* ---------- Quantity Controls in Basket ---------- */
@@ -435,7 +435,7 @@
           tableContainer.innerHTML = "";
           const table = document.createElement("table");
           
-          // Create sticky header using thead
+          // Create thead for sticky header
           const thead = document.createElement("thead");
           const trHead = document.createElement("tr");
           // Extra empty header cell for add-to-basket button
@@ -476,7 +476,7 @@
               } else {
                 td.textContent = formatted;
               }
-              // Bold price cells if header includes keywords
+              // Bold all price-related cells
               if(headers[colIndex] && (/price|gst|rate/i).test(headers[colIndex])) {
                 td.style.fontWeight = "bold";
               }
@@ -686,22 +686,22 @@
         grandExEl.textContent = totalEx.toFixed(2);
         grandIncEl.textContent = totalInc.toFixed(2);
         
-        // Create footer for grand totals in basket table, shifted one cell right
+        // Create footer row for grand totals, shifted one cell right
         const tfoot = document.createElement("tfoot");
         const tfootRow = document.createElement("tr");
-        // Span the first five columns with the label "Grand Totals:"
+        // Create a cell spanning the first 5 columns with label "Grand Totals:"
         const spanCell = document.createElement("td");
         spanCell.colSpan = 5;
         spanCell.style.textAlign = "right";
         spanCell.style.fontWeight = "bold";
         spanCell.textContent = "Grand Totals:";
         tfootRow.appendChild(spanCell);
-        // Total for Line Total Ex. GST
+        // Grand Total Ex. GST
         const totalExTd = document.createElement("td");
         totalExTd.style.fontWeight = "bold";
         totalExTd.textContent = totalEx.toFixed(2);
         tfootRow.appendChild(totalExTd);
-        // Total for Line Total Inc. GST
+        // Grand Total Inc. GST
         const totalIncTd = document.createElement("td");
         totalIncTd.style.fontWeight = "bold";
         totalIncTd.textContent = totalInc.toFixed(2);
@@ -711,7 +711,7 @@
         tfootRow.appendChild(emptyCell);
         tfoot.appendChild(tfootRow);
         
-        // Remove existing footer if present, then add new footer
+        // Remove existing tfoot if present, then append new tfoot
         const basketTable = document.getElementById("basketTable");
         const existingTfoot = basketTable.querySelector("tfoot");
         if(existingTfoot) basketTable.removeChild(existingTfoot);
@@ -727,7 +727,7 @@
       function updateBasketOrder(evt) {
         const newOrder = [];
         Array.from(basketTableBody.children).forEach(row => {
-          // The item name is in the second cell (index 1) because first cell is the sort handle.
+          // The item name is in the second cell (index 1) because the first is the sort handle.
           const itemName = row.children[1].textContent;
           const found = basket.find(item => item.itemName === itemName);
           if(found) newOrder.push(found);
@@ -779,16 +779,20 @@
         }
       }
       
-      /* ---------------- CSV EXPORT FUNCTION (with fields enclosed in quotes) ---------------- */
-      function csvSafe(field) {
-        // Convert field to string, escape any quotes, and wrap in double quotes.
-        return '"' + field.toString().replace(/"/g, '""') + '"';
+      /* ---------------- CSV EXPORT FUNCTION (Fixed) ---------------- */
+      // Helper function to enclose fields in quotes and escape inner quotes.
+      function csvEscape(value) {
+        if (value === null || value === undefined) return '""';
+        let str = value.toString();
+        str = str.replace(/"/g, '""');
+        return `"${str}"`;
       }
       
       exportCsvBtn.onclick = () => {
         if(basket.length === 0) return;
         const lines = [];
-        lines.push(["Item","Quantity","Price Ex. GST","Price Inc. GST","Line Ex","Line Inc"]);
+        const header = ["Item","Quantity","Price Ex. GST","Price Inc. GST","Line Ex","Line Inc"];
+        lines.push(header.map(csvEscape));
         let totalEx = 0;
         let totalInc = 0;
         basket.forEach(item => {
@@ -797,18 +801,19 @@
           const lineInc = (item.incPrice !== null) ? q * item.incPrice : 0;
           totalEx += lineEx;
           totalInc += lineInc;
-          lines.push([
+          const row = [
             item.itemName,
             String(q),
             item.exPrice !== null ? item.exPrice.toFixed(2) : "N/A",
             item.incPrice !== null ? item.incPrice.toFixed(2) : "N/A",
             item.exPrice !== null ? lineEx.toFixed(2) : "N/A",
             item.incPrice !== null ? lineInc.toFixed(2) : "N/A"
-          ]);
+          ];
+          lines.push(row.map(csvEscape));
         });
-        lines.push(["","","","Totals:", totalEx.toFixed(2), totalInc.toFixed(2)]);
-        // Enclose every field in quotes for CSV safety.
-        const csvContent = lines.map(line => line.map(csvSafe).join(",")).join("\n");
+        const totalsRow = ["", "", "", "Totals:", totalEx.toFixed(2), totalInc.toFixed(2)];
+        lines.push(totalsRow.map(csvEscape));
+        const csvContent = lines.map(line => line.join(",")).join("\n");
         const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
