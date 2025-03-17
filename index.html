@@ -8,7 +8,7 @@
     body {
       font-family: sans-serif;
       margin: 1rem;
-      background-color: #f7f7f7; /* subtle page background */
+      background-color: #f7f7f7;
     }
     h1 {
       margin-bottom: 0.2rem;
@@ -17,11 +17,10 @@
       margin-top: 0;
       margin-bottom: 2rem;
     }
-
     /* Sheet Buttons */
     #sheetButtons > button {
       margin-right: 0.5rem;
-      background-color: #007bff; /* highlight color */
+      background-color: #007bff;
       color: #fff;
       border: none;
       padding: 0.5rem 0.75rem;
@@ -29,9 +28,8 @@
       cursor: pointer;
     }
     #sheetButtons > button:hover {
-      background-color: #0056b3; /* darker on hover */
+      background-color: #0056b3;
     }
-
     /* Container for each sheet's table + search */
     .sheet-view {
       background-color: #fff; 
@@ -40,8 +38,7 @@
       margin-bottom: 2rem;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-
-    /* Search filter box */
+    /* Search Filter */
     .search-container {
       margin-bottom: 1rem;
       display: flex;
@@ -58,31 +55,34 @@
       border-radius: 4px;
       width: 200px;
     }
-
     /* Table styling */
     table {
       border-collapse: collapse;
       width: 100%;
       background-color: #fff;
     }
-    th, td {
+    /* 
+      For any table, we want the first row (header) to be centered with a grey background.
+      All other rows will be left aligned.
+    */
+    table tr:first-child td {
+      text-align: center;
+      background-color: #e0e0e0;
+      font-weight: bold;
+    }
+    table tr:not(:first-child) td {
+      text-align: left;
+    }
+    table td, table th {
       border: 1px solid #ddd;
       padding: 0.5rem;
-      cursor: default;
-      text-align: center;
     }
-    thead tr {
-      background-color: #e0e0e0; /* grey header background for data tables */
+    table tbody tr:hover {
+      background-color: #f9f9f9;
     }
-    tbody tr:hover {
-      background-color: #f9f9f9; /* subtle row hover */
-    }
-    td:active {
-      background-color: #eaeaea;
-    }
-    /* “+” button in the table (Add to basket) */
+    /* “+” button in the main table */
     .add-button {
-      background-color: #28a745; /* green */
+      background-color: #28a745;
       border: none;
       color: #fff;
       padding: 0.3rem 0.6rem;
@@ -91,9 +91,8 @@
       font-weight: bold;
     }
     .add-button:hover {
-      background-color: #218838; /* darker on hover */
+      background-color: #218838;
     }
-
     /* Basket Section */
     #basketContainer {
       display: none;
@@ -109,7 +108,7 @@
     }
     .basket-actions button {
       margin-right: 0.5rem;
-      background-color: #17a2b8; /* teal-ish */
+      background-color: #17a2b8;
       color: #fff;
       border: none;
       padding: 0.5rem 0.75rem;
@@ -119,7 +118,6 @@
     .basket-actions button:hover {
       background-color: #138496;
     }
-
     /* Quantity controls */
     .qty-controls {
       display: flex;
@@ -145,37 +143,26 @@
       border: 1px solid #ccc;
       border-radius: 4px;
     }
-
     /* Remove (X) button */
     .remove-btn {
-      color: #dc3545; /* bootstrap red */
+      color: #dc3545;
       font-weight: bold;
       cursor: pointer;
     }
     .remove-btn:hover {
       text-decoration: underline;
     }
-
-    /* Basket Table Header Row (light grey) */
-    #basketTable thead tr {
-      background-color: #d3d3d3; /* light grey */
+    /* Basket Table Header (for basket table we use thead) */
+    #basketTable thead th {
+      text-align: center;
+      background-color: #d3d3d3;
     }
-    /*
-      Make the two line total columns even lighter grey.
-      They are columns 5 & 6 in the basket:
-      1 - Item
-      2 - Quantity
-      3 - Price Ex. GST
-      4 - Price Inc. GST
-      5 - Line Total Ex. GST
-      6 - Line Total Inc. GST
-      7 - Remove
-    */
-    #basketTable th:nth-child(5), 
+    /* Lighter grey for the two line total columns in basket (columns 5 & 6) */
+    #basketTable th:nth-child(5),
     #basketTable th:nth-child(6),
     #basketTable td:nth-child(5),
     #basketTable td:nth-child(6) {
-      background-color: #ededed; /* lighter grey for line total columns */
+      background-color: #ededed;
     }
   </style>
 </head>
@@ -191,12 +178,10 @@
 <div id="basketContainer">
   <h3>Quote Basket</h3>
   <div class="basket-actions">
-    <!-- Removed Export PDF, changed text for CSV -->
     <button id="exportCsvBtn">Export quote CSV</button>
   </div>
   <table id="basketTable">
     <thead>
-      <!-- Light grey is applied via CSS above -->
       <tr>
         <th>+</th>
         <th>Item</th>
@@ -217,13 +202,6 @@
 <!-- SheetJS library -->
 <script src="xlsx.full.min.js"></script>
 <script>
-/*
-  We’ll keep the same logic with minor modifications:
-  1) Move the “+” add-to-basket button to the left side in the main data table.
-  2) The basket now shows the “+” column in the first position as well.
-  3) Removed the PDF export entirely.
-*/
-
 /* ------------------------------------------------------------------
   CONFIG
 ------------------------------------------------------------------ */
@@ -264,7 +242,7 @@ fetch("myFile.xlsx")
   });
 
 /* ------------------------------------------------------------------
-  SHOW SHEET + "PLUS BUTTON" AT FAR LEFT
+  SHOW SHEET + ADD TO BASKET BUTTON (Moved to far left)
 ------------------------------------------------------------------ */
 function showSheet(workbook, sheetName) {
   const sheet = workbook.Sheets[sheetName];
@@ -284,7 +262,7 @@ function showSheet(workbook, sheetName) {
   wrapper.classList.add("sheet-view");
   sheetContainer.appendChild(wrapper);
 
-  // Search bar container
+  // Search bar
   const searchDiv = document.createElement("div");
   searchDiv.classList.add("search-container");
   const searchLabel = document.createElement("label");
@@ -294,7 +272,6 @@ function showSheet(workbook, sheetName) {
   searchInput.type = "text";
   searchInput.placeholder = "Type to filter...";
   searchInput.classList.add("search-input");
-
   searchDiv.appendChild(searchLabel);
   searchDiv.appendChild(searchInput);
   wrapper.appendChild(searchDiv);
@@ -313,13 +290,12 @@ function showSheet(workbook, sheetName) {
       const tr = document.createElement("tr");
       
       if (rowIndex === 0) {
-        // If it's header row, let's add an empty cell for the plus button column
+        // For header row, add an extra header cell for the plus button column.
         const plusHeader = document.createElement("th");
         plusHeader.textContent = "+";
-        plusHeader.style.fontWeight = "bold";
         tr.appendChild(plusHeader);
       } else {
-        // For data rows, add the plus button cell at far left
+        // For data rows, add a cell with a plus button at the far left.
         const addCell = document.createElement("td");
         const addBtn = document.createElement("button");
         addBtn.classList.add("add-button");
@@ -332,10 +308,8 @@ function showSheet(workbook, sheetName) {
       // Now add the rest of the cells
       row.forEach((cellValue, colIndex) => {
         const td = document.createElement("td");
-        if (rowIndex === 0) td.style.fontWeight = "bold";
+        // For header row, the first row gets centered & grey (handled by :first-child rule)
         td.textContent = formatIfPrice(rowIndex, headers[colIndex], cellValue);
-
-        // Click to copy
         td.onclick = () => {
           navigator.clipboard.writeText(td.textContent)
             .then(() => console.log("Copied:", td.textContent))
@@ -360,7 +334,7 @@ function showSheet(workbook, sheetName) {
       return;
     }
     const filtered = rows.filter((r, i) => {
-      if (i === 0) return true; // keep header
+      if (i === 0) return true;
       return r.some(cell => String(cell).toLowerCase().includes(filterVal));
     });
     buildTable(filtered);
@@ -368,7 +342,7 @@ function showSheet(workbook, sheetName) {
 }
 
 function formatIfPrice(rowIndex, colHeader, cellValue) {
-  if (rowIndex === 0) return cellValue; // header row
+  if (rowIndex === 0) return cellValue;
   const lower = (colHeader || "").toLowerCase();
   if (lower.includes("ex. gst") || lower.includes("inc. gst")) {
     const parsed = parseFloat(cellValue);
@@ -386,7 +360,6 @@ function addToBasket(row, headers) {
   const itemName = row[0] || "Untitled";
   let exPrice = null;
   let incPrice = null;
-
   for (let i = 0; i < headers.length; i++) {
     const head = headers[i];
     const val = parseFloat(row[i]);
@@ -397,7 +370,6 @@ function addToBasket(row, headers) {
       if (!isNaN(val)) incPrice = val;
     }
   }
-
   const existing = basket.find(it => it.itemName === itemName);
   if (existing) {
     existing.quantity = parseFloat(existing.quantity) + 1;
@@ -412,6 +384,9 @@ function addToBasket(row, headers) {
   renderBasket();
 }
 
+/* ------------------------------------------------------------------
+  RENDER BASKET
+------------------------------------------------------------------ */
 function renderBasket() {
   if (basket.length === 0) {
     basketContainer.style.display = "none";
@@ -419,17 +394,14 @@ function renderBasket() {
   }
   basketContainer.style.display = "block";
   basketTableBody.innerHTML = "";
-
   let totalEx = 0;
   let totalInc = 0;
-
   basket.forEach((item, index) => {
     const tr = document.createElement("tr");
 
-    // + column in the basket
+    // First column: static plus symbol (header already shows plus)
     const plusTd = document.createElement("td");
-    plusTd.textContent = "+"; 
-    // Or you might want a button here too, but not specified.
+    plusTd.textContent = "+";
     tr.appendChild(plusTd);
 
     // Item name
@@ -437,7 +409,7 @@ function renderBasket() {
     nameTd.textContent = item.itemName;
     tr.appendChild(nameTd);
 
-    // Qty with +/- and text input
+    // Quantity with +/- and input (allows decimals)
     const qtyTd = document.createElement("td");
     const qtyControls = document.createElement("div");
     qtyControls.classList.add("qty-controls");
@@ -446,7 +418,7 @@ function renderBasket() {
     minusBtn.textContent = "-";
     minusBtn.onclick = () => {
       let q = parseFloat(item.quantity) || 1;
-      q -= 1;
+      q = q - 1;
       if (q < 1) q = 1;
       item.quantity = q;
       renderBasket();
@@ -454,6 +426,7 @@ function renderBasket() {
 
     const qtyInput = document.createElement("input");
     qtyInput.type = "number";
+    qtyInput.step = "0.1";
     qtyInput.classList.add("qty-input");
     qtyInput.value = item.quantity;
     qtyInput.onchange = () => {
@@ -467,7 +440,7 @@ function renderBasket() {
     plusBtn.textContent = "+";
     plusBtn.onclick = () => {
       let q = parseFloat(item.quantity) || 1;
-      q += 1;
+      q = q + 1;
       item.quantity = q;
       renderBasket();
     };
@@ -488,7 +461,7 @@ function renderBasket() {
     priceIncTd.textContent = item.incPrice !== null ? item.incPrice.toFixed(2) : "N/A";
     tr.appendChild(priceIncTd);
 
-    // Line totals
+    // Line Total Ex. GST
     const q = parseFloat(item.quantity) || 1;
     const lineExTd = document.createElement("td");
     if (item.exPrice !== null) {
@@ -500,6 +473,7 @@ function renderBasket() {
     }
     tr.appendChild(lineExTd);
 
+    // Line Total Inc. GST
     const lineIncTd = document.createElement("td");
     if (item.incPrice !== null) {
       const lineInc = q * item.incPrice;
@@ -524,21 +498,17 @@ function renderBasket() {
 
     basketTableBody.appendChild(tr);
   });
-
   grandExEl.textContent = totalEx.toFixed(2);
   grandIncEl.textContent = totalInc.toFixed(2);
 }
 
 /* ------------------------------------------------------------------
-  EXPORT CSV (Renamed to "Export quote CSV")
+  EXPORT CSV (Export quote CSV)
 ------------------------------------------------------------------ */
 exportCsvBtn.onclick = () => {
   if (basket.length === 0) return;
   const lines = [];
-  // The first column in the basket is "+", then "Item", "Qty", "Price Ex", "Price Inc", "Line Ex", "Line Inc", "Remove"
-  // But for CSV we skip the plus & remove columns and just show the relevant data
   lines.push(["Item","Quantity","Price Ex. GST","Price Inc. GST","Line Ex","Line Inc"]);
-
   let totalEx = 0;
   let totalInc = 0;
   basket.forEach(item => {
@@ -557,7 +527,6 @@ exportCsvBtn.onclick = () => {
     ]);
   });
   lines.push(["","","","Totals:", totalEx.toFixed(2), totalInc.toFixed(2)]);
-
   const csvContent = lines.map(line => line.join(",")).join("\n");
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
