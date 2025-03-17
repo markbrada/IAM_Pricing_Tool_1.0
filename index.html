@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Online Excel Viewer with Hover Images & Copy</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 1rem;
+    }
+    #sheetButtons > button {
+      margin-right: 0.5rem;
+    }
+    .hoverImage {
+      position: absolute;
+      display: none;
+      border: 1px solid #ccc;
+      background-color: #fff;
+      max-width: 200px;
+      max-height: 200px;
+      z-index: 9999;
+    }
+    table {
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    td, th {
+      border: 1px solid #aaa;
+      padding: 0.5rem;
+      cursor: default;
+    }
+    td:active {
+      background-color: #f2f2f2; /* Quick visual feedback on click */
+    }
+    .header-cell {
+      background-color: #d3d3d3; /* Light grey background for header */
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Online Excel Demo</h2>
+<p>File: <strong>myFile.xlsx</strong></p>
+
+<div id="sheetButtons"></div>
+<div id="sheetContainer"></div>
+<img id="popupImg" class="hoverImage" />
+
+<!-- Include SheetJS library (download xlsx.full.min.js) -->
+<script src="xlsx.full.min.js"></script>
+<script>
+// Columns that should be displayed with two decimals
+const PRICE_COLUMNS = [
+  "Rate Ex. GST",
+  "Price Ex. GST",
+  "Price Inc. GST"
+];
+
+// Elements
+const sheetButtons = document.getElementById("sheetButtons");
+const sheetContainer = document.getElementById("sheetContainer");
+const popupImg = document.getElementById("popupImg");
+
+// 1) Fetch the Excel file automatically (no user upload)
+fetch("myFile.xlsx")
+  .then(response => response.arrayBuffer())
+  .then(data => {
+    // Parse the workbook with SheetJS
+    const workbook = XLSX.read(data, { type: "array" });
+
+    // Create a button for each sheet
+    Object.keys(workbook.Sheets).forEach(sheetName => {
+      const btn = document.createElement("button");
+      btn.textContent = sheetName;
+      btn.onclick = () => showSheet(workbook, sheetName);
+      sheetButtons.appendChild(btn);
+    });
+  })
+  .catch(err => {
+    console.error("Failed to fetch Excel file:", err);
+    sheetContainer.textContent = "Error fetching Excel file.";
+  });
+
+// 2) Show the chosen sheet
+function showSheet(workbook, sheetName) {
+  const sheet = workbook.Sheets[sheetName];
+
+  // Convert to 2D array, preserving blanks
+  const rows = XLSX.utils.sheet_to_json(sheet, {
+    header: 1,
+    defval: "",
+    blankrows: true
+  });
+
+  // Ensure each row has the same number of columns
+  const maxCols = Math.max(...rows.map(r => r.length));
+  rows.forEach(row => {
+    while (row.length < maxCols) {
+      row.push("");
+    }
+  });
+
+  // Clear existing display
+  sheetContainer.innerHTML = "";
+
+  // Build table
+  const table = document.createElement("table");
+
+  // The first row is typically headers
+  let headers = [];
+  if (rows.length > 0) {
+    headers = rows[0].map(h => String(h).trim());
+  }
+
+  rows.forEach((row, rowIndex) => {
+    const tr = document.createElement("tr");
+    
+    row.forEach((cellValue, colIndex) => {
+      const td = document.createElement("td");
+
+      // Mark top row as headers
+      if (rowIndex === 0) {
+        td.classList.add("header-cell");
+      }
+
+      const rawValue = cellValue;
+      let displayText = rawValue;
+
+      // If not header row, check if column name is a "price" column
+      if (rowIndex > 0 && headers[colIndex]) {
+        const colHeader = headers[colIndex];
+        if (PRICE_COLUMNS.includes(colHeader)) {
+          // Attempt to round
+          const parsedNum = parseFloat(rawValue);
+          if (!isNaN(parsedNum)) {
+            displayText = parsedNum.toFixed(2);
+          }
+        }
+      }
+
+      // Set text
+      td.textContent = displayText;
+
+      // Hover: show image if rawValue matches a file in /images/
+      td.onmouseover = (event) => {
+        if (!rawValue) return;
+        // e.g. if rawValue is "Bannister rail", show images/Bannister rail.jpeg
+        popupImg.src = `images/${rawValue}.jpeg`;
+        popupImg.style.left = (event.pageX + 10) + "px";
+        popupImg.style.top = (event.pageY + 10) + "px";
+        popupImg.style.display = "block";
+      };
+      td.onmouseout = () => {
+        popupImg.style.display = "none";
+      };
+
+      // Click: copy the displayed text
+      td.onclick = () => {
+        navigator.clipboard.writeText(displayText)
+          .then(() => {
+            console.log("Copied:", displayText);
+          })
+          .catch(err => {
+            console.error("Clipboard error:", err);
+          });
+      };
+
+      tr.appendChild(td);
+    });
+
+    table.appendChild(tr);
+  });
+
+  sheetContainer.appendChild(table);
+}
+</script>
+</body>
+</html>
