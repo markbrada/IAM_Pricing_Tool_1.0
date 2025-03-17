@@ -45,15 +45,16 @@
     #basketContainer h3 {
       margin-top: 0;
     }
-    #basketTable input[type="number"] {
-      width: 60px;
-    }
     .basket-actions button {
       margin-right: 0.5rem;
     }
     .remove-btn {
       color: red;
       cursor: pointer;
+    }
+    /* Buttons in the quantity cell */
+    .qty-controls button {
+      margin: 0 5px;
     }
   </style>
 </head>
@@ -140,7 +141,7 @@ fetch("myFile.xlsx")
   });
 
 /* ------------------------------------------------------------------
-  SHOW SELECTED SHEET WITH SEARCH & "ADD TO BASKET" BUTTON
+  SHOW SELECTED SHEET WITH SEARCH & "ADD TO BASKET"
 ------------------------------------------------------------------ */
 function showSheet(workbook, sheetName) {
   const sheet = workbook.Sheets[sheetName];
@@ -183,7 +184,6 @@ function showSheet(workbook, sheetName) {
   // If there's at least one row, treat the first row as headers
   let headers = rows.length > 0 ? rows[0].map(h => String(h).trim()) : [];
 
-  // Function to build the table from given rows
   function buildTable(filteredRows) {
     tableContainer.innerHTML = "";
     const table = document.createElement("table");
@@ -250,7 +250,7 @@ function showSheet(workbook, sheetName) {
       buildTable(rows);
       return;
     }
-    // Keep header row + any row that has the filter text
+    // Keep header row + any row that matches
     const filtered = rows.filter((r, i) => {
       if (i === 0) return true; // always keep header
       return r.some(cell => String(cell).toLowerCase().includes(filterVal));
@@ -263,13 +263,11 @@ function showSheet(workbook, sheetName) {
   BASKET LOGIC
 ------------------------------------------------------------------ */
 function addToBasket(row, headers) {
-  // "row" is an array of cell values; "headers" is the top row
-  // You might want the item name from the 1st column or a known column
-  // For example, let's assume the item name is in column 0 (or wherever).
+  // "row" is an array of cell values
+  // You might want the item name from column 0 (or whichever column).
   const itemName = row[0];
   
-  // Find the price from "Price Ex. GST" or "Rate Ex. GST" or "Price Inc. GST"
-  // This depends on your data layout. Let's scan for the first PRICE_COLUMNS match.
+  // Find the price from known PRICE_COLUMNS
   let unitPrice = 0;
   for (let i = 0; i < headers.length; i++) {
     if (PRICE_COLUMNS.includes(headers[i])) {
@@ -281,12 +279,12 @@ function addToBasket(row, headers) {
     }
   }
 
-  // Check if this item is already in the basket
+  // Check if item is already in the basket
   const existing = basket.find(item => item.itemName === itemName);
   if (existing) {
     existing.quantity += 1; // increment by 1
   } else {
-    // Add a new item with quantity=1
+    // Add new item with quantity=1
     basket.push({
       itemName,
       unitPrice,
@@ -298,7 +296,7 @@ function addToBasket(row, headers) {
 }
 
 function renderBasket() {
-  // If basket is empty, hide container
+  // If basket empty, hide container
   if (basket.length === 0) {
     basketContainer.style.display = "none";
     return;
@@ -319,17 +317,36 @@ function renderBasket() {
     nameTd.textContent = item.itemName;
     tr.appendChild(nameTd);
 
-    // Quantity (editable)
+    // Quantity with +/- buttons
     const qtyTd = document.createElement("td");
-    const qtyInput = document.createElement("input");
-    qtyInput.type = "number";
-    qtyInput.min = "1";
-    qtyInput.value = item.quantity;
-    qtyInput.onchange = () => {
-      item.quantity = parseInt(qtyInput.value, 10) || 1;
+    const qtyControls = document.createElement("div");
+    qtyControls.classList.add("qty-controls");
+
+    // Minus button
+    const minusBtn = document.createElement("button");
+    minusBtn.textContent = "-";
+    minusBtn.onclick = () => {
+      item.quantity = Math.max(1, item.quantity - 1);
       renderBasket();
     };
-    qtyTd.appendChild(qtyInput);
+
+    // Displayed quantity
+    const qtySpan = document.createElement("span");
+    qtySpan.textContent = item.quantity;
+    qtySpan.style.margin = "0 8px";
+
+    // Plus button
+    const plusBtn = document.createElement("button");
+    plusBtn.textContent = "+";
+    plusBtn.onclick = () => {
+      item.quantity++;
+      renderBasket();
+    };
+
+    qtyControls.appendChild(minusBtn);
+    qtyControls.appendChild(qtySpan);
+    qtyControls.appendChild(plusBtn);
+    qtyTd.appendChild(qtyControls);
     tr.appendChild(qtyTd);
 
     // Unit price
@@ -356,7 +373,6 @@ function renderBasket() {
     tr.appendChild(removeTd);
 
     basketTableBody.appendChild(tr);
-
     grandTotal += lineTotal;
   });
 
@@ -381,10 +397,10 @@ exportCsvBtn.onclick = () => {
       lineTotal.toFixed(2)
     ]);
   });
-  // Convert lines to CSV string
+  // Convert to CSV string
   const csvContent = lines.map(line => line.join(",")).join("\n");
 
-  // Create a blob and trigger a download
+  // Trigger download
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -401,7 +417,6 @@ exportPdfBtn.onclick = () => {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
 
-  // Basic PDF title
   doc.setFontSize(12);
   doc.text("Quote Basket", 10, 10);
 
@@ -413,7 +428,6 @@ exportPdfBtn.onclick = () => {
   doc.text("Line Total", 120, yPos);
 
   yPos += 10;
-
   let grandTotal = 0;
 
   basket.forEach(item => {
@@ -428,7 +442,6 @@ exportPdfBtn.onclick = () => {
     grandTotal += lineTotal;
   });
 
-  // Grand total
   yPos += 10;
   doc.text(`Grand Total: $${grandTotal.toFixed(2)}`, 10, yPos);
 
