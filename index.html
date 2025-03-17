@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>In A Minnit Pricing - Alpha preview</title>
+  <title>InAMinnit Pricing Sheet</title>
   <style>
     body {
       font-family: sans-serif;
@@ -11,18 +11,13 @@
     #sheetButtons > button {
       margin-right: 0.5rem;
     }
-    .hoverImage {
-      position: absolute;
-      display: none;
-      border: 1px solid #ccc;
-      background-color: #fff;
-      max-width: 200px;
-      max-height: 200px;
-      z-index: 9999;
+    /* Container for search box + table */
+    .sheet-view {
+      margin-bottom: 2rem;
     }
     table {
       border-collapse: collapse;
-      margin-top: 1rem;
+      margin-top: 0.5rem;
     }
     td, th {
       border: 1px solid #aaa;
@@ -36,6 +31,9 @@
       background-color: #d3d3d3; /* Light grey background for header */
       font-weight: bold;
     }
+    .search-label {
+      margin-right: 0.5rem;
+    }
   </style>
 </head>
 <body>
@@ -44,10 +42,10 @@
 <p>Early Alpha version - only for test purposes</p>
 
 <div id="sheetButtons"></div>
+<!-- This container will be cleared and populated each time you switch tabs -->
 <div id="sheetContainer"></div>
-<img id="popupImg" class="hoverImage" />
 
-<!-- Include SheetJS library (download xlsx.full.min.js) -->
+<!-- Include SheetJS library (xlsx.full.min.js) -->
 <script src="xlsx.full.min.js"></script>
 <script>
 // Columns that should be displayed with two decimals
@@ -57,12 +55,10 @@ const PRICE_COLUMNS = [
   "Price Inc. GST"
 ];
 
-// Elements
 const sheetButtons = document.getElementById("sheetButtons");
 const sheetContainer = document.getElementById("sheetContainer");
-const popupImg = document.getElementById("popupImg");
 
-// 1) Fetch the Excel file automatically (no user upload)
+// 1) Fetch the Excel file automatically (no file upload)
 fetch("myFile.xlsx")
   .then(response => response.arrayBuffer())
   .then(data => {
@@ -76,13 +72,18 @@ fetch("myFile.xlsx")
       btn.onclick = () => showSheet(workbook, sheetName);
       sheetButtons.appendChild(btn);
     });
+
+    // Optionally, auto-display the first sheet:
+    // if (Object.keys(workbook.Sheets).length > 0) {
+    //   showSheet(workbook, Object.keys(workbook.Sheets)[0]);
+    // }
   })
   .catch(err => {
     console.error("Failed to fetch Excel file:", err);
     sheetContainer.textContent = "Error fetching Excel file.";
   });
 
-// 2) Show the chosen sheet
+// 2) Show the chosen sheet with a search box
 function showSheet(workbook, sheetName) {
   const sheet = workbook.Sheets[sheetName];
 
@@ -101,78 +102,109 @@ function showSheet(workbook, sheetName) {
     }
   });
 
-  // Clear existing display
+  // Clear the sheetContainer and build a wrapper
   sheetContainer.innerHTML = "";
+  const wrapper = document.createElement("div");
+  wrapper.classList.add("sheet-view");
+  sheetContainer.appendChild(wrapper);
 
-  // Build table
-  const table = document.createElement("table");
+  // Create a search label and input
+  const searchLabel = document.createElement("label");
+  searchLabel.textContent = "Search items:";
+  searchLabel.classList.add("search-label");
+
+  const searchInput = document.createElement("input");
+  searchInput.type = "text";
+  searchInput.placeholder = "Type to filter...";
+
+  // Put label + input at the top of wrapper
+  wrapper.appendChild(searchLabel);
+  wrapper.appendChild(searchInput);
+
+  // Create a container for the table
+  const tableContainer = document.createElement("div");
+  wrapper.appendChild(tableContainer);
 
   // The first row is typically headers
-  let headers = [];
-  if (rows.length > 0) {
-    headers = rows[0].map(h => String(h).trim());
-  }
+  let headers = rows.length > 0 ? rows[0].map(h => String(h).trim()) : [];
 
-  rows.forEach((row, rowIndex) => {
-    const tr = document.createElement("tr");
-    
-    row.forEach((cellValue, colIndex) => {
-      const td = document.createElement("td");
+  // Function to build or rebuild the table from a given set of rows
+  function buildTable(filteredRows) {
+    // Clear the container
+    tableContainer.innerHTML = "";
+    // Create a table element
+    const table = document.createElement("table");
 
-      // Mark top row as headers
-      if (rowIndex === 0) {
-        td.classList.add("header-cell");
-      }
+    filteredRows.forEach((row, rowIndex) => {
+      const tr = document.createElement("tr");
+      
+      row.forEach((cellValue, colIndex) => {
+        const td = document.createElement("td");
 
-      const rawValue = cellValue;
-      let displayText = rawValue;
+        // If this is the top row in the filtered set (rowIndex === 0 in the FULL data),
+        // mark as header
+        if (rowIndex === 0) {
+          td.classList.add("header-cell");
+        }
 
-      // If not header row, check if column name is a "price" column
-      if (rowIndex > 0 && headers[colIndex]) {
-        const colHeader = headers[colIndex];
-        if (PRICE_COLUMNS.includes(colHeader)) {
-          // Attempt to round
-          const parsedNum = parseFloat(rawValue);
-          if (!isNaN(parsedNum)) {
-            displayText = parsedNum.toFixed(2);
+        let displayText = cellValue;
+        // If not header row in the FULL data, check if column name is a "price" column
+        if (rowIndex > 0 && headers[colIndex]) {
+          const colHeader = headers[colIndex];
+          if (PRICE_COLUMNS.includes(colHeader)) {
+            // Attempt to round
+            const parsedNum = parseFloat(cellValue);
+            if (!isNaN(parsedNum)) {
+              displayText = parsedNum.toFixed(2);
+            }
           }
         }
-      }
 
-      // Set text
-      td.textContent = displayText;
+        td.textContent = displayText;
 
-      // Hover: show image if rawValue matches a file in /images/
-      td.onmouseover = (event) => {
-        if (!rawValue) return;
-        // e.g., if rawValue is "Bannister rail", show images/Bannister rail.jpeg
-        popupImg.src = `images/${rawValue}.jpeg`;
-        popupImg.style.left = (event.pageX + 10) + "px";
-        popupImg.style.top = (event.pageY + 10) + "px";
-        popupImg.style.display = "block";
-      };
-      td.onmouseout = () => {
-        popupImg.style.display = "none";
-      };
+        // Click: copy the displayed text
+        td.onclick = () => {
+          navigator.clipboard.writeText(displayText)
+            .then(() => {
+              console.log("Copied:", displayText);
+            })
+            .catch(err => {
+              console.error("Clipboard error:", err);
+            });
+        };
 
-      // Click: copy the displayed text
-      td.onclick = () => {
-        navigator.clipboard.writeText(displayText)
-          .then(() => {
-            console.log("Copied:", displayText);
-          })
-          .catch(err => {
-            console.error("Clipboard error:", err);
-          });
-      };
+        tr.appendChild(td);
+      });
 
-      tr.appendChild(td);
+      table.appendChild(tr);
     });
 
-    table.appendChild(tr);
-  });
+    tableContainer.appendChild(table);
+  }
 
-  sheetContainer.appendChild(table);
+  // Build table the first time (show all rows)
+  buildTable(rows);
+
+  // Listen for changes in the search box to filter rows
+  searchInput.addEventListener("input", () => {
+    const filterValue = searchInput.value.trim().toLowerCase();
+
+    // If nothing typed, show all rows
+    if (!filterValue) {
+      buildTable(rows);
+      return;
+    }
+
+    // Filter out rows that don't contain filterValue
+    // Keep row[0] (the header row) regardless of match
+    const filtered = rows.filter((row, index) => {
+      if (index === 0) return true; // keep header row
+      // Check if ANY cell in the row includes the filterValue
+      return row.some(cell => String(cell).toLowerCase().includes(filterValue));
+    });
+
+    buildTable(filtered);
+  });
 }
 </script>
 </body>
