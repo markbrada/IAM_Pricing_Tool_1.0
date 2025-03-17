@@ -8,25 +8,24 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css" />
 
   <style>
-    /* Additional custom styling overrides */
-
     body {
       margin: 1rem;
     }
-
-    /* Let tables expand horizontally and scroll if necessary */
+    /* Let the table occupy all available width and wrap text if needed. */
     table {
-      table-layout: auto; /* allow columns to size based on content */
+      width: 100%;
+      table-layout: auto;  /* columns resize based on content, but can wrap text */
       border-collapse: collapse;
       margin-top: 0.5rem;
-      display: block;       /* so we can scroll horizontally */
-      overflow-x: auto;     /* if columns get too wide */
-      white-space: nowrap;  /* prevent wrapping */
     }
     th, td {
       border: 1px solid #aaa;
       padding: 0.5rem;
       cursor: default;
+      /* Allow text to wrap onto multiple lines if it's too wide */
+      word-wrap: break-word;
+      word-break: break-word;
+      white-space: normal;
     }
     thead tr {
       background-color: #d3d3d3;
@@ -61,8 +60,6 @@
       margin-right: 0.5rem;
       cursor: pointer;
     }
-
-    /* Container for each sheet's table + search */
     .sheet-view {
       margin-bottom: 2rem;
     }
@@ -81,7 +78,7 @@
       cursor: pointer;
     }
 
-    /* Quantity input only (no +/- buttons) */
+    /* Quantity input (no +/-) */
     .qty-controls {
       display: inline-block;
     }
@@ -104,7 +101,7 @@
 <!-- Buttons for each sheet -->
 <div id="sheetButtons"></div>
 
-<!-- Container for the sheet table + search bar -->
+<!-- Container for the table + search bar -->
 <div id="sheetContainer"></div>
 
 <!-- Basket Section -->
@@ -146,9 +143,7 @@
 /* ------------------------------------------------------------------
    CONFIG
 ------------------------------------------------------------------ */
-// We'll look for Ex. GST in these headers
 const PRICE_COLUMNS_EX = ["Rate Ex. GST", "Price Ex. GST"];
-// We'll look for Inc. GST in this header
 const PRICE_COLUMN_INC = "Price Inc. GST";
 
 /*
@@ -260,7 +255,7 @@ function showSheet(workbook, sheetName) {
         tr.appendChild(td);
       });
 
-      // Add "Add to basket" button if not header row
+      // Add "Add to basket" if not header row
       if (rowIndex > 0) {
         const addCell = document.createElement("td");
         const addBtn = document.createElement("button");
@@ -374,14 +369,14 @@ function renderBasket() {
     nameTd.textContent = item.itemName;
     tr.appendChild(nameTd);
 
-    // 2) Quantity (no +/-, just a number input with step=1)
+    // 2) Quantity (step=1, but decimals can be typed)
     const qtyTd = document.createElement("td");
     const qtyDiv = document.createElement("div");
     qtyDiv.classList.add("qty-controls");
 
     const qtyInput = document.createElement("input");
     qtyInput.type = "number";
-    qtyInput.step = "1"; // up/down arrows change by 1
+    qtyInput.step = "1"; // up/down arrows move in whole numbers
     qtyInput.min = "1";
     qtyInput.value = item.quantity;
     qtyInput.classList.add("qty-input");
