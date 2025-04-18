@@ -7,10 +7,10 @@
 /* ---------- THEME VARS ---------- */
 :root{--bg:#f7f7f7;--fg:#333;--header:#e0e0e0;--btn:#007bff;--btnh:#0056b3;
 --add:#28a745;--addh:#218838;--border:#aaa;--alt:#f9f9f9;--panel:#fff;
---toast:#007bff;--toastfg:#fff;}
+--toast:#007bff;--toastfg:#fff}
 .dark-mode{--bg:#222;--fg:#eee;--header:#444;--btn:#0d6efd;--btnh:#0a58ca;
 --add:#198754;--addh:#157347;--border:#555;--alt:#2a2a2a;--panel:#333;
---toast:#0d6efd;--toastfg:#fff;}
+--toast:#0d6efd;--toastfg:#fff}
 
 /* ---------- GLOBAL ---------- */
 body{font-family:sans-serif;margin:1rem;background:var(--bg);color:var(--fg);transition:.3s}
@@ -89,7 +89,7 @@ padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 </head>
 <body>
 <h1>In A Minnit Pricing Tool 1.0</h1>
-<p><em>Beta – features subject to change. Check your work. Report bugs to Marco.</em></p>
+<p><em>Beta – features subject to change. Check your work. Report bugs to Marco.</em></p>
 <button id="darkModeToggle">Toggle Dark Mode</button>
 
 <div id="sheetTabs"></div>
@@ -124,7 +124,7 @@ padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 const PRICE_EX=["Rate Ex. GST","Price Ex. GST"], PRICE_INC="Price Inc. GST";
 const TOAST_MS=3000;
 
-/* price‑list sections */
+/* PRICE‑LIST META (8 sections) */
 const PRICE_META=[
   ["bannister rail"                           ,"cat-orange","🛠️"],
   ["stainless steel grabrail"                 ,"cat-orange","🛠️"],
@@ -133,28 +133,43 @@ const PRICE_META=[
   ["plumbing"                                 ,"cat-blue"  ,"🔧"],
   ["door components"                          ,"cat-brown" ,"🚪"],
   ["fire safety"                              ,"cat-red"   ,"🧯"],
-  ["anti slip solutions"                      ,"cat-yellow","🥾"]
+  ["anti slip solutions"                      ,"cat-yellow","🥾"],
+  ["travel"                                   ,"cat-green" ,"🛻"]   /* optional travel */
 ];
 
-/* standard hrly rates sections */
+/* STANDARD‑RATES META (6 sections, all green) */
 const RATE_META=[
   ["standard rates - property maintenance"    ,"cat-green","🛠️"],
   ["standard rates - cleaning"                ,"cat-green","🧹"],
   ["standard rates - plumbing"                ,"cat-green","🔧"],
   ["standard rates - electrical"              ,"cat-green","⚡️"],
   ["standard rates - weekend work"            ,"cat-green","📆"],
-  ["skip bin and trailer rates"               ,"cat-green","🚛"]
+  ["skip bin and trailer rates"               ,"cat-green","🚛"],
+  ["travel"                                   ,"cat-green","🛻"]   /* optional travel */
 ];
 
-/* travel category (light‑green truck) */
-PRICE_META.push(["travel","cat-green","🛻"]);
-RATE_META .push(["travel","cat-green","🛻"]);
+/* ---------- UTILS ---------- */
+const mapFrom=(arr)=>Object.fromEntries(arr.map((m,i)=>[m[0],{idx:i,cls:m[1],emo:m[2]}]));
+const PRICE_MAP=mapFrom(PRICE_META), RATE_MAP=mapFrom(RATE_META);
+const normalise=s=>s.toLowerCase().replace(/\s+/g," ").trim();
 
-/* maps for quick lookup */
-function makeMap(arr){return Object.fromEntries(arr.map((m,i)=>[m[0],{idx:i,cls:m[1],emo:m[2]}]));}
-const PRICE_MAP=makeMap(PRICE_META), RATE_MAP=makeMap(RATE_META);
+/* meta helper tolerant to minor text variations */
+function metaFor(sheetName, rawCat){
+  const tbl=sheetName.toLowerCase().includes("standard")?RATE_META:PRICE_META;
+  const map=sheetName.toLowerCase().includes("standard")?RATE_MAP:PRICE_MAP;
+  const norm=normalise(rawCat);
 
-/* ---------- STATE / DOM ---------- */
+  /* exact or starts‑with */
+  for(const [key] of tbl){
+    if(norm===key||norm.startsWith(key))return map[key];
+  }
+  /* travel catch‑all */
+  if(norm.includes("travel"))return map["travel"];
+
+  return null;           // skip unknown categories
+}
+
+/* ---------- STATE & DOM ---------- */
 let wb=null,basket=[],lastRemoved=null,lastAdded=null;
 const tabs=document.getElementById("sheetTabs"),
       container=document.getElementById("sheetContainer"),
@@ -169,66 +184,59 @@ fetch("myFile.xlsx").then(r=>r.arrayBuffer()).then(buf=>{
   wb=XLSX.read(buf,{type:"array"});
   Object.keys(wb.Sheets).forEach((n,i)=>{
     const b=document.createElement("button");b.textContent=n;b.dataset.sheet=n;
-    b.onclick=()=>{setActive(n);buildSheet(n);};
-    if(i===0){b.classList.add("active");buildSheet(n);}tabs.appendChild(b);
+    b.onclick=()=>{setActive(n);buildSheet(n)};
+    if(i===0){b.classList.add("active");buildSheet(n)}
+    tabs.appendChild(b);
   });
 });
 
-/* ---------- ACTIVE TAB STYLING ---------- */
-function setActive(name){[...tabs.children].forEach(b=>b.classList.toggle("active",b.dataset.sheet===name));}
-
-/* ---------- META HELPERS ---------- */
-function getMetaTable(sheet){return sheet.toLowerCase().includes("standard")?RATE_META:PRICE_META;}
-function getMetaMap(sheet){return sheet.toLowerCase().includes("standard")?RATE_MAP:PRICE_MAP;}
-function metaFor(sheet,cat){
-  const map=getMetaMap(sheet), key=cat.trim().toLowerCase();
-  return map[key]??(key.includes("travel")?map["travel"]:null); // null -> skip row
-}
+/* ---------- TAB STYLE ---------- */
+const setActive=name=>[...tabs.children]
+  .forEach(b=>b.classList.toggle("active",b.dataset.sheet===name));
 
 /* ---------- BUILD SHEET ---------- */
 function buildSheet(sheetName){
-  const sheet=wb.Sheets[sheetName];
-  const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:""});
-  const header=rows[0].map(h=>String(h).trim()), catIdx=header.indexOf("Category");
+  const sheet=wb.Sheets[sheetName],
+        rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:""}),
+        header=rows[0].map(h=>String(h).trim()),
+        catIdx=header.indexOf("Category");
   if(catIdx===-1){container.textContent='No "Category" column.';return;}
-  const data=rows.slice(1);
 
-  /* search UI */
-  container.innerHTML="";
-  container.innerHTML='<div class="search-container"><label class="search-label">Search items:</label>\
-    <input class="search-input" placeholder="Type to filter..."></div><div id="sections"></div>';
-  const searchInput=container.querySelector(".search-input"), wrap=document.getElementById("sections");
+  const searchBox=`<div class="search-container"><label class="search-label">Search items:</label>
+    <input class="search-input" placeholder="Type to filter..."></div><div id="sect"></div>`;
+  container.innerHTML=searchBox;
+  const searchInput=container.querySelector(".search-input"), sectWrap=document.getElementById("sect");
+  const body=rows.slice(1);
 
-  /* render helper */
-  function render(list,term=""){
-    wrap.innerHTML="";
+  const build=(list,term="")=>{
+    sectWrap.innerHTML="";
     const groups={};
     list.forEach(r=>{
-      const cat=r[catIdx]||"";const m=metaFor(sheetName,cat);
-      if(!m)return; (groups[cat]=groups[cat]||[]).push(r);
+      const meta=metaFor(sheetName,r[catIdx]||"");
+      if(!meta)return; (groups[r[catIdx]]??=[]).push(r);
     });
     const cats=Object.keys(groups).sort((a,b)=>metaFor(sheetName,a).idx-metaFor(sheetName,b).idx);
+
     cats.forEach(cat=>{
       const meta=metaFor(sheetName,cat);
-      const det=document.createElement("details");det.className=meta.cls;det.open=!!term;
+      const det=document.createElement("details");det.open=!!term;det.className=meta.cls;
       det.innerHTML=`<summary>${meta.emo}&nbsp;&nbsp;${cat}</summary>`;
       const tbl=document.createElement("table");det.appendChild(tbl);
       const thead=document.createElement("thead");
       const hdr=header.slice();hdr.splice(catIdx,1);
-      thead.innerHTML='<tr><th></th>'+hdr.map(h=>`<th>${h}</th>`).join("")+'</tr>';
-      tbl.appendChild(thead);
+      thead.innerHTML='<tr><th></th>'+hdr.map(h=>`<th>${h}</th>`).join("")+'</tr>';tbl.appendChild(thead);
       const tbody=document.createElement("tbody");tbl.appendChild(tbody);
+
       groups[cat].forEach(row=>{
         const tr=document.createElement("tr");
-        const tdBtn=document.createElement("td");
-        tdBtn.innerHTML='<button class="add-button">+</button>';tr.appendChild(tdBtn);
-        tdBtn.firstChild.onclick=()=>{addToBasket(row,header);showToast("Item added ✓",undoAdd);};
+        tr.innerHTML='<td><button class="add-button">+</button></td>';
+        tr.querySelector("button").onclick=()=>{addToBasket(row,header);showToast("Item added ✓",undoAdd)};
         row.forEach((cell,i)=>{
           if(i===catIdx)return;
           const td=document.createElement("td"), h=header[i].toLowerCase();
-          td.textContent=/price|gst|rate/.test(h)&&!isNaN(cell)?(+cell).toFixed(2):cell;
-          if(/price|gst|rate/.test(h))td.style.fontWeight="bold";
-          if(term)td.innerHTML=td.textContent.replace(new RegExp(`(${term})`,"gi"),"<span class='highlight'>$1</span>");
+          let txt=/price|gst|rate/.test(h)&&!isNaN(cell)?(+cell).toFixed(2):cell;
+          if(term)txt=txt.toString().replace(new RegExp(`(${term})`,"gi"),"<span class='highlight'>$1</span>");
+          td.innerHTML=txt; if(/price|gst|rate/.test(h))td.style.fontWeight="bold";
           td.onclick=e=>{
             if(e.target.tagName==="BUTTON")return;
             navigator.clipboard.writeText(td.textContent).then(()=>{
@@ -240,27 +248,27 @@ function buildSheet(sheetName){
         });
         tbody.appendChild(tr);
       });
-      wrap.appendChild(det);
+      sectWrap.appendChild(det);
     });
-  }
+  };
 
-  /* initial render */
-  render(data);
+  build(body);
 
-  /* live search */
   searchInput.oninput=()=>{
-    const t=searchInput.value.trim().toLowerCase();
-    if(!t){render(data);return;}
-    const filtered=data.filter(r=>r.some(c=>String(c).toLowerCase().includes(t)));
-    render(filtered,t);
+    const term=searchInput.value.trim().toLowerCase();
+    if(!term)return build(body);
+    const filtered=body.filter(r=>r.some(c=>String(c).toLowerCase().includes(term)));
+    build(filtered,term);
   };
 }
 
 /* ---------- TOAST ---------- */
-function showToast(msg,undo){toast.textContent=msg;toast.classList.add("show");
-  if(undo){toast.style.cursor="pointer";toast.onclick=()=>{undo();hideToast();}}
-  else{toast.style.cursor="default";toast.onclick=null;}
-  setTimeout(hideToast,TOAST_MS);} function hideToast(){toast.classList.remove("show");}
+const showToast=(m,undo)=>{
+  toast.textContent=m;toast.classList.add("show");
+  toast.style.cursor=undo?"pointer":"default";
+  toast.onclick=undo?()=>{undo();toast.classList.remove("show");}:null;
+  setTimeout(()=>toast.classList.remove("show"),TOAST_MS);
+};
 
 /* ---------- BASKET ---------- */
 const basketBody=document.querySelector("#basketTable tbody"),
@@ -270,45 +278,46 @@ document.getElementById("toggleBasketBtn").onclick=e=>{
   bc.style.display=bc.style.display==="none"?"block":"none";
   e.target.textContent=bc.style.display==="none"?"Show Basket":"Hide Basket";
 };
-function addToBasket(row,head){
-  const item=row[head.indexOf("Item")]||"Item", ex=+row[head.findIndex(h=>PRICE_EX.includes(h))],
-        inc=+row[head.indexOf(PRICE_INC)]; let b=basket.find(x=>x.item===item);
-  b?b.qty++:basket.push(b={item,qty:1,ex,inc}); lastAdded=b; renderBasket();
+function addToBasket(row,hdr){
+  const item=row[hdr.indexOf("Item")]||"Item",
+        ex=+row[hdr.findIndex(h=>PRICE_EX.includes(h))],
+        inc=+row[hdr.indexOf(PRICE_INC)];
+  let b=basket.find(x=>x.item===item); b?b.qty++:basket.push(b={item,qty:1,ex,inc});
+  lastAdded=b; renderBasket();
 }
 function undoAdd(){if(lastAdded){lastAdded.qty>1?lastAdded.qty--:basket.splice(basket.indexOf(lastAdded),1);
-  lastAdded=null;renderBasket();}} function undoRemove(){if(lastRemoved){
-  basket.splice(lastRemoved.i,0,lastRemoved.b);lastRemoved=null;renderBasket();}}
+  lastAdded=null;renderBasket();}}
+function undoRemove(){if(lastRemoved){basket.splice(lastRemoved.i,0,lastRemoved.b);lastRemoved=null;renderBasket();}}
 function renderBasket(){
   if(!basket.length){document.getElementById("basketContainer").style.display="none";return;}
   document.getElementById("basketContainer").style.display="block";
-  basketBody.innerHTML="";let totE=0,totI=0;
+  basketBody.innerHTML=""; let tE=0,tI=0;
   basket.forEach((b,i)=>{
     const tr=document.createElement("tr");
     tr.innerHTML=`<td class="sort-handle">≡</td><td>${b.item}</td>`;
-    const tdQty=document.createElement("td");
-    tdQty.innerHTML='<div class="qty-controls"><button>-</button>\
+    const qtyTd=document.createElement("td");
+    qtyTd.innerHTML='<div class="qty-controls"><button>-</button>\
       <input type="number" step="0.1" class="qty-input"><button>+</button></div>';
-    const [minus,input,plus]=tdQty.querySelectorAll("button,input,button");
-    input.value=b.qty; minus.onclick=()=>{b.qty=Math.max(1,b.qty-1);renderBasket();};
+    const [minus,input,plus]=qtyTd.querySelectorAll("button,input,button");
+    input.value=b.qty;
+    minus.onclick=()=>{b.qty=Math.max(1,b.qty-1);renderBasket();};
     plus.onclick =()=>{b.qty++;renderBasket();};
     input.onchange=()=>{b.qty=Math.max(1,parseFloat(input.value)||1);renderBasket();};
-    tr.appendChild(tdQty);
+    tr.appendChild(qtyTd);
     tr.innerHTML+=`<td style="font-weight:bold">${isNaN(b.ex)?"N/A":b.ex.toFixed(2)}</td>
-                   <td style="font-weight:bold">${isNaN(b.inc)?"N/A":b.inc.toFixed(2)}</td>`;
-    const le=isNaN(b.ex)?0:b.qty*b.ex, li=isNaN(b.inc)?0:b.qty*b.inc; totE+=le; totI+=li;
-    tr.innerHTML+=`<td>${isNaN(b.ex)?"N/A":le.toFixed(2)}</td>
-                   <td>${isNaN(b.inc)?"N/A":li.toFixed(2)}</td>`;
-    const tdDel=document.createElement("td");
-    tdDel.innerHTML='<span class="remove-btn">X</span>';
-    tdDel.firstChild.onclick=()=>{lastRemoved={b,i};tr.classList.add("fade-out");
+      <td style="font-weight:bold">${isNaN(b.inc)?"N/A":b.inc.toFixed(2)}</td>`;
+    const le=isNaN(b.ex)?0:b.qty*b.ex, li=isNaN(b.inc)?0:b.qty*b.inc; tE+=le; tI+=li;
+    tr.innerHTML+=`<td>${isNaN(b.ex)?"N/A":le.toFixed(2)}</td><td>${isNaN(b.inc)?"N/A":li.toFixed(2)}</td>`;
+    const del=document.createElement("td");del.innerHTML='<span class="remove-btn">X</span>';
+    del.firstChild.onclick=()=>{lastRemoved={b,i};tr.classList.add("fade-out");
       setTimeout(()=>{basket.splice(i,1);renderBasket();showToast("Item removed ↩",undoRemove);},300);};
-    tr.appendChild(tdDel); basketBody.appendChild(tr);
+    tr.appendChild(del); basketBody.appendChild(tr);
   });
   basketFoot.innerHTML=`<tr><td colspan="5" style="text-align:right;font-weight:bold">Grand Totals:</td>
-    <td style="font-weight:bold">${totE.toFixed(2)}</td>
-    <td style="font-weight:bold">${totI.toFixed(2)}</td><td></td></tr>`;
-  Sortable.create(basketBody,{handle:".sort-handle",onEnd:()=>{
-    basket=[...basketBody.children].map(r=>basket.find(b=>b.item===r.children[1].textContent));}});
+    <td style="font-weight:bold">${tE.toFixed(2)}</td>
+    <td style="font-weight:bold">${tI.toFixed(2)}</td><td></td></tr>`;
+  Sortable.create(basketBody,{handle:".sort-handle",onEnd:()=>basket=[...basketBody.children]
+    .map(r=>basket.find(b=>b.item===r.children[1].textContent))});
 }
 
 /* ---------- CSV EXPORT ---------- */
