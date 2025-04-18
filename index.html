@@ -33,6 +33,7 @@ border:1px solid var(--border);border-radius:4px}
 .search-label{font-weight:bold;margin-right:.5rem}
 .search-input{padding:.4rem;border:1px solid var(--border);border-radius:4px;
 width:200px;background:var(--panel);color:var(--fg)}
+.highlight{background:yellow}
 
 /* =====  TABLES  ===== */
 table{border-collapse:collapse;width:100%}
@@ -42,12 +43,7 @@ tbody td{border:1px solid var(--border);padding:.5rem}
 tbody tr:nth-child(even){background:var(--alt)!important}
 tbody tr:hover{background:#ccc}
 
-/* =====  ADD BUTTON  ===== */
-.add-button{background:var(--add);color:#fff;border:none;padding:.3rem .6rem;
-border-radius:4px;font-weight:bold;cursor:pointer;transition:.3s}
-.add-button:hover{background:var(--addh)}
-
-/* =====  COLLAPSIBLE SECTION HEADERS  ===== */
+/* =====  SECTION HEADERS  ===== */
 details{margin-bottom:1rem}
 summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:.5rem;
 padding:.4rem .6rem;border-radius:4px;background:var(--header);font-weight:bold}
@@ -60,6 +56,12 @@ summary:hover{background:var(--btn);color:#fff}
 .cat-brown  summary{background:#f2e6d9}.cat-brown  summary:hover{background:#e0cbb9;color:#000}
 .cat-red    summary{background:#ffdede}.cat-red    summary:hover{background:#ffb7b7;color:#000}
 .cat-yellow summary{background:#fff8d6}.cat-yellow summary:hover{background:#ffea9f;color:#000}
+
+/* =====  BUTTONS / FLASH  ===== */
+.add-button{background:var(--add);color:#fff;border:none;padding:.3rem .6rem;
+border-radius:4px;font-weight:bold;cursor:pointer;transition:.3s}
+.add-button:hover{background:var(--addh)}
+.copied-cell{background:#c8e6c9!important;transition:.15s}
 
 /* =====  BASKET  ===== */
 #basketContainer{position:fixed;bottom:0;left:0;right:0;max-height:40%;
@@ -76,13 +78,10 @@ border-radius:4px;cursor:pointer;transition:.3s}
 .qty-input{width:60px;text-align:center}
 .remove-btn{color:red;font-weight:bold;cursor:pointer}
 
-/* =====  TOAST (beside “Quote Basket”)  ===== */
+/* =====  TOAST  ===== */
 #toast{margin-left:1rem;background:var(--toast);color:var(--toastfg);
 padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 #toast.show{opacity:1}
-
-/* =====  COPY FLASH  ===== */
-.copied-cell{background:#c8e6c9!important;transition:.15s}
 </style>
 </head>
 <body>
@@ -120,22 +119,20 @@ padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
 (()=>{"use strict";
-/* ---------- FIXED CATEGORY MAP ---------- */
+/* ---------- CATEGORY META (order, colour, emoji) ---------- */
 const ORDER=[
- ["bannister rail"                           ,"cat-orange","🛠️"],
- ["stainless steel grabrail"                 ,"cat-orange","🛠️"],
- ["aluminium grabrail, powder coated"        ,"cat-orange","🛠️"],
- ["shower parts"                             ,"cat-blue"  ,"🚿"],
- ["plumbing"                                 ,"cat-blue"  ,"🔧"],
- ["door components"                          ,"cat-brown" ,"🚪"],
- ["fire safety"                              ,"cat-red"   ,"🧯"],
- ["anti slip solutions"                      ,"cat-yellow","🥾"],
- ["uncategorised"                            ,"cat-yellow","📦"]
+  ["bannister rail"                           ,"cat-orange","🛠️"],
+  ["stainless steel grabrail"                 ,"cat-orange","🛠️"],
+  ["aluminium grabrail, powder coated"        ,"cat-orange","🛠️"],
+  ["shower parts"                             ,"cat-blue"  ,"🚿"],
+  ["plumbing"                                 ,"cat-blue"  ,"🔧"],
+  ["door components"                          ,"cat-brown" ,"🚪"],
+  ["fire safety"                              ,"cat-red"   ,"🧯"],
+  ["anti slip solutions"                      ,"cat-yellow","🥾"],
+  ["uncategorised"                            ,"cat-yellow","📦"]
 ];
-const ORDER_MAP=Object.fromEntries(ORDER.map((o,i)=>[o[0],{i,cls:o[1],emo:o[2]}]));
-const UNCAT=ORDER_MAP["uncategorised"];
-
-/* ---------- CONSTANTS ---------- */
+const META=Object.fromEntries(ORDER.map((o,i)=>[o[0],{idx:i,cls:o[1],emo:o[2]}]));
+const FALLBACK=META["uncategorised"];
 const PRICE_EX=["Rate Ex. GST","Price Ex. GST"], PRICE_INC="Price Inc. GST";
 const TOAST_MS=3000;
 
@@ -146,93 +143,88 @@ const sheetTabs=document.getElementById("sheetTabs"),
       toast=document.getElementById("toast");
 
 /* ---------- DARK MODE ---------- */
-document.getElementById("darkModeToggle").onclick=
-  ()=>document.body.classList.toggle("dark-mode");
+document.getElementById("darkModeToggle").onclick=()=>document.body.classList.toggle("dark-mode");
 
-/* ---------- FETCH EXCEL ---------- */
+/* ---------- LOAD EXCEL ---------- */
 fetch("myFile.xlsx").then(r=>r.arrayBuffer()).then(buf=>{
   wb=XLSX.read(buf,{type:"array"});
   Object.keys(wb.Sheets).forEach((name,i)=>{
-    const btn=document.createElement("button");
-    btn.textContent=name;btn.dataset.sheet=name;
-    btn.onclick=()=>{setActive(name);buildSheet(name);}
-    if(i===0){btn.classList.add("active");buildSheet(name);}
-    sheetTabs.appendChild(btn);
+    const b=document.createElement("button");
+    b.textContent=name;b.dataset.sheet=name;
+    b.onclick=()=>{setActive(name);buildSheet(name);}
+    if(i===0){b.classList.add("active");buildSheet(name);}
+    sheetTabs.appendChild(b);
   });
 });
 
-/* ---------- ACTIVE TAB UI ---------- */
-function setActive(name){
-  [...sheetTabs.children].forEach(b=>b.classList.toggle("active",b.dataset.sheet===name));
-}
+/* ---------- TAB UI ---------- */
+function setActive(name){[...sheetTabs.children]
+  .forEach(btn=>btn.classList.toggle("active",btn.dataset.sheet===name));}
 
-/* ---------- BUILD ONE SHEET ---------- */
+/* ---------- BUILD SHEET ---------- */
 function buildSheet(name){
   const rows=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:""});
-  const header=rows[0].map(h=>String(h).trim()),
-        catIdx=header.indexOf("Category");
-  /* If no Category col – treat whole sheet as Uncategorised */
+  const header=rows[0].map(h=>String(h).trim()), catIdx=header.indexOf("Category");
   if(catIdx===-1){sheetContainer.textContent='No "Category" column.';return;}
 
   const data=rows.slice(1);
-  /* Search UI */
   sheetContainer.innerHTML="";
+  /* Search box */
   const searchBox=document.createElement("div");searchBox.className="search-container";
   searchBox.innerHTML='<label class="search-label">Search items:</label>\
     <input class="search-input" placeholder="Type to filter...">';
   sheetContainer.appendChild(searchBox);
-  const input=searchBox.querySelector("input");
-  const wrap=document.createElement("div");sheetContainer.appendChild(wrap);
+  const input=searchBox.querySelector("input"), wrap=document.createElement("div");
+  sheetContainer.appendChild(wrap);
 
-  input.oninput=()=>render(filterRows());
-  render(data);               // initial draw
+  input.oninput=()=>render();
+  render();            // first draw
 
-  function filterRows(){
-    const t=input.value.toLowerCase();
-    if(!t)return data;
-    return data.filter(r=>r.some(c=>String(c).toLowerCase().includes(t)));
-  }
-
-  function render(rowsArr){
+  function render(){
+    const term=input.value.trim().toLowerCase();
     wrap.innerHTML="";
-    /* group by category */
-    const grp={};
-    rowsArr.forEach(r=>{
+    /* Group rows */
+    const groups={};
+    data.forEach(r=>{
+      if(term&& !r.some(c=>String(c).toLowerCase().includes(term)))return;
       const cat=(r[catIdx]||"Uncategorised").toString().trim();
-      (grp[cat]=grp[cat]||[]).push(r);
+      (groups[cat]=groups[cat]||[]).push(r);
     });
-    /* order categories by fixed list */
-    const cats=Object.keys(grp).sort((a,b)=>{
-      const A=(ORDER_MAP[a.toLowerCase()]||UNCAT).i,
-            B=(ORDER_MAP[b.toLowerCase()]||UNCAT).i;
+    /* Order categories */
+    const cats=Object.keys(groups).sort((a,b)=>{
+      const A=(META[a.toLowerCase()]||FALLBACK).idx,
+            B=(META[b.toLowerCase()]||FALLBACK).idx;
       return A-B;
     });
-    /* render */
     cats.forEach(cat=>{
-      const meta=ORDER_MAP[cat.toLowerCase()]||UNCAT;
-      const det=document.createElement("details");det.open=false;det.className=meta.cls;
+      const m=META[cat.toLowerCase()]||FALLBACK;
+      const det=document.createElement("details");
+      det.open=!!term;              // open if searching
+      det.className=m.cls;
       const sum=document.createElement("summary");
-      sum.textContent=`${meta.emo}  ${cat}`;det.appendChild(sum);
-      /* table */
-      const tbl=document.createElement("table");det.appendChild(tbl);
-      const hdr=header.slice();hdr.splice(catIdx,1);
-      tbl.innerHTML='<thead><tr><th></th>'+hdr.map(h=>`<th>${h}</th>`).join("")+'</tr></thead>';
+      sum.textContent=`${m.emo}  ${cat}`;det.appendChild(sum);
+
+      /* build table */
+      const tbl=document.createElement("table");
+      tbl.innerHTML='<thead><tr><th></th>'+header.filter((_,i)=>i!==catIdx)
+        .map(h=>`<th>${h}</th>`).join("")+'</tr></thead>';
       const tbody=document.createElement("tbody");tbl.appendChild(tbody);
 
-      grp[cat].forEach(r=>{
+      groups[cat].forEach(r=>{
         const tr=document.createElement("tr");
         /* + button */
         const tdBtn=document.createElement("td");
-        const btn=document.createElement("button");
-        btn.className="add-button";btn.textContent="+";
-        btn.onclick=()=>{pushBasket(r,header);flash("Item added ✓",undoAdd);}
-        tdBtn.appendChild(btn);tr.appendChild(tdBtn);
+        const add=document.createElement("button");add.className="add-button";add.textContent="+";
+        add.onclick=()=>{pushBasket(r,header);flash("Item added ✓",undoAdd);}
+        tdBtn.appendChild(add);tr.appendChild(tdBtn);
 
         r.forEach((cell,i)=>{
           if(i===catIdx)return;
-          const td=document.createElement("td");
-          const h=header[i].toLowerCase();
-          td.textContent=/price|gst|rate/.test(h)&&!isNaN(cell)?(+cell).toFixed(2):cell;
+          const td=document.createElement("td"), h=header[i].toLowerCase();
+          let text=/price|gst|rate/.test(h)&&!isNaN(cell)?(+cell).toFixed(2):cell;
+          if(term){text=text.toString().replace(new RegExp(`(${term})`,"gi"),
+            '<span class="highlight">$1</span>');td.innerHTML=text;}
+          else td.textContent=text;
           if(/price|gst|rate/.test(h))td.style.fontWeight="bold";
           td.onclick=e=>{
             if(e.target.tagName==="BUTTON")return;
@@ -245,7 +237,7 @@ function buildSheet(name){
         });
         tbody.appendChild(tr);
       });
-      wrap.appendChild(det);
+      det.appendChild(tbl);wrap.appendChild(det);
     });
   }
 }
@@ -253,12 +245,12 @@ function buildSheet(name){
 /* ---------- TOAST ---------- */
 function flash(msg,undo){
   toast.textContent=msg;toast.classList.add("show");
-  if(undo){toast.style.cursor="pointer";toast.onclick=()=>{undo();fade();}}
+  if(undo){toast.style.cursor="pointer";toast.onclick=()=>{undo();toast.classList.remove("show");}}
   else{toast.style.cursor="default";toast.onclick=null}
-  setTimeout(fade,TOAST_MS);function fade(){toast.classList.remove("show");}
+  setTimeout(()=>toast.classList.remove("show"),TOAST_MS);
 }
 
-/* ---------- BASKET --------- */
+/* ---------- BASKET ---------- */
 const bBody=document.querySelector("#basketTable tbody"),
       bFoot=document.querySelector("#basketTable tfoot");
 document.getElementById("toggleBasketBtn").onclick=e=>{
@@ -268,13 +260,12 @@ document.getElementById("toggleBasketBtn").onclick=e=>{
 };
 
 function pushBasket(r,h){
-  const catIdx=h.indexOf("Category");
-  const item=r[h.indexOf("Item")]||r.find((_,i)=>i!==catIdx)||"Item";
+  const item=r[h.indexOf("Item")]||"Item";
   const ex=+r[h.findIndex(x=>PRICE_EX.includes(x))];
   const inc=+r[h.indexOf(PRICE_INC)];
-  const b=basket.find(x=>x.item===item);
-  if(b)b.qty+=1; else basket.push({item,qty:1,ex,inc});
-  lastAdded=b||basket[basket.length-1];drawBasket();
+  const row=basket.find(x=>x.item===item);
+  if(row)row.qty+=1; else basket.push({item,qty:1,ex,inc});
+  lastAdded=row||basket[basket.length-1];drawBasket();
 }
 function undoAdd(){if(lastAdded){lastAdded.qty>1?lastAdded.qty--:basket.splice(basket.indexOf(lastAdded),1);
   lastAdded=null;drawBasket();}}
@@ -291,8 +282,8 @@ function drawBasket(){
     /* qty */
     const td=document.createElement("td");
     td.innerHTML='<div class="qty-controls"><button>-</button>\
-      <input type="number" step="0.1" class="qty-input">\
-      <button>+</button></div>';
+    <input type="number" step="0.1" class="qty-input">\
+    <button>+</button></div>';
     const [minus,input,plus]=td.querySelectorAll("button,input,button");
     input.value=b.qty;
     minus.onclick=()=>{b.qty=Math.max(1,b.qty-1);drawBasket();}
@@ -300,11 +291,11 @@ function drawBasket(){
     input.onchange=()=>{b.qty=Math.max(1,parseFloat(input.value)||1);drawBasket();}
     tr.appendChild(td);
     tr.innerHTML+=`<td style="font-weight:bold">${isNaN(b.ex)?"N/A":b.ex.toFixed(2)}</td>
-      <td style="font-weight:bold">${isNaN(b.inc)?"N/A":b.inc.toFixed(2)}</td>`;
+    <td style="font-weight:bold">${isNaN(b.inc)?"N/A":b.inc.toFixed(2)}</td>`;
     const le=isNaN(b.ex)?0:b.qty*b.ex, li=isNaN(b.inc)?0:b.qty*b.inc;
-    totE+=le; totI+=li;
+    totE+=le;totI+=li;
     tr.innerHTML+=`<td>${isNaN(b.ex)?"N/A":le.toFixed(2)}</td>
-      <td>${isNaN(b.inc)?"N/A":li.toFixed(2)}</td>`;
+    <td>${isNaN(b.inc)?"N/A":li.toFixed(2)}</td>`;
     const del=document.createElement("td");
     del.innerHTML='<span class="remove-btn">X</span>';
     del.firstChild.onclick=()=>{
@@ -314,8 +305,8 @@ function drawBasket(){
     tr.appendChild(del);bBody.appendChild(tr);
   });
   bFoot.innerHTML=`<tr><td colspan="5" style="text-align:right;font-weight:bold">Grand Totals:</td>
-    <td style="font-weight:bold">${totE.toFixed(2)}</td>
-    <td style="font-weight:bold">${totI.toFixed(2)}</td><td></td></tr>`;
+  <td style="font-weight:bold">${totE.toFixed(2)}</td>
+  <td style="font-weight:bold">${totI.toFixed(2)}</td><td></td></tr>`;
   Sortable.create(bBody,{handle:".sort-handle",onEnd:()=>basket=[...bBody.children]
     .map(r=>basket.find(b=>b.item===r.children[1].textContent))});
 }
