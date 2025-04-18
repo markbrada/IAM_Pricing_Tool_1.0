@@ -2,69 +2,92 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>In A Minnit Pricing Tool 1.0</title>
+<title>In A Minnit Pricing Tool 1.0</title>
 <style>
-/* ---------- THEME ---------- */
+/* =====  THEME VARIABLES  ===== */
 :root{--bg:#f7f7f7;--fg:#333;--header:#e0e0e0;--btn:#007bff;--btnh:#0056b3;
---add:#28a745;--addh:#218838;--border:#aaa;--alt:#f9f9f9;--panel:#fff}
+--add:#28a745;--addh:#218838;--border:#aaa;--alt:#f9f9f9;--panel:#fff;
+--toast:#007bff;--toastfg:#fff}
 .dark-mode{--bg:#222;--fg:#eee;--header:#444;--btn:#0d6efd;--btnh:#0a58ca;
---add:#198754;--addh:#157347;--border:#555;--alt:#2a2a2a;--panel:#333}
+--add:#198754;--addh:#157347;--border:#555;--alt:#2a2a2a;--panel:#333;
+--toast:#0d6efd;--toastfg:#fff}
 
+/* =====  GLOBAL LAYOUT  ===== */
 body{font-family:sans-serif;margin:1rem;background:var(--bg);color:var(--fg);transition:.3s}
 h1{margin:.2rem 0}p{margin:0 0 2rem}
 
-#darkModeToggle{position:fixed;top:10px;right:10px;z-index:3000;background:var(--btn);color:#fff;border:none;padding:.5rem .75rem;border-radius:4px;cursor:pointer}
+/* =====  DARK‑MODE BUTTON  ===== */
+#darkModeToggle{position:fixed;top:10px;right:10px;z-index:3000;
+background:var(--btn);color:#fff;border:none;padding:.5rem .75rem;border-radius:4px;cursor:pointer}
 #darkModeToggle:hover{background:var(--btnh)}
 
+/* =====  SHEET TABS  ===== */
 #sheetTabs{border-bottom:1px solid var(--border);margin-bottom:1rem}
-#sheetTabs button{background:none;border:none;padding:.5rem 1rem;margin-right:.5rem;font-size:1rem;color:var(--fg);cursor:pointer}
+#sheetTabs button{background:none;border:none;padding:.5rem 1rem;margin-right:.5rem;
+cursor:pointer;font-size:1rem;color:var(--fg)}
 #sheetTabs button.active{border-bottom:2px solid var(--btn);font-weight:bold}
 
-.search-container{margin-bottom:1rem;padding:.5rem;background:var(--panel);border:1px solid var(--border);border-radius:4px}
+/* =====  SEARCH BOX  ===== */
+.search-container{margin-bottom:1rem;padding:.5rem;background:var(--panel);
+border:1px solid var(--border);border-radius:4px}
 .search-label{font-weight:bold;margin-right:.5rem}
-.search-input{padding:.4rem;border:1px solid var(--border);border-radius:4px;width:200px;background:var(--panel);color:var(--fg)}
-.highlight{background:yellow}
+.search-input{padding:.4rem;border:1px solid var(--border);border-radius:4px;
+width:200px;background:var(--panel);color:var(--fg)}
 
+/* =====  TABLES  ===== */
 table{border-collapse:collapse;width:100%}
-thead th{position:sticky;top:0;background:var(--header);border:1px solid var(--border);padding:.5rem;text-align:center;z-index:2}
+thead th{position:sticky;top:0;background:var(--header);border:1px solid var(--border);
+padding:.5rem;text-align:center;z-index:2}
 tbody td{border:1px solid var(--border);padding:.5rem}
-tbody tr:nth-child(even){background:var(--alt)}
+tbody tr:nth-child(even){background:var(--alt)!important}
 tbody tr:hover{background:#ccc}
 
+/* =====  ADD BUTTON  ===== */
+.add-button{background:var(--add);color:#fff;border:none;padding:.3rem .6rem;
+border-radius:4px;font-weight:bold;cursor:pointer;transition:.3s}
+.add-button:hover{background:var(--addh)}
+
+/* =====  COLLAPSIBLE SECTION HEADERS  ===== */
 details{margin-bottom:1rem}
-summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:.5rem;padding:.4rem .6rem;border-radius:4px;background:var(--header);font-weight:bold}
+summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:.5rem;
+padding:.4rem .6rem;border-radius:4px;background:var(--header);font-weight:bold}
 summary::-webkit-details-marker{display:none}
 summary:hover{background:var(--btn);color:#fff}
 
+/* colour classes */
 .cat-orange summary{background:#ffe9d6}.cat-orange summary:hover{background:#ffc999;color:#000}
 .cat-blue   summary{background:#d8ebff}.cat-blue   summary:hover{background:#add6ff;color:#000}
 .cat-brown  summary{background:#f2e6d9}.cat-brown  summary:hover{background:#e0cbb9;color:#000}
 .cat-red    summary{background:#ffdede}.cat-red    summary:hover{background:#ffb7b7;color:#000}
 .cat-yellow summary{background:#fff8d6}.cat-yellow summary:hover{background:#ffea9f;color:#000}
-.cat-green  summary{background:#e6f9e5}.cat-green  summary:hover{background:#c4eac2;color:#000}
 
-.add-button{background:var(--add);color:#fff;border:none;padding:.3rem .6rem;border-radius:4px;font-weight:bold;cursor:pointer}
-.add-button:hover{background:var(--addh)}
-
-#basketContainer{position:fixed;bottom:0;left:0;right:0;max-height:40%;background:var(--panel);border-top:1px solid var(--border);padding:1rem;box-shadow:0 -2px 5px rgba(0,0,0,.1);z-index:1000;overflow-y:auto}
+/* =====  BASKET  ===== */
+#basketContainer{position:fixed;bottom:0;left:0;right:0;max-height:40%;
+background:var(--panel);border-top:1px solid var(--border);padding:1rem;
+box-shadow:0 -2px 5px rgba(0,0,0,.1);z-index:1000;overflow-y:auto}
 #basketHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem}
 #basketHeader h3{margin:0}
-#basketHeader button{background:var(--btn);color:#fff;border:none;padding:.3rem .6rem;border-radius:4px;cursor:pointer}
+#basketHeader button{background:var(--btn);color:#fff;border:none;padding:.3rem .6rem;
+border-radius:4px;cursor:pointer;transition:.3s}
 #basketHeader button:hover{background:var(--btnh)}
 #basketTable th,#basketTable td{border:1px solid var(--border);padding:.5rem}
-#basketTable tbody tr:nth-child(even){background:var(--alt)}
+#basketTable tbody tr:nth-child(even){background:var(--alt)!important}
 .sort-handle{cursor:move;user-select:none;text-align:center;font-size:1.2rem;width:2em}
 .qty-input{width:60px;text-align:center}
 .remove-btn{color:red;font-weight:bold;cursor:pointer}
 
-#toast{margin-left:1rem;background:var(--btn);color:#fff;padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
+/* =====  TOAST (beside “Quote Basket”)  ===== */
+#toast{margin-left:1rem;background:var(--toast);color:var(--toastfg);
+padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 #toast.show{opacity:1}
+
+/* =====  COPY FLASH  ===== */
 .copied-cell{background:#c8e6c9!important;transition:.15s}
 </style>
 </head>
 <body>
-<h1>In A Minnit Pricing Tool 1.0</h1>
-<p><em>Beta – features subject to change. Check your work. Report bugs to Marco.</em></p>
+<h1>In A Minnit Pricing Tool 1.0</h1>
+<p><em>Beta – features subject to change. Check your work. Report bugs to Marco.</em></p>
 <button id="darkModeToggle">Toggle Dark Mode</button>
 
 <div id="sheetTabs"></div>
@@ -83,7 +106,11 @@ summary:hover{background:var(--btn);color:#fff}
   </div>
   <div id="basketContent">
     <table id="basketTable">
-      <thead><tr><th class="sort-handle">≡</th><th>Item</th><th>Quantity</th><th>Price Ex. GST</th><th>Price Inc. GST</th><th>Line Total Ex. GST</th><th>Line Total Inc. GST</th><th>Remove</th></tr></thead>
+      <thead><tr>
+        <th class="sort-handle">≡</th><th>Item</th><th>Quantity</th>
+        <th>Price Ex. GST</th><th>Price Inc. GST</th>
+        <th>Line Total Ex. GST</th><th>Line Total Inc. GST</th><th>Remove</th>
+      </tr></thead>
       <tbody></tbody><tfoot></tfoot>
     </table>
   </div>
@@ -93,170 +120,222 @@ summary:hover{background:var(--btn);color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
 (()=>{"use strict";
-/* ---------- CONSTANTS & META ---------- */
+/* ---------- FIXED CATEGORY MAP ---------- */
+const ORDER=[
+ ["bannister rail"                           ,"cat-orange","🛠️"],
+ ["stainless steel grabrail"                 ,"cat-orange","🛠️"],
+ ["aluminium grabrail, powder coated"        ,"cat-orange","🛠️"],
+ ["shower parts"                             ,"cat-blue"  ,"🚿"],
+ ["plumbing"                                 ,"cat-blue"  ,"🔧"],
+ ["door components"                          ,"cat-brown" ,"🚪"],
+ ["fire safety"                              ,"cat-red"   ,"🧯"],
+ ["anti slip solutions"                      ,"cat-yellow","🥾"],
+ ["uncategorised"                            ,"cat-yellow","📦"]
+];
+const ORDER_MAP=Object.fromEntries(ORDER.map((o,i)=>[o[0],{i,cls:o[1],emo:o[2]}]));
+const UNCAT=ORDER_MAP["uncategorised"];
+
+/* ---------- CONSTANTS ---------- */
 const PRICE_EX=["Rate Ex. GST","Price Ex. GST"], PRICE_INC="Price Inc. GST";
-const PRICE_META=[
-  ["bannister rail","cat-orange","🛠️"],
-  ["stainless steel grabrail","cat-orange","🛠️"],
-  ["aluminium grabrail, powder coated","cat-orange","🛠️"],
-  ["shower parts","cat-blue","🚿"],
-  ["plumbing","cat-blue","🔧"],
-  ["door components","cat-brown","🚪"],
-  ["fire safety","cat-red","🧯"],
-  ["anti slip solutions","cat-yellow","🥾"],
-  ["travel","cat-green","🛻"]
-];
-const RATE_META=[
-  ["property maintenance","cat-green","🛠️"],
-  ["cleaning","cat-green","🧹"],
-  ["plumbing","cat-green","🔧"],
-  ["electrical","cat-green","⚡️"],
-  ["weekend work","cat-green","📆"],
-  ["skip bin","cat-green","🚛"],
-  ["travel","cat-green","🛻"]
-];
-const PRICE_MAP=Object.fromEntries(PRICE_META.map((m,i)=>[m[0],{idx:i,cls:m[1],emo:m[2]}]));
-const RATE_MAP =Object.fromEntries(RATE_META .map((m,i)=>[m[0],{idx:i,cls:m[1],emo:m[2]}]));
-const norm=s=>s.toLowerCase().replace(/[^a-z0-9 ]+/g," ").replace(/\s+/g," ").trim();
+const TOAST_MS=3000;
 
-/* fuzzy match to meta */
-function meta(sheet, raw){
-  const tbl = sheet.toLowerCase().includes("standard")?RATE_META:PRICE_META;
-  const map = sheet.toLowerCase().includes("standard")?RATE_MAP :PRICE_MAP;
-  const n   = norm(raw);
-  for(const [key] of tbl) if(n&&n.includes(key)) return map[key];
-  if(n.includes("travel")) return map["travel"];
-  return null;          // skip unknown
-}
-
-/* ---------- GLOBAL STATE ---------- */
-let wb=null,basket=[];
-const $=q=>document.querySelector(q), $$=q=>document.querySelectorAll(q);
+/* ---------- STATE ---------- */
+let wb=null,basket=[],lastRemoved=null,lastAdded=null;
+const sheetTabs=document.getElementById("sheetTabs"),
+      sheetContainer=document.getElementById("sheetContainer"),
+      toast=document.getElementById("toast");
 
 /* ---------- DARK MODE ---------- */
-$("#darkModeToggle").onclick=()=>document.body.classList.toggle("dark-mode");
+document.getElementById("darkModeToggle").onclick=
+  ()=>document.body.classList.toggle("dark-mode");
 
-/* ---------- TOAST ---------- */
-const toast=$("#toast");
-function pop(msg,undo){
-  toast.textContent=msg;toast.classList.add("show");
-  toast.onclick=undo?()=>{undo();toast.classList.remove("show");}:null;
-  setTimeout(()=>toast.classList.remove("show"),3000);
-}
-
-/* ---------- LOAD EXCEL ---------- */
+/* ---------- FETCH EXCEL ---------- */
 fetch("myFile.xlsx").then(r=>r.arrayBuffer()).then(buf=>{
   wb=XLSX.read(buf,{type:"array"});
   Object.keys(wb.Sheets).forEach((name,i)=>{
-    const b=document.createElement("button");b.textContent=name;
-    b.onclick=()=>{[...$$("#sheetTabs button")].forEach(x=>x.classList.toggle("active",x===b));build(name)};
-    if(i===0){b.classList.add("active");build(name)}
-    $("#sheetTabs").appendChild(b);
+    const btn=document.createElement("button");
+    btn.textContent=name;btn.dataset.sheet=name;
+    btn.onclick=()=>{setActive(name);buildSheet(name);}
+    if(i===0){btn.classList.add("active");buildSheet(name);}
+    sheetTabs.appendChild(btn);
   });
 });
 
-/* ---------- BUILD SHEET ---------- */
-function build(sheetName){
-  const rows=XLSX.utils.sheet_to_json(wb.Sheets[sheetName],{header:1,defval:""});
-  const header=rows[0].map(h=>String(h).trim()), catIdx=header.indexOf("Category");
-  $("#sheetContainer").innerHTML='<div class="search-container"><label class="search-label">Search items:</label><input class="search-input" placeholder="Type to filter..."></div><div id="wrap"></div>';
-  const search=$("#sheetContainer .search-input"), wrap=$("#wrap");
-  const data=rows.slice(1);
+/* ---------- ACTIVE TAB UI ---------- */
+function setActive(name){
+  [...sheetTabs.children].forEach(b=>b.classList.toggle("active",b.dataset.sheet===name));
+}
 
-  function render(arr,term=""){
+/* ---------- BUILD ONE SHEET ---------- */
+function buildSheet(name){
+  const rows=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:""});
+  const header=rows[0].map(h=>String(h).trim()),
+        catIdx=header.indexOf("Category");
+  /* If no Category col – treat whole sheet as Uncategorised */
+  if(catIdx===-1){sheetContainer.textContent='No "Category" column.';return;}
+
+  const data=rows.slice(1);
+  /* Search UI */
+  sheetContainer.innerHTML="";
+  const searchBox=document.createElement("div");searchBox.className="search-container";
+  searchBox.innerHTML='<label class="search-label">Search items:</label>\
+    <input class="search-input" placeholder="Type to filter...">';
+  sheetContainer.appendChild(searchBox);
+  const input=searchBox.querySelector("input");
+  const wrap=document.createElement("div");sheetContainer.appendChild(wrap);
+
+  input.oninput=()=>render(filterRows());
+  render(data);               // initial draw
+
+  function filterRows(){
+    const t=input.value.toLowerCase();
+    if(!t)return data;
+    return data.filter(r=>r.some(c=>String(c).toLowerCase().includes(t)));
+  }
+
+  function render(rowsArr){
     wrap.innerHTML="";
-    const buckets={};
-    arr.forEach(row=>{
-      const m=meta(sheetName,row[catIdx]||"");
-      if(!m) return;
-      (buckets[m.idx]=buckets[m.idx]||[]).push(row);
+    /* group by category */
+    const grp={};
+    rowsArr.forEach(r=>{
+      const cat=(r[catIdx]||"Uncategorised").toString().trim();
+      (grp[cat]=grp[cat]||[]).push(r);
     });
-    const table=sheetName.toLowerCase().includes("standard")?RATE_META:PRICE_META;
-    table.forEach(([key,cls,emo],idx)=>{
-      const det=document.createElement("details");det.open=!!term;det.className=cls;
-      det.innerHTML=`<summary>${emo}&nbsp;&nbsp;${key.charAt(0).toUpperCase()+key.slice(1)}</summary>`;
+    /* order categories by fixed list */
+    const cats=Object.keys(grp).sort((a,b)=>{
+      const A=(ORDER_MAP[a.toLowerCase()]||UNCAT).i,
+            B=(ORDER_MAP[b.toLowerCase()]||UNCAT).i;
+      return A-B;
+    });
+    /* render */
+    cats.forEach(cat=>{
+      const meta=ORDER_MAP[cat.toLowerCase()]||UNCAT;
+      const det=document.createElement("details");det.open=false;det.className=meta.cls;
+      const sum=document.createElement("summary");
+      sum.textContent=`${meta.emo}  ${cat}`;det.appendChild(sum);
+      /* table */
       const tbl=document.createElement("table");det.appendChild(tbl);
-      tbl.innerHTML='<thead><tr><th></th>'+header.filter((_,i)=>i!==catIdx).map(h=>`<th>${h}</th>`).join("")+'</tr></thead><tbody></tbody>';
-      const tbody=tbl.querySelector("tbody");
-      const rows=buckets[idx]||[];
-      if(!rows.length){
+      const hdr=header.slice();hdr.splice(catIdx,1);
+      tbl.innerHTML='<thead><tr><th></th>'+hdr.map(h=>`<th>${h}</th>`).join("")+'</tr></thead>';
+      const tbody=document.createElement("tbody");tbl.appendChild(tbody);
+
+      grp[cat].forEach(r=>{
         const tr=document.createElement("tr");
-        tr.innerHTML=`<td></td><td colspan="${header.length-1}"><em>No items in this section</em></td>`;
-        tbody.appendChild(tr);
-      }else{
-        rows.forEach(row=>{
-          const tr=document.createElement("tr");
-          tr.innerHTML='<td><button class="add-button">+</button></td>';
-          tr.querySelector("button").onclick=()=>{add(row,header);pop("Item added ✓",undoAdd)};
-          row.forEach((cell,i)=>{
-            if(i===catIdx) return;
-            const td=document.createElement("td");const h=header[i].toLowerCase();
-            let txt=/price|gst|rate/.test(h)&&!isNaN(cell)?(+cell).toFixed(2):cell;
-            if(term) txt=txt.toString().replace(new RegExp(`(${term})`,"gi"),"<span class='highlight'>$1</span>");
-            td.innerHTML=txt;if(/price|gst|rate/.test(h))td.style.fontWeight="bold";
-            td.onclick=e=>{
-              if(e.target.tagName==="BUTTON")return;
-              navigator.clipboard.writeText(td.textContent).then(()=>{td.classList.add("copied-cell");void td.offsetWidth;setTimeout(()=>td.classList.remove("copied-cell"),150);});
-            };
-            tr.appendChild(td);
-          });
-          tbody.appendChild(tr);
+        /* + button */
+        const tdBtn=document.createElement("td");
+        const btn=document.createElement("button");
+        btn.className="add-button";btn.textContent="+";
+        btn.onclick=()=>{pushBasket(r,header);flash("Item added ✓",undoAdd);}
+        tdBtn.appendChild(btn);tr.appendChild(tdBtn);
+
+        r.forEach((cell,i)=>{
+          if(i===catIdx)return;
+          const td=document.createElement("td");
+          const h=header[i].toLowerCase();
+          td.textContent=/price|gst|rate/.test(h)&&!isNaN(cell)?(+cell).toFixed(2):cell;
+          if(/price|gst|rate/.test(h))td.style.fontWeight="bold";
+          td.onclick=e=>{
+            if(e.target.tagName==="BUTTON")return;
+            navigator.clipboard.writeText(td.textContent).then(()=>{
+              td.classList.add("copied-cell");void td.offsetWidth;
+              setTimeout(()=>td.classList.remove("copied-cell"),150);
+            });
+          };
+          tr.appendChild(td);
         });
-      }
+        tbody.appendChild(tr);
+      });
       wrap.appendChild(det);
     });
   }
-  render(data);
-  search.oninput=()=>{const t=search.value.trim().toLowerCase();render(t?data.filter(r=>r.some(c=>String(c).toLowerCase().includes(t))):data,t);}
 }
 
-/* ---------- BASKET ---------- */
-const tbody=$("#basketTable tbody"), tfoot=$("#basketTable tfoot");
-$("#toggleBasketBtn").onclick=e=>{
-  const c=$("#basketContent");c.style.display=c.style.display==="none"?"block":"none";
-  e.target.textContent=c.style.display==="none"?"Show Basket":"Hide Basket";
-};
-let lastAdd=null,lastDel=null;
-function add(row,hdr){
-  const item=row[hdr.indexOf("Item")]||"Item", ex=+row[hdr.findIndex(h=>PRICE_EX.includes(h))], inc=+row[hdr.indexOf(PRICE_INC)];
-  const b=basket.find(x=>x.item===item); b?b.qty++:basket.push({item,qty:1,ex,inc});
-  lastAdd=b||basket[basket.length-1]; refresh();
+/* ---------- TOAST ---------- */
+function flash(msg,undo){
+  toast.textContent=msg;toast.classList.add("show");
+  if(undo){toast.style.cursor="pointer";toast.onclick=()=>{undo();fade();}}
+  else{toast.style.cursor="default";toast.onclick=null}
+  setTimeout(fade,TOAST_MS);function fade(){toast.classList.remove("show");}
 }
-function undoAdd(){if(lastAdd){lastAdd.qty>1?lastAdd.qty--:basket.splice(basket.indexOf(lastAdd),1);lastAdd=null;refresh();}}
-function undoDel(){if(lastDel){basket.splice(lastDel.i,0,lastDel.b);lastDel=null;refresh();}}
-function refresh(){
-  if(!basket.length){$("#basketContainer").style.display="none";return;} $("#basketContainer").style.display="block";
-  tbody.innerHTML=""; let exTot=0, inTot=0;
+
+/* ---------- BASKET --------- */
+const bBody=document.querySelector("#basketTable tbody"),
+      bFoot=document.querySelector("#basketTable tfoot");
+document.getElementById("toggleBasketBtn").onclick=e=>{
+  const bc=document.getElementById("basketContent");
+  bc.style.display=bc.style.display==="none"?"block":"none";
+  e.target.textContent=bc.style.display==="none"?"Show Basket":"Hide Basket";
+};
+
+function pushBasket(r,h){
+  const catIdx=h.indexOf("Category");
+  const item=r[h.indexOf("Item")]||r.find((_,i)=>i!==catIdx)||"Item";
+  const ex=+r[h.findIndex(x=>PRICE_EX.includes(x))];
+  const inc=+r[h.indexOf(PRICE_INC)];
+  const b=basket.find(x=>x.item===item);
+  if(b)b.qty+=1; else basket.push({item,qty:1,ex,inc});
+  lastAdded=b||basket[basket.length-1];drawBasket();
+}
+function undoAdd(){if(lastAdded){lastAdded.qty>1?lastAdded.qty--:basket.splice(basket.indexOf(lastAdded),1);
+  lastAdded=null;drawBasket();}}
+function undoRemove(){if(lastRemoved){basket.splice(lastRemoved.i,0,lastRemoved.b);lastRemoved=null;drawBasket();}}
+
+function drawBasket(){
+  const cont=document.getElementById("basketContainer");
+  if(!basket.length){cont.style.display="none";return;}
+  cont.style.display="block";
+  bBody.innerHTML="";let totE=0,totI=0;
   basket.forEach((b,i)=>{
     const tr=document.createElement("tr");
     tr.innerHTML=`<td class="sort-handle">≡</td><td>${b.item}</td>`;
-    const qtd=document.createElement("td");
-    qtd.innerHTML='<div class="qty-controls"><button>-</button><input type="number" step="0.1" class="qty-input"><button>+</button></div>';
-    const [minus,input,plus]=qtd.querySelectorAll("button,input,button");
-    input.value=b.qty; minus.onclick=()=>{b.qty=Math.max(1,b.qty-1);refresh();}; plus.onclick=()=>{b.qty++;refresh();}; input.onchange=()=>{b.qty=Math.max(1,parseFloat(input.value)||1);refresh();};
-    tr.appendChild(qtd);
-    tr.innerHTML+=`<td style="font-weight:bold">${isNaN(b.ex)?"N/A":b.ex.toFixed(2)}</td><td style="font-weight:bold">${isNaN(b.inc)?"N/A":b.inc.toFixed(2)}</td>`;
-    const le=isNaN(b.ex)?0:b.qty*b.ex, li=isNaN(b.inc)?0:b.qty*b.inc; exTot+=le; inTot+=li;
-    tr.innerHTML+=`<td>${isNaN(b.ex)?"N/A":le.toFixed(2)}</td><td>${isNaN(b.inc)?"N/A":li.toFixed(2)}</td>`;
-    const del=document.createElement("td");del.innerHTML='<span class="remove-btn">X</span>';
-    del.firstChild.onclick=()=>{lastDel={b,i};tr.classList.add("fade-out");setTimeout(()=>{basket.splice(i,1);refresh();pop("Item removed ↩",undoDel);},300);};
-    tr.appendChild(del); tbody.appendChild(tr);
+    /* qty */
+    const td=document.createElement("td");
+    td.innerHTML='<div class="qty-controls"><button>-</button>\
+      <input type="number" step="0.1" class="qty-input">\
+      <button>+</button></div>';
+    const [minus,input,plus]=td.querySelectorAll("button,input,button");
+    input.value=b.qty;
+    minus.onclick=()=>{b.qty=Math.max(1,b.qty-1);drawBasket();}
+    plus.onclick =()=>{b.qty+=1;drawBasket();}
+    input.onchange=()=>{b.qty=Math.max(1,parseFloat(input.value)||1);drawBasket();}
+    tr.appendChild(td);
+    tr.innerHTML+=`<td style="font-weight:bold">${isNaN(b.ex)?"N/A":b.ex.toFixed(2)}</td>
+      <td style="font-weight:bold">${isNaN(b.inc)?"N/A":b.inc.toFixed(2)}</td>`;
+    const le=isNaN(b.ex)?0:b.qty*b.ex, li=isNaN(b.inc)?0:b.qty*b.inc;
+    totE+=le; totI+=li;
+    tr.innerHTML+=`<td>${isNaN(b.ex)?"N/A":le.toFixed(2)}</td>
+      <td>${isNaN(b.inc)?"N/A":li.toFixed(2)}</td>`;
+    const del=document.createElement("td");
+    del.innerHTML='<span class="remove-btn">X</span>';
+    del.firstChild.onclick=()=>{
+      lastRemoved={b,i};tr.classList.add("fade-out");
+      setTimeout(()=>{basket.splice(i,1);drawBasket();flash("Item removed ↩",undoRemove);},300);
+    };
+    tr.appendChild(del);bBody.appendChild(tr);
   });
-  tfoot.innerHTML=`<tr><td colspan="5" style="text-align:right;font-weight:bold">Grand Totals:</td><td style="font-weight:bold">${exTot.toFixed(2)}</td><td style="font-weight:bold">${inTot.toFixed(2)}</td><td></td></tr>`;
-  Sortable.create(tbody,{handle:".sort-handle",onEnd:()=>basket=[...tbody.children].map(r=>basket.find(b=>b.item===r.children[1].textContent))});
+  bFoot.innerHTML=`<tr><td colspan="5" style="text-align:right;font-weight:bold">Grand Totals:</td>
+    <td style="font-weight:bold">${totE.toFixed(2)}</td>
+    <td style="font-weight:bold">${totI.toFixed(2)}</td><td></td></tr>`;
+  Sortable.create(bBody,{handle:".sort-handle",onEnd:()=>basket=[...bBody.children]
+    .map(r=>basket.find(b=>b.item===r.children[1].textContent))});
 }
 
 /* ---------- CSV EXPORT ---------- */
-$("#exportCsvBtn").onclick=()=>{
+document.getElementById("exportCsvBtn").onclick=()=>{
   if(!basket.length)return;
-  const lines=[["Item","Quantity","Price Ex. GST","Price Inc. GST","Line Ex","Line Inc"].map(s=>`"${s}"`)];
-  let ex=0,inc=0;
+  const esc=v=>`"${String(v).replace(/"/g,'""')}"`;
+  const rows=[["Item","Quantity","Price Ex. GST","Price Inc. GST","Line Ex","Line Inc"].map(esc)];
+  let tE=0,tI=0;
   basket.forEach(b=>{
-    const le=isNaN(b.ex)?0:b.qty*b.ex, li=isNaN(b.inc)?0:b.qty*b.inc; ex+=le; inc+=li;
-    lines.push([b.item,b.qty,isNaN(b.ex)?"N/A":b.ex.toFixed(2),isNaN(b.inc)?"N/A":b.inc.toFixed(2),isNaN(b.ex)?"N/A":le.toFixed(2),isNaN(b.inc)?"N/A":li.toFixed(2)].map(v=>`"${String(v).replace(/"/g,'""')}"`));
+    const le=isNaN(b.ex)?0:b.qty*b.ex, li=isNaN(b.inc)?0:b.qty*b.inc;tE+=le;tI+=li;
+    rows.push([b.item,b.qty,isNaN(b.ex)?"N/A":b.ex.toFixed(2),
+      isNaN(b.inc)?"N/A":b.inc.toFixed(2),isNaN(b.ex)?"N/A":le.toFixed(2),
+      isNaN(b.inc)?"N/A":li.toFixed(2)].map(esc));
   });
-  lines.push(['','','',"\"Totals:\"",ex.toFixed(2),inc.toFixed(2)]);
-  const blob=new Blob([lines.map(r=>r.join(",")).join("\n")],{type:"text/csv"}); const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="quote_basket.csv";document.body.appendChild(a);a.click();document.body.removeChild(a);
+  rows.push(['','','',"\"Totals:\"",tE.toFixed(2),tI.toFixed(2)]);
+  const blob=new Blob([rows.map(r=>r.join(",")).join("\n")],{type:"text/csv"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="quote_basket.csv";
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
 };
 })();
 </script>
