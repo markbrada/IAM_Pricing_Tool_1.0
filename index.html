@@ -36,6 +36,9 @@ border:1px solid var(--border);border-radius:4px}
 width:200px;background:var(--panel);color:var(--fg)}
 .highlight{background:yellow}
 
+/* ---------- SHEET CONTAINER PADDING so basket never hides content ---------- */
+#sheetContainer{padding-bottom:45vh}
+
 /* ---------- TABLES ---------- */
 table{border-collapse:collapse;width:100%}
 thead th{position:sticky;top:0;background:var(--header);border:1px solid var(--border);
@@ -47,14 +50,16 @@ tbody tr:hover{background:#ccc}
 /* ---------- SECTION HEADERS ---------- */
 details{margin-bottom:1rem}
 summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:.5rem;
-padding:.4rem .6rem;border-radius:4px;background:var(--header);font-weight:bold}
+padding:.4rem .6rem;border-radius:4px;background:var(--header);font-weight:bold;color:#000}
 summary::-webkit-details-marker{display:none}
-summary:hover{background:var(--btn);color:#fff}
-.cat-orange summary{background:#ffe9d6}.cat-orange summary:hover{background:#ffc999;color:#000}
-.cat-blue   summary{background:#d8ebff}.cat-blue   summary:hover{background:#add6ff;color:#000}
-.cat-brown  summary{background:#f2e6d9}.cat-brown  summary:hover{background:#e0cbb9;color:#000}
-.cat-red    summary{background:#ffdede}.cat-red    summary:hover{background:#ffb7b7;color:#000}
-.cat-yellow summary{background:#fff8d6}.cat-yellow summary:hover{background:#ffea9f;color:#000}
+summary:hover{background:var(--btn);color:#000} /* keep text black */
+
+/* colour classes */
+.cat-orange summary{background:#ffe9d6}
+.cat-blue   summary{background:#d8ebff}
+.cat-brown  summary{background:#f2e6d9}
+.cat-red    summary{background:#ffdede}
+.cat-yellow summary{background:#fff8d6}
 
 /* ---------- BUTTONS ---------- */
 .add-button{background:var(--add);color:#fff;border:none;padding:.3rem .6rem;
@@ -118,21 +123,20 @@ padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
 (()=>{"use strict";
-/* ---------- CONSTANTS ---------- */
 const PRICE_EX=["Rate Ex. GST","Price Ex. GST"], PRICE_INC="Price Inc. GST";
 const TOAST_MS=3000;
 
-/* master category list (order, colour, emoji – case‑insensitive key) */
+/* master category meta – unchanged */
 const CAT_META=[
-  ["bannister rail"                           ,"cat-orange","🛠️"],
-  ["stainless steel grabrail"                 ,"cat-orange","🛠️"],
-  ["aluminium grabrail, powder coated"        ,"cat-orange","🛠️"],
-  ["shower parts"                             ,"cat-blue"  ,"🚿"],
-  ["plumbing"                                 ,"cat-blue"  ,"🔧"],
-  ["door components"                          ,"cat-brown" ,"🚪"],
-  ["fire safety"                              ,"cat-red"   ,"🧯"],
-  ["anti slip solutions"                      ,"cat-yellow","🥾"],
-  ["uncategorised"                            ,"cat-yellow","📦"]
+ ["bannister rail","cat-orange","🛠️"],
+ ["stainless steel grabrail","cat-orange","🛠️"],
+ ["aluminium grabrail, powder coated","cat-orange","🛠️"],
+ ["shower parts","cat-blue","🚿"],
+ ["plumbing","cat-blue","🔧"],
+ ["door components","cat-brown","🚪"],
+ ["fire safety","cat-red","🧯"],
+ ["anti slip solutions","cat-yellow","🥾"],
+ ["uncategorised","cat-yellow","📦"]
 ];
 const META_MAP=Object.fromEntries(CAT_META.map((m,i)=>[m[0],{idx:i,cls:m[1],emo:m[2]}]));
 const UNC_META=META_MAP["uncategorised"];
@@ -143,60 +147,44 @@ const tabs=document.getElementById("sheetTabs"),
       container=document.getElementById("sheetContainer"),
       toast=document.getElementById("toast");
 
-/* ---------- THEME ---------- */
 document.getElementById("darkModeToggle").onclick=()=>document.body.classList.toggle("dark-mode");
 
-/* ---------- FETCH EXCEL ---------- */
+/* ---------- FETCH ---------- */
 fetch("myFile.xlsx").then(r=>r.arrayBuffer()).then(buf=>{
   wb=XLSX.read(buf,{type:"array"});
   Object.keys(wb.Sheets).forEach((n,i)=>{
-    const b=document.createElement("button");
-    b.textContent=n;b.dataset.sheet=n;
+    const b=document.createElement("button");b.textContent=n;b.dataset.sheet=n;
     b.onclick=()=>{setActive(n);buildSheet(n);}
     if(i===0){b.classList.add("active");buildSheet(n);}
     tabs.appendChild(b);
   });
 });
-
-/* ---------- TAB HIGHLIGHT ---------- */
-function setActive(n){[...tabs.children].forEach(b=>b.classList.toggle("active",b.dataset.sheet===n));}
-
-/* ---------- CATEGORY META ---------- */
-function metaFor(cat){
-  const key=cat.trim().toLowerCase();
-  return META_MAP[key]||UNC_META;
-}
+const setActive=n=>[...tabs.children].forEach(b=>b.classList.toggle("active",b.dataset.sheet===n));
+const metaFor=c=>META_MAP[c.trim().toLowerCase()]||UNC_META;
 
 /* ---------- BUILD SHEET ---------- */
-function buildSheet(sheetName){
-  const sh=wb.Sheets[sheetName];
-  const rows=XLSX.utils.sheet_to_json(sh,{header:1,defval:""});
+function buildSheet(name){
+  const sh=wb.Sheets[name], rows=XLSX.utils.sheet_to_json(sh,{header:1,defval:""});
   const header=rows[0].map(h=>String(h).trim()), catIdx=header.indexOf("Category");
   if(catIdx===-1){container.textContent='No "Category" column.';return;}
   const data=rows.slice(1);
-
-  /* search box */
   container.innerHTML="";
-  const searchDiv=document.createElement("div");
-  searchDiv.className="search-container";
-  searchDiv.innerHTML='<label class="search-label">Search items:</label>\
-  <input class="search-input" placeholder="Type to filter...">';
-  container.appendChild(searchDiv);
-  const searchInput=searchDiv.querySelector("input");
+  /* search box */
+  container.insertAdjacentHTML("afterbegin",
+    '<div class="search-container"><label class="search-label">Search items:</label>\
+    <input class="search-input" placeholder="Type to filter..."></div>');
+  const searchInput=container.querySelector(".search-input");
   const wrap=document.createElement("div");container.appendChild(wrap);
 
-  function render(arr){
+  const render=arr=>{
     wrap.innerHTML="";
-    const groups={};
-    arr.forEach(r=>{
+    const groups={};arr.forEach(r=>{
       const c=r[catIdx]||"Uncategorised";(groups[c]=groups[c]||[]).push(r);
     });
-    const cats=Object.keys(groups).sort((a,b)=>metaFor(a).idx-metaFor(b).idx);
-    cats.forEach(cat=>{
+    Object.keys(groups).sort((a,b)=>metaFor(a).idx-metaFor(b).idx).forEach(cat=>{
       const m=metaFor(cat);
       const det=document.createElement("details");det.open=false;det.className=m.cls;
-      const sum=document.createElement("summary");sum.textContent=`${m.emo}  ${cat}`;det.appendChild(sum);
-      /* table */
+      det.innerHTML=`<summary>${m.emo}&nbsp;&nbsp;${cat}</summary>`;
       const tbl=document.createElement("table");det.appendChild(tbl);
       const thead=document.createElement("thead");
       const hdr=header.slice();hdr.splice(catIdx,1);
@@ -206,10 +194,9 @@ function buildSheet(sheetName){
         const tr=document.createElement("tr");
         /* add btn */
         const tdBtn=document.createElement("td");
-        const add=document.createElement("button");
-        add.className="add-button";add.textContent="+";
-        add.onclick=()=>{addToBasket(r,header);showToast("Item added ✓",undoAdd);}
-        tdBtn.appendChild(add);tr.appendChild(tdBtn);
+        tdBtn.innerHTML='<button class="add-button">+</button>';
+        tdBtn.firstChild.onclick=()=>{addToBasket(r,header);showToast("Item added ✓",undoAdd);}
+        tr.appendChild(tdBtn);
         r.forEach((cell,i)=>{
           if(i===catIdx)return;
           const td=document.createElement("td"), h=header[i].toLowerCase();
@@ -228,7 +215,7 @@ function buildSheet(sheetName){
       });
       wrap.appendChild(det);
     });
-  }
+  };
   render(data);
   searchInput.oninput=()=>{
     const t=searchInput.value.toLowerCase();
@@ -237,11 +224,11 @@ function buildSheet(sheetName){
 }
 
 /* ---------- TOAST ---------- */
-function showToast(msg,undo){toast.textContent=msg;toast.classList.add("show");
-  if(undo){toast.style.cursor="pointer";toast.onclick=()=>{undo();hideToast();}}
+const showToast=(m,u)=>{toast.textContent=m;toast.classList.add("show");
+  if(u){toast.style.cursor="pointer";toast.onclick=()=>{u();hideToast();}}
   else{toast.style.cursor="default";toast.onclick=null;}
-  setTimeout(hideToast,TOAST_MS);}
-function hideToast(){toast.classList.remove("show");}
+  setTimeout(hideToast,TOAST_MS);};
+const hideToast=()=>toast.classList.remove("show");
 
 /* ---------- BASKET ---------- */
 const basketBody=document.querySelector("#basketTable tbody"),
@@ -271,16 +258,16 @@ function renderBasket(){
   basket.forEach((b,i)=>{
     const tr=document.createElement("tr");
     tr.innerHTML=`<td class="sort-handle">≡</td><td>${b.item}</td>`;
-    /* qty controls */
+    /* qty */
     const tdQty=document.createElement("td");
-    tdQty.innerHTML='<div class="qty-controls"><button>-</button>\
-      <input type="number" step="0.1" class="qty-input">\
-      <button>+</button></div>';
-    const [minus,input,plus]=tdQty.querySelectorAll("button,input,button");
-    input.value=b.qty;
+    tdQty.innerHTML=
+      '<div class="qty-controls"><button class="minus">-</button>\
+      <input type="number" step="0.1" class="qty-input" value="'+b.qty+'">\
+      <button class="plus">+</button></div>';
+    const minus=tdQty.querySelector(".minus"), plus=tdQty.querySelector(".plus"), inp=tdQty.querySelector("input");
     minus.onclick=()=>{b.qty=Math.max(1,b.qty-1);renderBasket();}
     plus.onclick =()=>{b.qty+=1;renderBasket();}
-    input.onchange=()=>{b.qty=Math.max(1,parseFloat(input.value)||1);renderBasket();}
+    inp.onchange =()=>{b.qty=Math.max(1,parseFloat(inp.value)||1);renderBasket();}
     tr.appendChild(tdQty);
     tr.innerHTML+=`<td style="font-weight:bold">${isNaN(b.ex)?"N/A":b.ex.toFixed(2)}</td>
     <td style="font-weight:bold">${isNaN(b.inc)?"N/A":b.inc.toFixed(2)}</td>`;
@@ -288,38 +275,40 @@ function renderBasket(){
     totE+=le;totI+=li;
     tr.innerHTML+=`<td>${isNaN(b.ex)?"N/A":le.toFixed(2)}</td>
     <td>${isNaN(b.inc)?"N/A":li.toFixed(2)}</td>`;
-    const tdDel=document.createElement("td");
-    tdDel.innerHTML='<span class="remove-btn">X</span>';
-    tdDel.firstChild.onclick=()=>{
+    const del=document.createElement("td");
+    del.innerHTML='<span class="remove-btn">X</span>';
+    del.firstChild.onclick=()=>{
       lastRemoved={b,i};tr.classList.add("fade-out");
-      setTimeout(()=>{basket.splice(i,1);renderBasket();showToast("Item removed ↩",undoRemove);},300);
+      setTimeout(()=>{basket.splice(i,1);renderBasket();
+        showToast("Item removed ↩",undoRemove);},300);
     };
-    tr.appendChild(tdDel);basketBody.appendChild(tr);
+    tr.appendChild(del);basketBody.appendChild(tr);
   });
-  basketFoot.innerHTML=`<tr><td colspan="5" style="text-align:right;font-weight:bold">Grand Totals:</td>
-  <td style="font-weight:bold">${totE.toFixed(2)}</td>
-  <td style="font-weight:bold">${totI.toFixed(2)}</td><td></td></tr>`;
-  Sortable.create(basketBody,{handle:".sort-handle",onEnd:()=>{basket=[...basketBody.children]
-    .map(r=>basket.find(b=>b.item===r.children[1].textContent));}});
+  basketFoot.innerHTML=
+    `<tr><td colspan="5" style="text-align:right;font-weight:bold">Grand Totals:</td>
+       <td style="font-weight:bold">${totE.toFixed(2)}</td>
+       <td style="font-weight:bold">${totI.toFixed(2)}</td><td></td></tr>`;
+  Sortable.create(basketBody,{handle:".sort-handle",onEnd:()=>{
+    basket=[...basketBody.children].map(r=>basket.find(b=>b.item===r.children[1].textContent));}});
 }
 
-/* ---------- CSV EXPORT ---------- */
+/* ---------- CSV ---------- */
 document.getElementById("exportCsvBtn").onclick=()=>{
   if(!basket.length)return;
-  const lines=[["Item","Quantity","Price Ex. GST","Price Inc. GST","Line Ex","Line Inc"]
-    .map(s=>`"${s}"`)];
+  const csv=[['"Item"','"Quantity"','"Price Ex. GST"','"Price Inc. GST"','"Line Ex"','"Line Inc"']];
   let tE=0,tI=0;
   basket.forEach(b=>{
-    const le=isNaN(b.ex)?0:b.qty*b.ex, li=isNaN(b.inc)?0:b.qty*b.inc; tE+=le; tI+=li;
-    lines.push([b.item,b.qty,isNaN(b.ex)?"N/A":b.ex.toFixed(2),
+    const le=isNaN(b.ex)?0:b.qty*b.ex, li=isNaN(b.inc)?0:b.qty*b.inc; tE+=le;tI+=li;
+    csv.push([b.item,b.qty,isNaN(b.ex)?"N/A":b.ex.toFixed(2),
       isNaN(b.inc)?"N/A":b.inc.toFixed(2),isNaN(b.ex)?"N/A":le.toFixed(2),
       isNaN(b.inc)?"N/A":li.toFixed(2)]
       .map(v=>`"${String(v).replace(/"/g,'""')}"`));
   });
-  lines.push(['','','',"\"Totals:\"",tE.toFixed(2),tI.toFixed(2)]);
-  const blob=new Blob([lines.map(l=>l.join(",")).join("\n")],{type:"text/csv"});
-  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="quote_basket.csv";
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  csv.push(['','','',"\"Totals:\"",tE.toFixed(2),tI.toFixed(2)]);
+  const blob=new Blob([csv.map(r=>r.join(",")).join("\n")],{type:"text/csv"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download="quote_basket.csv";document.body.appendChild(a);a.click();
+  document.body.removeChild(a);
 };
 })();
 </script>
