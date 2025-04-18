@@ -50,11 +50,13 @@ summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:.5rem
 padding:.4rem .6rem;border-radius:4px;background:var(--header);font-weight:bold}
 summary::-webkit-details-marker{display:none}
 summary:hover{background:var(--btn);color:#fff}
+
 .cat-orange summary{background:#ffe9d6}.cat-orange summary:hover{background:#ffc999;color:#000}
 .cat-blue   summary{background:#d8ebff}.cat-blue   summary:hover{background:#add6ff;color:#000}
 .cat-brown  summary{background:#f2e6d9}.cat-brown  summary:hover{background:#e0cbb9;color:#000}
 .cat-red    summary{background:#ffdede}.cat-red    summary:hover{background:#ffb7b7;color:#000}
 .cat-yellow summary{background:#fff8d6}.cat-yellow summary:hover{background:#ffea9f;color:#000}
+.cat-green  summary{background:#e6f9e5}.cat-green  summary:hover{background:#c4eac2;color:#000}
 
 /* ---------- BUTTONS ---------- */
 .add-button{background:var(--add);color:#fff;border:none;padding:.3rem .6rem;
@@ -87,7 +89,7 @@ padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 </head>
 <body>
 <h1>In A Minnit Pricing Tool 1.0</h1>
-<p><em>Beta – features subject to change. Check your work. Report bugs to Marco.</em></p>
+<p><em>Beta – features subject to change. Check your work. Report bugs to Marco.</em></p>
 <button id="darkModeToggle">Toggle Dark Mode</button>
 
 <div id="sheetTabs"></div>
@@ -122,8 +124,8 @@ padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 const PRICE_EX=["Rate Ex. GST","Price Ex. GST"], PRICE_INC="Price Inc. GST";
 const TOAST_MS=3000;
 
-/* master category list (order, colour, emoji – case‑insensitive key) */
-const CAT_META=[
+/* master meta for price‑list sheets */
+const PRICE_META=[
   ["bannister rail"                           ,"cat-orange","🛠️"],
   ["stainless steel grabrail"                 ,"cat-orange","🛠️"],
   ["aluminium grabrail, powder coated"        ,"cat-orange","🛠️"],
@@ -134,10 +136,19 @@ const CAT_META=[
   ["anti slip solutions"                      ,"cat-yellow","🥾"],
   ["uncategorised"                            ,"cat-yellow","📦"]
 ];
-const META_MAP=Object.fromEntries(CAT_META.map((m,i)=>[m[0],{idx:i,cls:m[1],emo:m[2]}]));
-const UNC_META=META_MAP["uncategorised"];
 
-/* ---------- STATE & DOM ---------- */
+/* meta for the Standard hrly rates sheet */
+const RATE_META=[
+  ["standard rates - property maintenance"    ,"cat-green","🛠️"],
+  ["standard rates - cleaning"                ,"cat-green","🧹"],
+  ["standard rates - plumbing"                ,"cat-green","🔧"],
+  ["standard rates - electrical"              ,"cat-green","⚡️"],
+  ["standard rates - weekend work"            ,"cat-green","📆"],
+  ["skip bin and trailer rates"               ,"cat-green","🚛"],
+  ["uncategorised"                            ,"cat-yellow","📦"]   /* fallback */
+];
+
+/* ---------- STATE ---------- */
 let wb=null,basket=[],lastRemoved=null,lastAdded=null;
 const tabs=document.getElementById("sheetTabs"),
       container=document.getElementById("sheetContainer"),
@@ -150,21 +161,27 @@ document.getElementById("darkModeToggle").onclick=()=>document.body.classList.to
 fetch("myFile.xlsx").then(r=>r.arrayBuffer()).then(buf=>{
   wb=XLSX.read(buf,{type:"array"});
   Object.keys(wb.Sheets).forEach((n,i)=>{
-    const b=document.createElement("button");
-    b.textContent=n;b.dataset.sheet=n;
-    b.onclick=()=>{setActive(n);buildSheet(n);}
-    if(i===0){b.classList.add("active");buildSheet(n);}
-    tabs.appendChild(b);
+    const btn=document.createElement("button");
+    btn.textContent=n;btn.dataset.sheet=n;
+    btn.onclick=()=>{setActive(n);buildSheet(n);}
+    if(i===0){btn.classList.add("active");buildSheet(n);}
+    tabs.appendChild(btn);
   });
 });
 
 /* ---------- TAB HIGHLIGHT ---------- */
 function setActive(n){[...tabs.children].forEach(b=>b.classList.toggle("active",b.dataset.sheet===n));}
 
-/* ---------- CATEGORY META ---------- */
-function metaFor(cat){
-  const key=cat.trim().toLowerCase();
-  return META_MAP[key]||UNC_META;
+/* ---------- META HANDLERS ---------- */
+function getMetaTable(sheetName){
+  return sheetName.toLowerCase().includes("standard")?RATE_META:PRICE_META;
+}
+function metaFor(sheetName,cat){
+  const norm=cat.trim().toLowerCase(), table=getMetaTable(sheetName);
+  const idx=table.findIndex(m=>m[0]===norm);
+  if(idx!==-1){const [k,cls,emo]=table[idx];return{idx,cls,emo};}
+  const unc=table.find(m=>m[0]==="uncategorised");
+  return {idx:table.length,cls:unc[1],emo:unc[2]};
 }
 
 /* ---------- BUILD SHEET ---------- */
@@ -191,12 +208,11 @@ function buildSheet(sheetName){
     arr.forEach(r=>{
       const c=r[catIdx]||"Uncategorised";(groups[c]=groups[c]||[]).push(r);
     });
-    const cats=Object.keys(groups).sort((a,b)=>metaFor(a).idx-metaFor(b).idx);
+    const cats=Object.keys(groups).sort((a,b)=>metaFor(sheetName,a).idx-metaFor(sheetName,b).idx);
     cats.forEach(cat=>{
-      const m=metaFor(cat);
+      const m=metaFor(sheetName,cat);
       const det=document.createElement("details");det.open=false;det.className=m.cls;
       const sum=document.createElement("summary");sum.textContent=`${m.emo}  ${cat}`;det.appendChild(sum);
-      /* table */
       const tbl=document.createElement("table");det.appendChild(tbl);
       const thead=document.createElement("thead");
       const hdr=header.slice();hdr.splice(catIdx,1);
@@ -204,7 +220,6 @@ function buildSheet(sheetName){
       const tbody=document.createElement("tbody");tbl.appendChild(tbody);
       groups[cat].forEach(r=>{
         const tr=document.createElement("tr");
-        /* add btn */
         const tdBtn=document.createElement("td");
         const add=document.createElement("button");
         add.className="add-button";add.textContent="+";
@@ -271,7 +286,6 @@ function renderBasket(){
   basket.forEach((b,i)=>{
     const tr=document.createElement("tr");
     tr.innerHTML=`<td class="sort-handle">≡</td><td>${b.item}</td>`;
-    /* qty controls */
     const tdQty=document.createElement("td");
     tdQty.innerHTML='<div class="qty-controls"><button>-</button>\
       <input type="number" step="0.1" class="qty-input">\
