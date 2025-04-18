@@ -18,8 +18,7 @@ h1{margin:.2rem 0}p{margin:0 0 2rem}
 
 /* ---------- DARK‑MODE BUTTON ---------- */
 #darkModeToggle{position:fixed;top:10px;right:10px;z-index:3000;
-background:var(--btn);color:#fff;border:none;padding:.5rem .75rem;border-radius:4px;
-cursor:pointer;transition:.3s}
+background:var(--btn);color:#fff;border:none;padding:.5rem .75rem;border-radius:4px;cursor:pointer}
 #darkModeToggle:hover{background:var(--btnh)}
 
 /* ---------- TABS ---------- */
@@ -32,14 +31,12 @@ font-size:1rem;color:var(--fg);cursor:pointer}
 .search-container{margin-bottom:1rem;padding:.5rem;background:var(--panel);
 border:1px solid var(--border);border-radius:4px}
 .search-label{font-weight:bold;margin-right:.5rem}
-.search-input{padding:.4rem;border:1px solid var(--border);border-radius:4px;
-width:200px;background:var(--panel);color:var(--fg)}
+.search-input{padding:.4rem;border:1px solid var(--border);border-radius:4px;width:200px;background:var(--panel);color:var(--fg)}
 .highlight{background:yellow}
 
 /* ---------- TABLES ---------- */
 table{border-collapse:collapse;width:100%}
-thead th{position:sticky;top:0;background:var(--header);border:1px solid var(--border);
-padding:.5rem;text-align:center;z-index:2}
+thead th{position:sticky;top:0;background:var(--header);border:1px solid var(--border);padding:.5rem;text-align:center;z-index:2}
 tbody td{border:1px solid var(--border);padding:.5rem}
 tbody tr:nth-child(even){background:var(--alt)!important}
 tbody tr:hover{background:#ccc}
@@ -50,7 +47,6 @@ summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:.5rem
 padding:.4rem .6rem;border-radius:4px;background:var(--header);font-weight:bold}
 summary::-webkit-details-marker{display:none}
 summary:hover{background:var(--btn);color:#fff}
-
 .cat-orange summary{background:#ffe9d6}.cat-orange summary:hover{background:#ffc999;color:#000}
 .cat-blue   summary{background:#d8ebff}.cat-blue   summary:hover{background:#add6ff;color:#000}
 .cat-brown  summary{background:#f2e6d9}.cat-brown  summary:hover{background:#e0cbb9;color:#000}
@@ -58,19 +54,15 @@ summary:hover{background:var(--btn);color:#fff}
 .cat-yellow summary{background:#fff8d6}.cat-yellow summary:hover{background:#ffea9f;color:#000}
 .cat-green  summary{background:#e6f9e5}.cat-green  summary:hover{background:#c4eac2;color:#000}
 
-/* ---------- BUTTONS ---------- */
-.add-button{background:var(--add);color:#fff;border:none;padding:.3rem .6rem;
-border-radius:4px;font-weight:bold;cursor:pointer;transition:.3s}
+/* ---------- ADD BUTTON ---------- */
+.add-button{background:var(--add);color:#fff;border:none;padding:.3rem .6rem;border-radius:4px;font-weight:bold;cursor:pointer}
 .add-button:hover{background:var(--addh)}
 
 /* ---------- BASKET ---------- */
-#basketContainer{position:fixed;bottom:0;left:0;right:0;max-height:40%;
-background:var(--panel);border-top:1px solid var(--border);padding:1rem;
-box-shadow:0 -2px 5px rgba(0,0,0,.1);z-index:1000;overflow-y:auto;transition:.3s}
+#basketContainer{position:fixed;bottom:0;left:0;right:0;max-height:40%;background:var(--panel);border-top:1px solid var(--border);padding:1rem;box-shadow:0 -2px 5px rgba(0,0,0,.1);z-index:1000;overflow-y:auto}
 #basketHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem}
 #basketHeader h3{margin:0}
-#basketHeader button{background:var(--btn);color:#fff;border:none;padding:.3rem .6rem;
-border-radius:4px;cursor:pointer;transition:.3s}
+#basketHeader button{background:var(--btn);color:#fff;border:none;padding:.3rem .6rem;border-radius:4px;cursor:pointer}
 #basketHeader button:hover{background:var(--btnh)}
 #basketTable th,#basketTable td{border:1px solid var(--border);padding:.5rem}
 #basketTable tbody tr:nth-child(even){background:var(--alt)!important}
@@ -79,8 +71,7 @@ border-radius:4px;cursor:pointer;transition:.3s}
 .remove-btn{color:red;font-weight:bold;cursor:pointer}
 
 /* ---------- TOAST ---------- */
-#toast{margin-left:1rem;background:var(--toast);color:var(--toastfg);
-padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
+#toast{margin-left:1rem;background:var(--toast);color:var(--toastfg);padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 #toast.show{opacity:1}
 
 /* ---------- COPY FLASH ---------- */
@@ -89,7 +80,7 @@ padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 </head>
 <body>
 <h1>In A Minnit Pricing Tool 1.0</h1>
-<p><em>Beta – features subject to change. Check your work. Report bugs to Marco.</em></p>
+<p><em>Beta – features subject to change. Check your work. Report bugs to Marco.</em></p>
 <button id="darkModeToggle">Toggle Dark Mode</button>
 
 <div id="sheetTabs"></div>
@@ -108,9 +99,7 @@ padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
   </div>
   <div id="basketContent">
     <table id="basketTable">
-      <thead><tr><th class="sort-handle">≡</th><th>Item</th><th>Quantity</th>
-        <th>Price Ex. GST</th><th>Price Inc. GST</th>
-        <th>Line Total Ex. GST</th><th>Line Total Inc. GST</th><th>Remove</th></tr></thead>
+      <thead><tr><th class="sort-handle">≡</th><th>Item</th><th>Quantity</th><th>Price Ex. GST</th><th>Price Inc. GST</th><th>Line Total Ex. GST</th><th>Line Total Inc. GST</th><th>Remove</th></tr></thead>
       <tbody></tbody><tfoot></tfoot>
     </table>
   </div>
@@ -120,164 +109,124 @@ padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
 (()=>{"use strict";
-/* ---------- CONSTANTS ---------- */
 const PRICE_EX=["Rate Ex. GST","Price Ex. GST"], PRICE_INC="Price Inc. GST";
 const TOAST_MS=3000;
 
-/* PRICE‑LIST META (8 sections) */
+/* ------------- CATEGORY META TABLES ------------- */
 const PRICE_META=[
-  ["bannister rail"                           ,"cat-orange","🛠️"],
-  ["stainless steel grabrail"                 ,"cat-orange","🛠️"],
-  ["aluminium grabrail, powder coated"        ,"cat-orange","🛠️"],
-  ["shower parts"                             ,"cat-blue"  ,"🚿"],
-  ["plumbing"                                 ,"cat-blue"  ,"🔧"],
-  ["door components"                          ,"cat-brown" ,"🚪"],
-  ["fire safety"                              ,"cat-red"   ,"🧯"],
-  ["anti slip solutions"                      ,"cat-yellow","🥾"],
-  ["travel"                                   ,"cat-green" ,"🛻"]   /* optional travel */
+  ["bannister rail","cat-orange","🛠️"],
+  ["stainless steel grabrail","cat-orange","🛠️"],
+  ["aluminium grabrail, powder coated","cat-orange","🛠️"],
+  ["shower parts","cat-blue","🚿"],
+  ["plumbing","cat-blue","🔧"],
+  ["door components","cat-brown","🚪"],
+  ["fire safety","cat-red","🧯"],
+  ["anti slip solutions","cat-yellow","🥾"],
+  ["travel","cat-green","🛻"]
 ];
-
-/* STANDARD‑RATES META (6 sections, all green) */
 const RATE_META=[
-  ["standard rates - property maintenance"    ,"cat-green","🛠️"],
-  ["standard rates - cleaning"                ,"cat-green","🧹"],
-  ["standard rates - plumbing"                ,"cat-green","🔧"],
-  ["standard rates - electrical"              ,"cat-green","⚡️"],
-  ["standard rates - weekend work"            ,"cat-green","📆"],
-  ["skip bin and trailer rates"               ,"cat-green","🚛"],
-  ["travel"                                   ,"cat-green","🛻"]   /* optional travel */
+  ["property maintenance","cat-green","🛠️"],
+  ["cleaning","cat-green","🧹"],
+  ["plumbing","cat-green","🔧"],
+  ["electrical","cat-green","⚡️"],
+  ["weekend work","cat-green","📆"],
+  ["skip bin","cat-green","🚛"],
+  ["travel","cat-green","🛻"]
 ];
+const mapOf=arr=>Object.fromEntries(arr.map((m,i)=>[m[0],{idx:i,cls:m[1],emo:m[2]}]));
+const PRICE_MAP=mapOf(PRICE_META), RATE_MAP=mapOf(RATE_META);
 
-/* ---------- UTILS ---------- */
-const mapFrom=(arr)=>Object.fromEntries(arr.map((m,i)=>[m[0],{idx:i,cls:m[1],emo:m[2]}]));
-const PRICE_MAP=mapFrom(PRICE_META), RATE_MAP=mapFrom(RATE_META);
-const normalise=s=>s.toLowerCase().replace(/\s+/g," ").trim();
+const norm=s=>s.toLowerCase().replace(/[^a-z0-9 ]+/g," ").replace(/\s+/g," ").trim();
 
-/* meta helper tolerant to minor text variations */
-function metaFor(sheetName, rawCat){
-  const tbl=sheetName.toLowerCase().includes("standard")?RATE_META:PRICE_META;
-  const map=sheetName.toLowerCase().includes("standard")?RATE_MAP:PRICE_MAP;
-  const norm=normalise(rawCat);
+/* tolerant matcher returns null if category should be skipped */
+function getMeta(sheetName, rawCat){
+  const table = sheetName.toLowerCase().includes("standard") ? RATE_META : PRICE_META;
+  const map   = sheetName.toLowerCase().includes("standard") ? RATE_MAP  : PRICE_MAP;
+  const n     = norm(rawCat);
 
-  /* exact or starts‑with */
-  for(const [key] of tbl){
-    if(norm===key||norm.startsWith(key))return map[key];
+  /* exact / contains match */
+  for(const [key] of table){
+    if(n===key || n.includes(key) || key.includes(n)) return map[key];
   }
   /* travel catch‑all */
-  if(norm.includes("travel"))return map["travel"];
-
-  return null;           // skip unknown categories
+  if(n.includes("travel")) return map["travel"];
+  return null;   // skip unknown row
 }
 
-/* ---------- STATE & DOM ---------- */
-let wb=null,basket=[],lastRemoved=null,lastAdded=null;
-const tabs=document.getElementById("sheetTabs"),
-      container=document.getElementById("sheetContainer"),
-      toast=document.getElementById("toast");
-
-/* ---------- THEME ---------- */
-document.getElementById("darkModeToggle")
-  .onclick=()=>document.body.classList.toggle("dark-mode");
-
-/* ---------- LOAD EXCEL ---------- */
-fetch("myFile.xlsx").then(r=>r.arrayBuffer()).then(buf=>{
-  wb=XLSX.read(buf,{type:"array"});
-  Object.keys(wb.Sheets).forEach((n,i)=>{
-    const b=document.createElement("button");b.textContent=n;b.dataset.sheet=n;
-    b.onclick=()=>{setActive(n);buildSheet(n)};
-    if(i===0){b.classList.add("active");buildSheet(n)}
-    tabs.appendChild(b);
-  });
-});
-
-/* ---------- TAB STYLE ---------- */
-const setActive=name=>[...tabs.children]
-  .forEach(b=>b.classList.toggle("active",b.dataset.sheet===name));
-
-/* ---------- BUILD SHEET ---------- */
-function buildSheet(sheetName){
-  const sheet=wb.Sheets[sheetName],
-        rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:""}),
-        header=rows[0].map(h=>String(h).trim()),
-        catIdx=header.indexOf("Category");
-  if(catIdx===-1){container.textContent='No "Category" column.';return;}
-
-  const searchBox=`<div class="search-container"><label class="search-label">Search items:</label>
-    <input class="search-input" placeholder="Type to filter..."></div><div id="sect"></div>`;
-  container.innerHTML=searchBox;
-  const searchInput=container.querySelector(".search-input"), sectWrap=document.getElementById("sect");
-  const body=rows.slice(1);
-
-  const build=(list,term="")=>{
-    sectWrap.innerHTML="";
-    const groups={};
-    list.forEach(r=>{
-      const meta=metaFor(sheetName,r[catIdx]||"");
-      if(!meta)return; (groups[r[catIdx]]??=[]).push(r);
-    });
-    const cats=Object.keys(groups).sort((a,b)=>metaFor(sheetName,a).idx-metaFor(sheetName,b).idx);
-
-    cats.forEach(cat=>{
-      const meta=metaFor(sheetName,cat);
-      const det=document.createElement("details");det.open=!!term;det.className=meta.cls;
-      det.innerHTML=`<summary>${meta.emo}&nbsp;&nbsp;${cat}</summary>`;
-      const tbl=document.createElement("table");det.appendChild(tbl);
-      const thead=document.createElement("thead");
-      const hdr=header.slice();hdr.splice(catIdx,1);
-      thead.innerHTML='<tr><th></th>'+hdr.map(h=>`<th>${h}</th>`).join("")+'</tr>';tbl.appendChild(thead);
-      const tbody=document.createElement("tbody");tbl.appendChild(tbody);
-
-      groups[cat].forEach(row=>{
-        const tr=document.createElement("tr");
-        tr.innerHTML='<td><button class="add-button">+</button></td>';
-        tr.querySelector("button").onclick=()=>{addToBasket(row,header);showToast("Item added ✓",undoAdd)};
-        row.forEach((cell,i)=>{
-          if(i===catIdx)return;
-          const td=document.createElement("td"), h=header[i].toLowerCase();
-          let txt=/price|gst|rate/.test(h)&&!isNaN(cell)?(+cell).toFixed(2):cell;
-          if(term)txt=txt.toString().replace(new RegExp(`(${term})`,"gi"),"<span class='highlight'>$1</span>");
-          td.innerHTML=txt; if(/price|gst|rate/.test(h))td.style.fontWeight="bold";
-          td.onclick=e=>{
-            if(e.target.tagName==="BUTTON")return;
-            navigator.clipboard.writeText(td.textContent).then(()=>{
-              td.classList.add("copied-cell");void td.offsetWidth;
-              setTimeout(()=>td.classList.remove("copied-cell"),150);
-            });
-          };
-          tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-      });
-      sectWrap.appendChild(det);
-    });
-  };
-
-  build(body);
-
-  searchInput.oninput=()=>{
-    const term=searchInput.value.trim().toLowerCase();
-    if(!term)return build(body);
-    const filtered=body.filter(r=>r.some(c=>String(c).toLowerCase().includes(term)));
-    build(filtered,term);
-  };
-}
+/* ------------- STATE & DOM ------------- */
+let wb=null,basket=[];
+const $=q=>document.querySelector(q), $$=q=>document.querySelectorAll(q);
+$("#darkModeToggle").onclick=()=>document.body.classList.toggle("dark-mode");
 
 /* ---------- TOAST ---------- */
-const showToast=(m,undo)=>{
-  toast.textContent=m;toast.classList.add("show");
+const toast=$("#toast");
+const showToast=(msg,undo)=>{
+  toast.textContent=msg;toast.classList.add("show");
   toast.style.cursor=undo?"pointer":"default";
   toast.onclick=undo?()=>{undo();toast.classList.remove("show");}:null;
   setTimeout(()=>toast.classList.remove("show"),TOAST_MS);
 };
 
+/* ---------- LOAD EXCEL ---------- */
+fetch("myFile.xlsx").then(r=>r.arrayBuffer()).then(buf=>{
+  wb=XLSX.read(buf,{type:"array"});
+  Object.keys(wb.Sheets).forEach((name,i)=>{
+    const btn=document.createElement("button");btn.textContent=name;
+    btn.onclick=()=>{setActive(btn);buildSheet(name)};
+    if(i===0){btn.classList.add("active");buildSheet(name)}
+    $("#sheetTabs").appendChild(btn);
+  });
+});
+const setActive=btn=>$$("#sheetTabs button").forEach(b=>b.classList.toggle("active",b===btn));
+
+/* ---------- BUILD SHEET ---------- */
+function buildSheet(name){
+  const rows=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:""});
+  const header=rows[0].map(h=>String(h).trim()); const catIdx=header.indexOf("Category");
+  if(catIdx===-1){$("#sheetContainer").textContent='No "Category" column.';return;}
+
+  $("#sheetContainer").innerHTML='<div class="search-container"><label class="search-label">Search items:</label>\
+    <input class="search-input" placeholder="Type to filter..."></div><div id="wrap"></div>';
+  const search=$("#sheetContainer .search-input"), wrap=$("#wrap");
+  const body=rows.slice(1);
+
+  const render=(arr,term="")=>{
+    wrap.innerHTML=""; const groups={};
+    arr.forEach(r=>{const meta=getMeta(name,r[catIdx]||""); if(meta){(groups[meta.idx]=groups[meta.idx]||[]).push([meta,r]);}});
+    Object.keys(groups).sort((a,b)=>a-b).forEach(idx=>{
+      const [meta]=groups[idx][0];
+      const det=document.createElement("details");det.open=!!term;det.className=meta.cls;
+      det.innerHTML=`<summary>${meta.emo}&nbsp;&nbsp;${groups[idx][0][1][catIdx]}</summary>`;
+      const tbl=document.createElement("table");det.appendChild(tbl);
+      tbl.innerHTML='<thead><tr><th></th>'+header.filter((_,i)=>i!==catIdx).map(h=>`<th>${h}</th>`).join("")+'</tr></thead><tbody></tbody>';
+      const tbody=tbl.querySelector("tbody");
+      groups[idx].forEach(([m,row])=>{
+        const tr=document.createElement("tr");
+        tr.innerHTML='<td><button class="add-button">+</button></td>'; tbody.appendChild(tr);
+        tr.querySelector("button").onclick=()=>{addToBasket(row,header);showToast("Item added ✓",undoAdd)};
+        row.forEach((cell,i)=>{
+          if(i===catIdx)return; const h=header[i].toLowerCase();
+          let txt=/price|gst|rate/.test(h)&&!isNaN(cell)?(+cell).toFixed(2):cell;
+          if(term)txt=txt.toString().replace(new RegExp(`(${term})`,"gi"),"<span class='highlight'>$1</span>");
+          const td=document.createElement("td");td.innerHTML=txt;if(/price|gst|rate/.test(h))td.style.fontWeight="bold";
+          td.onclick=e=>{if(e.target.tagName==="BUTTON")return;navigator.clipboard.writeText(td.textContent).then(()=>{td.classList.add("copied-cell");void td.offsetWidth;setTimeout(()=>td.classList.remove("copied-cell"),150);});};
+          tr.appendChild(td);
+        });
+      });
+      wrap.appendChild(det);
+    });
+  };
+  render(body);
+  search.oninput=()=>{const t=search.value.trim().toLowerCase();render(t?body.filter(r=>r.some(c=>String(c).toLowerCase().includes(t))):body,t);}
+}
+
 /* ---------- BASKET ---------- */
-const basketBody=document.querySelector("#basketTable tbody"),
-      basketFoot=document.querySelector("#basketTable tfoot");
-document.getElementById("toggleBasketBtn").onclick=e=>{
-  const bc=document.getElementById("basketContent");
-  bc.style.display=bc.style.display==="none"?"block":"none";
-  e.target.textContent=bc.style.display==="none"?"Show Basket":"Hide Basket";
+const basketBody=$("#basketTable tbody"), basketFoot=$("#basketTable tfoot");
+$("#toggleBasketBtn").onclick=e=>{
+  const c=$("#basketContent"); c.style.display=c.style.display==="none"?"block":"none";
+  e.target.textContent=c.style.display==="none"?"Show Basket":"Hide Basket";
 };
+let lastAdded=null,lastRemoved=null;
 function addToBasket(row,hdr){
   const item=row[hdr.indexOf("Item")]||"Item",
         ex=+row[hdr.findIndex(h=>PRICE_EX.includes(h))],
@@ -285,57 +234,44 @@ function addToBasket(row,hdr){
   let b=basket.find(x=>x.item===item); b?b.qty++:basket.push(b={item,qty:1,ex,inc});
   lastAdded=b; renderBasket();
 }
-function undoAdd(){if(lastAdded){lastAdded.qty>1?lastAdded.qty--:basket.splice(basket.indexOf(lastAdded),1);
-  lastAdded=null;renderBasket();}}
-function undoRemove(){if(lastRemoved){basket.splice(lastRemoved.i,0,lastRemoved.b);lastRemoved=null;renderBasket();}}
+const undoAdd=()=>{if(lastAdded){lastAdded.qty>1?lastAdded.qty--:basket.splice(basket.indexOf(lastAdded),1);lastAdded=null;renderBasket();}};
+const undoRemove=()=>{if(lastRemoved){basket.splice(lastRemoved.i,0,lastRemoved.b);lastRemoved=null;renderBasket();}};
 function renderBasket(){
-  if(!basket.length){document.getElementById("basketContainer").style.display="none";return;}
-  document.getElementById("basketContainer").style.display="block";
+  if(!basket.length){$("#basketContainer").style.display="none";return;} $("#basketContainer").style.display="block";
   basketBody.innerHTML=""; let tE=0,tI=0;
   basket.forEach((b,i)=>{
     const tr=document.createElement("tr");
     tr.innerHTML=`<td class="sort-handle">≡</td><td>${b.item}</td>`;
     const qtyTd=document.createElement("td");
-    qtyTd.innerHTML='<div class="qty-controls"><button>-</button>\
-      <input type="number" step="0.1" class="qty-input"><button>+</button></div>';
+    qtyTd.innerHTML='<div class="qty-controls"><button>-</button><input type="number" step="0.1" class="qty-input"><button>+</button></div>';
     const [minus,input,plus]=qtyTd.querySelectorAll("button,input,button");
-    input.value=b.qty;
-    minus.onclick=()=>{b.qty=Math.max(1,b.qty-1);renderBasket();};
-    plus.onclick =()=>{b.qty++;renderBasket();};
-    input.onchange=()=>{b.qty=Math.max(1,parseFloat(input.value)||1);renderBasket();};
+    input.value=b.qty; minus.onclick=()=>{b.qty=Math.max(1,b.qty-1);renderBasket();};
+    plus.onclick=()=>{b.qty++;renderBasket();}; input.onchange=()=>{b.qty=Math.max(1,parseFloat(input.value)||1);renderBasket();};
     tr.appendChild(qtyTd);
-    tr.innerHTML+=`<td style="font-weight:bold">${isNaN(b.ex)?"N/A":b.ex.toFixed(2)}</td>
-      <td style="font-weight:bold">${isNaN(b.inc)?"N/A":b.inc.toFixed(2)}</td>`;
+    tr.innerHTML+=`<td style="font-weight:bold">${isNaN(b.ex)?"N/A":b.ex.toFixed(2)}</td><td style="font-weight:bold">${isNaN(b.inc)?"N/A":b.inc.toFixed(2)}</td>`;
     const le=isNaN(b.ex)?0:b.qty*b.ex, li=isNaN(b.inc)?0:b.qty*b.inc; tE+=le; tI+=li;
     tr.innerHTML+=`<td>${isNaN(b.ex)?"N/A":le.toFixed(2)}</td><td>${isNaN(b.inc)?"N/A":li.toFixed(2)}</td>`;
-    const del=document.createElement("td");del.innerHTML='<span class="remove-btn">X</span>';
-    del.firstChild.onclick=()=>{lastRemoved={b,i};tr.classList.add("fade-out");
-      setTimeout(()=>{basket.splice(i,1);renderBasket();showToast("Item removed ↩",undoRemove);},300);};
+    const del=document.createElement("td"); del.innerHTML='<span class="remove-btn">X</span>';
+    del.firstChild.onclick=()=>{lastRemoved={b,i};tr.classList.add("fade-out");setTimeout(()=>{basket.splice(i,1);renderBasket();showToast("Item removed ↩",undoRemove);},300);};
     tr.appendChild(del); basketBody.appendChild(tr);
   });
-  basketFoot.innerHTML=`<tr><td colspan="5" style="text-align:right;font-weight:bold">Grand Totals:</td>
-    <td style="font-weight:bold">${tE.toFixed(2)}</td>
-    <td style="font-weight:bold">${tI.toFixed(2)}</td><td></td></tr>`;
-  Sortable.create(basketBody,{handle:".sort-handle",onEnd:()=>basket=[...basketBody.children]
-    .map(r=>basket.find(b=>b.item===r.children[1].textContent))});
+  basketFoot.innerHTML=`<tr><td colspan="5" style="text-align:right;font-weight:bold">Grand Totals:</td><td style="font-weight:bold">${tE.toFixed(2)}</td><td style="font-weight:bold">${tI.toFixed(2)}</td><td></td></tr>`;
+  Sortable.create(basketBody,{handle:".sort-handle",onEnd:()=>basket=[...basketBody.children].map(r=>basket.find(b=>b.item===r.children[1].textContent))});
 }
 
 /* ---------- CSV EXPORT ---------- */
-document.getElementById("exportCsvBtn").onclick=()=>{
+$("#exportCsvBtn").onclick=()=>{
   if(!basket.length)return;
-  const lines=[["Item","Quantity","Price Ex. GST","Price Inc. GST","Line Ex","Line Inc"]
-    .map(s=>`"${s}"`)];
-  let tE=0,tI=0;
+  const lines=[["Item","Quantity","Price Ex. GST","Price Inc. GST","Line Ex","Line Inc"].map(s=>`"${s}"`)];
+  let totE=0,totI=0;
   basket.forEach(b=>{
-    const le=isNaN(b.ex)?0:b.qty*b.ex, li=isNaN(b.inc)?0:b.qty*b.inc; tE+=le; tI+=li;
+    const le=isNaN(b.ex)?0:b.qty*b.ex, li=isNaN(b.inc)?0:b.qty*b.inc; totE+=le; totI+=li;
     lines.push([b.item,b.qty,isNaN(b.ex)?"N/A":b.ex.toFixed(2),isNaN(b.inc)?"N/A":b.inc.toFixed(2),
-      isNaN(b.ex)?"N/A":le.toFixed(2),isNaN(b.inc)?"N/A":li.toFixed(2)]
-      .map(v=>`"${String(v).replace(/"/g,'""')}"`));
+      isNaN(b.ex)?"N/A":le.toFixed(2),isNaN(b.inc)?"N/A":li.toFixed(2)].map(v=>`"${String(v).replace(/"/g,'""')}"`));
   });
-  lines.push(['','','',"\"Totals:\"",tE.toFixed(2),tI.toFixed(2)]);
+  lines.push(['','','',"\"Totals:\"",totE.toFixed(2),totI.toFixed(2)]);
   const blob=new Blob([lines.map(l=>l.join(",")).join("\n")],{type:"text/csv"});
-  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="quote_basket.csv";
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="quote_basket.csv";document.body.appendChild(a);a.click();document.body.removeChild(a);
 };
 })();
 </script>
