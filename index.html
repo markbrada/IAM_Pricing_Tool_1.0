@@ -124,7 +124,7 @@ padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 const PRICE_EX=["Rate Ex. GST","Price Ex. GST"], PRICE_INC="Price Inc. GST";
 const TOAST_MS=3000;
 
-/* master meta for price‑list sheets */
+/* price‑list sections */
 const PRICE_META=[
   ["bannister rail"                           ,"cat-orange","🛠️"],
   ["stainless steel grabrail"                 ,"cat-orange","🛠️"],
@@ -133,103 +133,102 @@ const PRICE_META=[
   ["plumbing"                                 ,"cat-blue"  ,"🔧"],
   ["door components"                          ,"cat-brown" ,"🚪"],
   ["fire safety"                              ,"cat-red"   ,"🧯"],
-  ["anti slip solutions"                      ,"cat-yellow","🥾"],
-  ["uncategorised"                            ,"cat-yellow","📦"]
+  ["anti slip solutions"                      ,"cat-yellow","🥾"]
 ];
 
-/* meta for the Standard hrly rates sheet */
+/* standard hrly rates sections */
 const RATE_META=[
   ["standard rates - property maintenance"    ,"cat-green","🛠️"],
   ["standard rates - cleaning"                ,"cat-green","🧹"],
   ["standard rates - plumbing"                ,"cat-green","🔧"],
   ["standard rates - electrical"              ,"cat-green","⚡️"],
   ["standard rates - weekend work"            ,"cat-green","📆"],
-  ["skip bin and trailer rates"               ,"cat-green","🚛"],
-  ["uncategorised"                            ,"cat-yellow","📦"]   /* fallback */
+  ["skip bin and trailer rates"               ,"cat-green","🚛"]
 ];
 
-/* ---------- STATE ---------- */
+/* travel category (light‑green truck) */
+PRICE_META.push(["travel","cat-green","🛻"]);
+RATE_META .push(["travel","cat-green","🛻"]);
+
+/* maps for quick lookup */
+function makeMap(arr){return Object.fromEntries(arr.map((m,i)=>[m[0],{idx:i,cls:m[1],emo:m[2]}]));}
+const PRICE_MAP=makeMap(PRICE_META), RATE_MAP=makeMap(RATE_META);
+
+/* ---------- STATE / DOM ---------- */
 let wb=null,basket=[],lastRemoved=null,lastAdded=null;
 const tabs=document.getElementById("sheetTabs"),
       container=document.getElementById("sheetContainer"),
       toast=document.getElementById("toast");
 
 /* ---------- THEME ---------- */
-document.getElementById("darkModeToggle").onclick=()=>document.body.classList.toggle("dark-mode");
+document.getElementById("darkModeToggle")
+  .onclick=()=>document.body.classList.toggle("dark-mode");
 
-/* ---------- FETCH EXCEL ---------- */
+/* ---------- LOAD EXCEL ---------- */
 fetch("myFile.xlsx").then(r=>r.arrayBuffer()).then(buf=>{
   wb=XLSX.read(buf,{type:"array"});
   Object.keys(wb.Sheets).forEach((n,i)=>{
-    const btn=document.createElement("button");
-    btn.textContent=n;btn.dataset.sheet=n;
-    btn.onclick=()=>{setActive(n);buildSheet(n);}
-    if(i===0){btn.classList.add("active");buildSheet(n);}
-    tabs.appendChild(btn);
+    const b=document.createElement("button");b.textContent=n;b.dataset.sheet=n;
+    b.onclick=()=>{setActive(n);buildSheet(n);};
+    if(i===0){b.classList.add("active");buildSheet(n);}tabs.appendChild(b);
   });
 });
 
-/* ---------- TAB HIGHLIGHT ---------- */
-function setActive(n){[...tabs.children].forEach(b=>b.classList.toggle("active",b.dataset.sheet===n));}
+/* ---------- ACTIVE TAB STYLING ---------- */
+function setActive(name){[...tabs.children].forEach(b=>b.classList.toggle("active",b.dataset.sheet===name));}
 
-/* ---------- META HANDLERS ---------- */
-function getMetaTable(sheetName){
-  return sheetName.toLowerCase().includes("standard")?RATE_META:PRICE_META;
-}
-function metaFor(sheetName,cat){
-  const norm=cat.trim().toLowerCase(), table=getMetaTable(sheetName);
-  const idx=table.findIndex(m=>m[0]===norm);
-  if(idx!==-1){const [k,cls,emo]=table[idx];return{idx,cls,emo};}
-  const unc=table.find(m=>m[0]==="uncategorised");
-  return {idx:table.length,cls:unc[1],emo:unc[2]};
+/* ---------- META HELPERS ---------- */
+function getMetaTable(sheet){return sheet.toLowerCase().includes("standard")?RATE_META:PRICE_META;}
+function getMetaMap(sheet){return sheet.toLowerCase().includes("standard")?RATE_MAP:PRICE_MAP;}
+function metaFor(sheet,cat){
+  const map=getMetaMap(sheet), key=cat.trim().toLowerCase();
+  return map[key]??(key.includes("travel")?map["travel"]:null); // null -> skip row
 }
 
 /* ---------- BUILD SHEET ---------- */
 function buildSheet(sheetName){
-  const sh=wb.Sheets[sheetName];
-  const rows=XLSX.utils.sheet_to_json(sh,{header:1,defval:""});
+  const sheet=wb.Sheets[sheetName];
+  const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:""});
   const header=rows[0].map(h=>String(h).trim()), catIdx=header.indexOf("Category");
   if(catIdx===-1){container.textContent='No "Category" column.';return;}
   const data=rows.slice(1);
 
-  /* search box */
+  /* search UI */
   container.innerHTML="";
-  const searchDiv=document.createElement("div");
-  searchDiv.className="search-container";
-  searchDiv.innerHTML='<label class="search-label">Search items:</label>\
-  <input class="search-input" placeholder="Type to filter...">';
-  container.appendChild(searchDiv);
-  const searchInput=searchDiv.querySelector("input");
-  const wrap=document.createElement("div");container.appendChild(wrap);
+  container.innerHTML='<div class="search-container"><label class="search-label">Search items:</label>\
+    <input class="search-input" placeholder="Type to filter..."></div><div id="sections"></div>';
+  const searchInput=container.querySelector(".search-input"), wrap=document.getElementById("sections");
 
-  function render(arr){
+  /* render helper */
+  function render(list,term=""){
     wrap.innerHTML="";
     const groups={};
-    arr.forEach(r=>{
-      const c=r[catIdx]||"Uncategorised";(groups[c]=groups[c]||[]).push(r);
+    list.forEach(r=>{
+      const cat=r[catIdx]||"";const m=metaFor(sheetName,cat);
+      if(!m)return; (groups[cat]=groups[cat]||[]).push(r);
     });
     const cats=Object.keys(groups).sort((a,b)=>metaFor(sheetName,a).idx-metaFor(sheetName,b).idx);
     cats.forEach(cat=>{
-      const m=metaFor(sheetName,cat);
-      const det=document.createElement("details");det.open=false;det.className=m.cls;
-      const sum=document.createElement("summary");sum.textContent=`${m.emo}  ${cat}`;det.appendChild(sum);
+      const meta=metaFor(sheetName,cat);
+      const det=document.createElement("details");det.className=meta.cls;det.open=!!term;
+      det.innerHTML=`<summary>${meta.emo}&nbsp;&nbsp;${cat}</summary>`;
       const tbl=document.createElement("table");det.appendChild(tbl);
       const thead=document.createElement("thead");
       const hdr=header.slice();hdr.splice(catIdx,1);
-      thead.innerHTML='<tr><th></th>'+hdr.map(h=>`<th>${h}</th>`).join("")+'</tr>';tbl.appendChild(thead);
+      thead.innerHTML='<tr><th></th>'+hdr.map(h=>`<th>${h}</th>`).join("")+'</tr>';
+      tbl.appendChild(thead);
       const tbody=document.createElement("tbody");tbl.appendChild(tbody);
-      groups[cat].forEach(r=>{
+      groups[cat].forEach(row=>{
         const tr=document.createElement("tr");
         const tdBtn=document.createElement("td");
-        const add=document.createElement("button");
-        add.className="add-button";add.textContent="+";
-        add.onclick=()=>{addToBasket(r,header);showToast("Item added ✓",undoAdd);}
-        tdBtn.appendChild(add);tr.appendChild(tdBtn);
-        r.forEach((cell,i)=>{
+        tdBtn.innerHTML='<button class="add-button">+</button>';tr.appendChild(tdBtn);
+        tdBtn.firstChild.onclick=()=>{addToBasket(row,header);showToast("Item added ✓",undoAdd);};
+        row.forEach((cell,i)=>{
           if(i===catIdx)return;
           const td=document.createElement("td"), h=header[i].toLowerCase();
           td.textContent=/price|gst|rate/.test(h)&&!isNaN(cell)?(+cell).toFixed(2):cell;
           if(/price|gst|rate/.test(h))td.style.fontWeight="bold";
+          if(term)td.innerHTML=td.textContent.replace(new RegExp(`(${term})`,"gi"),"<span class='highlight'>$1</span>");
           td.onclick=e=>{
             if(e.target.tagName==="BUTTON")return;
             navigator.clipboard.writeText(td.textContent).then(()=>{
@@ -244,10 +243,16 @@ function buildSheet(sheetName){
       wrap.appendChild(det);
     });
   }
+
+  /* initial render */
   render(data);
+
+  /* live search */
   searchInput.oninput=()=>{
-    const t=searchInput.value.toLowerCase();
-    render(t?data.filter(r=>r.some(c=>String(c).toLowerCase().includes(t))):data);
+    const t=searchInput.value.trim().toLowerCase();
+    if(!t){render(data);return;}
+    const filtered=data.filter(r=>r.some(c=>String(c).toLowerCase().includes(t)));
+    render(filtered,t);
   };
 }
 
@@ -255,8 +260,7 @@ function buildSheet(sheetName){
 function showToast(msg,undo){toast.textContent=msg;toast.classList.add("show");
   if(undo){toast.style.cursor="pointer";toast.onclick=()=>{undo();hideToast();}}
   else{toast.style.cursor="default";toast.onclick=null;}
-  setTimeout(hideToast,TOAST_MS);}
-function hideToast(){toast.classList.remove("show");}
+  setTimeout(hideToast,TOAST_MS);} function hideToast(){toast.classList.remove("show");}
 
 /* ---------- BASKET ---------- */
 const basketBody=document.querySelector("#basketTable tbody"),
@@ -266,19 +270,14 @@ document.getElementById("toggleBasketBtn").onclick=e=>{
   bc.style.display=bc.style.display==="none"?"block":"none";
   e.target.textContent=bc.style.display==="none"?"Show Basket":"Hide Basket";
 };
-function addToBasket(r,h){
-  const catIdx=h.indexOf("Category");
-  const item=r[h.indexOf("Item")]||r.find((_,i)=>i!==catIdx)||"Item";
-  const ex=+r[h.findIndex(x=>PRICE_EX.includes(x))];
-  const inc=+r[h.indexOf(PRICE_INC)];
-  const found=basket.find(x=>x.item===item);
-  if(found)found.qty+=1;else basket.push({item,qty:1,ex,inc});
-  lastAdded=found||basket[basket.length-1];renderBasket();
+function addToBasket(row,head){
+  const item=row[head.indexOf("Item")]||"Item", ex=+row[head.findIndex(h=>PRICE_EX.includes(h))],
+        inc=+row[head.indexOf(PRICE_INC)]; let b=basket.find(x=>x.item===item);
+  b?b.qty++:basket.push(b={item,qty:1,ex,inc}); lastAdded=b; renderBasket();
 }
 function undoAdd(){if(lastAdded){lastAdded.qty>1?lastAdded.qty--:basket.splice(basket.indexOf(lastAdded),1);
-  lastAdded=null;renderBasket();}}
-function undoRemove(){if(lastRemoved){basket.splice(lastRemoved.i,0,lastRemoved.b);lastRemoved=null;renderBasket();}}
-
+  lastAdded=null;renderBasket();}} function undoRemove(){if(lastRemoved){
+  basket.splice(lastRemoved.i,0,lastRemoved.b);lastRemoved=null;renderBasket();}}
 function renderBasket(){
   if(!basket.length){document.getElementById("basketContainer").style.display="none";return;}
   document.getElementById("basketContainer").style.display="block";
@@ -288,33 +287,28 @@ function renderBasket(){
     tr.innerHTML=`<td class="sort-handle">≡</td><td>${b.item}</td>`;
     const tdQty=document.createElement("td");
     tdQty.innerHTML='<div class="qty-controls"><button>-</button>\
-      <input type="number" step="0.1" class="qty-input">\
-      <button>+</button></div>';
+      <input type="number" step="0.1" class="qty-input"><button>+</button></div>';
     const [minus,input,plus]=tdQty.querySelectorAll("button,input,button");
-    input.value=b.qty;
-    minus.onclick=()=>{b.qty=Math.max(1,b.qty-1);renderBasket();}
-    plus.onclick =()=>{b.qty+=1;renderBasket();}
-    input.onchange=()=>{b.qty=Math.max(1,parseFloat(input.value)||1);renderBasket();}
+    input.value=b.qty; minus.onclick=()=>{b.qty=Math.max(1,b.qty-1);renderBasket();};
+    plus.onclick =()=>{b.qty++;renderBasket();};
+    input.onchange=()=>{b.qty=Math.max(1,parseFloat(input.value)||1);renderBasket();};
     tr.appendChild(tdQty);
     tr.innerHTML+=`<td style="font-weight:bold">${isNaN(b.ex)?"N/A":b.ex.toFixed(2)}</td>
-    <td style="font-weight:bold">${isNaN(b.inc)?"N/A":b.inc.toFixed(2)}</td>`;
-    const le=isNaN(b.ex)?0:b.qty*b.ex, li=isNaN(b.inc)?0:b.qty*b.inc;
-    totE+=le;totI+=li;
+                   <td style="font-weight:bold">${isNaN(b.inc)?"N/A":b.inc.toFixed(2)}</td>`;
+    const le=isNaN(b.ex)?0:b.qty*b.ex, li=isNaN(b.inc)?0:b.qty*b.inc; totE+=le; totI+=li;
     tr.innerHTML+=`<td>${isNaN(b.ex)?"N/A":le.toFixed(2)}</td>
-    <td>${isNaN(b.inc)?"N/A":li.toFixed(2)}</td>`;
+                   <td>${isNaN(b.inc)?"N/A":li.toFixed(2)}</td>`;
     const tdDel=document.createElement("td");
     tdDel.innerHTML='<span class="remove-btn">X</span>';
-    tdDel.firstChild.onclick=()=>{
-      lastRemoved={b,i};tr.classList.add("fade-out");
-      setTimeout(()=>{basket.splice(i,1);renderBasket();showToast("Item removed ↩",undoRemove);},300);
-    };
-    tr.appendChild(tdDel);basketBody.appendChild(tr);
+    tdDel.firstChild.onclick=()=>{lastRemoved={b,i};tr.classList.add("fade-out");
+      setTimeout(()=>{basket.splice(i,1);renderBasket();showToast("Item removed ↩",undoRemove);},300);};
+    tr.appendChild(tdDel); basketBody.appendChild(tr);
   });
   basketFoot.innerHTML=`<tr><td colspan="5" style="text-align:right;font-weight:bold">Grand Totals:</td>
-  <td style="font-weight:bold">${totE.toFixed(2)}</td>
-  <td style="font-weight:bold">${totI.toFixed(2)}</td><td></td></tr>`;
-  Sortable.create(basketBody,{handle:".sort-handle",onEnd:()=>{basket=[...basketBody.children]
-    .map(r=>basket.find(b=>b.item===r.children[1].textContent));}});
+    <td style="font-weight:bold">${totE.toFixed(2)}</td>
+    <td style="font-weight:bold">${totI.toFixed(2)}</td><td></td></tr>`;
+  Sortable.create(basketBody,{handle:".sort-handle",onEnd:()=>{
+    basket=[...basketBody.children].map(r=>basket.find(b=>b.item===r.children[1].textContent));}});
 }
 
 /* ---------- CSV EXPORT ---------- */
@@ -325,9 +319,8 @@ document.getElementById("exportCsvBtn").onclick=()=>{
   let tE=0,tI=0;
   basket.forEach(b=>{
     const le=isNaN(b.ex)?0:b.qty*b.ex, li=isNaN(b.inc)?0:b.qty*b.inc; tE+=le; tI+=li;
-    lines.push([b.item,b.qty,isNaN(b.ex)?"N/A":b.ex.toFixed(2),
-      isNaN(b.inc)?"N/A":b.inc.toFixed(2),isNaN(b.ex)?"N/A":le.toFixed(2),
-      isNaN(b.inc)?"N/A":li.toFixed(2)]
+    lines.push([b.item,b.qty,isNaN(b.ex)?"N/A":b.ex.toFixed(2),isNaN(b.inc)?"N/A":b.inc.toFixed(2),
+      isNaN(b.ex)?"N/A":le.toFixed(2),isNaN(b.inc)?"N/A":li.toFixed(2)]
       .map(v=>`"${String(v).replace(/"/g,'""')}"`));
   });
   lines.push(['','','',"\"Totals:\"",tE.toFixed(2),tI.toFixed(2)]);
