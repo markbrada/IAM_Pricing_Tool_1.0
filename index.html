@@ -1,835 +1,345 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <title>In A Minnit Pricing Tool 1.0</title>
-  <style>
-    /* ---------- CSS Variables for Themes ---------- */
-    :root {
-      --bg-color: #f7f7f7;
-      --text-color: #333;
-      --header-bg: #e0e0e0;
-      --button-bg: #007bff;
-      --button-hover-bg: #0056b3;
-      --add-btn-bg: #28a745;
-      --add-btn-hover-bg: #218838;
-      --basket-border: #aaa;
-      --row-alt: #f9f9f9;
-      --container-bg: #fff;
-      --toast-bg: #007bff;
-      --toast-text: #fff;
-    }
-    .dark-mode {
-      --bg-color: #222;
-      --text-color: #eee;
-      --header-bg: #444;
-      --button-bg: #0d6efd;
-      --button-hover-bg: #0a58ca;
-      --add-btn-bg: #198754;
-      --add-btn-hover-bg: #157347;
-      --basket-border: #555;
-      --row-alt: #2a2a2a;
-      --container-bg: #333;
-      --toast-bg: #0d6efd;
-      --toast-text: #fff;
-    }
-    
-    /* ---------- Global Styles ---------- */
-    body {
-      font-family: sans-serif;
-      margin: 1rem;
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      transition: background-color 0.3s, color 0.3s;
-    }
-    h1 {
-      margin-bottom: 0.2rem;
-    }
-    p {
-      margin-top: 0;
-      margin-bottom: 2rem;
-    }
-    
-    /* ---------- Dark Mode Toggle Button (fixed at top right) ---------- */
-    #darkModeToggle {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      background-color: var(--button-bg);
-      color: #fff;
-      border: none;
-      padding: 0.5rem 0.75rem;
-      border-radius: 4px;
-      cursor: pointer;
-      z-index: 3000;
-      transition: background-color 0.3s;
-    }
-    #darkModeToggle:hover {
-      background-color: var(--button-hover-bg);
-    }
-    
-    /* ---------- Tab-Based Navigation for Sheets ---------- */
-    #sheetTabs {
-      border-bottom: 1px solid var(--basket-border);
-      margin-bottom: 1rem;
-    }
-    #sheetTabs button {
-      background: none;
-      border: none;
-      padding: 0.5rem 1rem;
-      cursor: pointer;
-      font-size: 1rem;
-      margin-right: 0.5rem;
-      color: var(--text-color);
-    }
-    #sheetTabs button.active {
-      border-bottom: 2px solid var(--button-bg);
-      font-weight: bold;
-    }
-    
-    /* ---------- Main Sheet Container ---------- */
-    #sheetContainer {
-      margin-bottom: 160px; /* leave space for fixed basket */
-    }
-    #sheetContainer table {
-      border-collapse: collapse;
-      width: 100%;
-    }
-    /* Use sticky headers for the main table */
-    #sheetContainer thead th {
-      position: sticky;
-      top: 0;
-      background-color: var(--header-bg);
-      border: 1px solid var(--basket-border);
-      padding: 0.5rem;
-      text-align: center;
-      z-index: 2;
-    }
-    #sheetContainer tbody td {
-      border: 1px solid var(--basket-border);
-      padding: 0.5rem;
-      text-align: left;
-    }
-    /* Zebra striping for main table in all modes */
-    #sheetContainer tbody tr:nth-child(even) {
-      background-color: var(--row-alt) !important;
-    }
-    #sheetContainer tbody tr:hover {
-      background-color: #cccccc;
-    }
-    
-    /* ---------- Search Container ---------- */
-    .search-container {
-      margin-bottom: 1rem;
-      padding: 0.5rem;
-      background-color: var(--container-bg);
-      border: 1px solid var(--basket-border);
-      border-radius: 4px;
-    }
-    .search-label {
-      font-weight: bold;
-      margin-right: 0.5rem;
-      color: var(--text-color);
-    }
-    .search-input {
-      padding: 0.4rem;
-      border: 1px solid var(--basket-border);
-      border-radius: 4px;
-      width: 200px;
-      color: var(--text-color);
-      background-color: var(--container-bg);
-    }
-    .highlight {
-      background-color: yellow;
-    }
-    
-    /* ---------- "Add to Basket" Button in Main Table ---------- */
-    .add-button {
-      background-color: var(--add-btn-bg);
-      border: none;
-      color: #fff;
-      padding: 0.3rem 0.6rem;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: background-color 0.3s;
-    }
-    .add-button:hover {
-      background-color: var(--add-btn-hover-bg);
-    }
-    
-    /* ---------- Fixed Basket at Bottom ---------- */
-    #basketContainer {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background-color: var(--container-bg);
-      border-top: 1px solid var(--basket-border);
-      padding: 1rem;
-      box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
-      max-height: 40%;
-      overflow-y: auto;
-      z-index: 1000;
-      transition: background-color 0.3s, border-color 0.3s;
-    }
-    /* Basket Header with Export and Toggle Buttons */
-    #basketHeader {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.5rem;
-    }
-    #basketHeader h3 {
-      margin: 0;
-    }
-    #basketHeader button {
-      background-color: var(--button-bg);
-      color: #fff;
-      border: none;
-      padding: 0.3rem 0.6rem;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-    #basketHeader button:hover {
-      background-color: var(--button-hover-bg);
-    }
-    
-    /* ---------- Basket Table ---------- */
-    #basketTable {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    #basketTable th,
-    #basketTable td {
-      border: 1px solid var(--basket-border);
-      padding: 0.5rem;
-      text-align: left;
-      transition: border-color 0.3s;
-    }
-    /* Zebra striping for basket table in both themes */
-    #basketTable tbody tr:nth-child(even) {
-      background-color: var(--row-alt) !important;
-    }
-    
-    /* Sorting handle cell in basket */
-    .sort-handle {
-      cursor: move;
-      user-select: none;
-      -webkit-user-select: none;
-      touch-action: none;
-      text-align: center;
-      font-size: 1.2rem;
-      width: 2em;
-    }
-    
-    /* ---------- Quantity Controls in Basket ---------- */
-    .qty-controls {
-      display: flex;
-      align-items: center;
-    }
-    .qty-controls button {
-      margin: 0 5px;
-      cursor: pointer;
-    }
-    .qty-input {
-      width: 60px;
-      text-align: center;
-    }
-    .remove-btn {
-      color: red;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    
-    /* ---------- Toast Notification ---------- */
-    #toast {
-      position: fixed;
-      bottom: 60px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: var(--toast-bg);
-      color: var(--toast-text);
-      padding: 0.75rem 1.5rem;
-      border-radius: 4px;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      z-index: 2000;
-    }
-    #toast.show {
-      opacity: 1;
-    }
-    
-    /* ---------- Animations ---------- */
-    .basket-row {
-      transition: all 0.3s ease;
-    }
-    .fade-out {
-      opacity: 0;
-      transform: scale(0.9);
-    }
-    
-    /* ---------- Click-to-Copy Flash Effect ---------- */
-    .copied-cell {
-      background-color: #c8e6c9 !important;
-      transition: background-color 0.15s ease;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>In A Minnit Pricing Tool 1.0</title>
+<style>
+/* ---------- THEME VARIABLES ---------- */
+:root{
+  --bg:#f7f7f7;--fg:#333;--header:#e0e0e0;--btn:#007bff;--btnh:#0056b3;
+  --add:#28a745;--addh:#218838;--border:#aaa;--alt:#f9f9f9;--panel:#fff;
+  --toast:#007bff;--toastfg:#fff;
+}
+.dark-mode{
+  --bg:#222;--fg:#eee;--header:#444;--btn:#0d6efd;--btnh:#0a58ca;
+  --add:#198754;--addh:#157347;--border:#555;--alt:#2a2a2a;--panel:#333;
+  --toast:#0d6efd;--toastfg:#fff;
+}
+
+/* ---------- GLOBAL ---------- */
+body{font-family:sans-serif;margin:1rem;background:var(--bg);color:var(--fg);
+  transition:.3s background,.3s color;}
+h1{margin:.2rem 0}p{margin:0 0 2rem}
+
+/* ---------- DARK‑MODE TOGGLE (top‑right) ---------- */
+#darkModeToggle{position:fixed;top:10px;right:10px;z-index:3000;
+  background:var(--btn);color:#fff;border:none;padding:.5rem .75rem;
+  border-radius:4px;cursor:pointer;transition:.3s background}
+#darkModeToggle:hover{background:var(--btnh)}
+
+/* ---------- SHEET TABS ---------- */
+#sheetTabs{margin-bottom:1rem;border-bottom:1px solid var(--border)}
+#sheetTabs button{background:none;border:none;padding:.5rem 1rem;
+  cursor:pointer;font-size:1rem;margin-right:.5rem;color:var(--fg)}
+#sheetTabs button.active{border-bottom:2px solid var(--btn);font-weight:bold}
+
+/* ---------- SEARCH BOX ---------- */
+.search-container{margin-bottom:1rem;padding:.5rem;background:var(--panel);
+  border:1px solid var(--border);border-radius:4px}
+.search-label{font-weight:bold;margin-right:.5rem}
+.search-input{padding:.4rem;border:1px solid var(--border);border-radius:4px;
+  width:200px;background:var(--panel);color:var(--fg)}
+.highlight{background:yellow}
+
+/* ---------- TABLES ---------- */
+table{border-collapse:collapse;width:100%}
+thead th{position:sticky;top:0;background:var(--header);border:1px solid var(--border);
+  padding:.5rem;text-align:center;z-index:2}
+tbody td{border:1px solid var(--border);padding:.5rem;text-align:left}
+tbody tr:nth-child(even){background:var(--alt)!important}
+tbody tr:hover{background:#ccc}
+
+/* ---------- ADD BUTTON ---------- */
+.add-button{background:var(--add);color:#fff;border:none;padding:.3rem .6rem;
+  border-radius:4px;font-weight:bold;cursor:pointer;transition:.3s background}
+.add-button:hover{background:var(--addh)}
+
+/* ---------- BASKET PANEL ---------- */
+#basketContainer{position:fixed;bottom:0;left:0;right:0;z-index:1000;
+  max-height:40%;padding:1rem;background:var(--panel);border-top:1px solid var(--border);
+  box-shadow:0 -2px 5px rgba(0,0,0,.1);overflow-y:auto;transition:.3s}
+#basketHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem}
+#basketHeader h3{margin:0}
+#basketHeader button{background:var(--btn);color:#fff;border:none;
+  padding:.3rem .6rem;border-radius:4px;cursor:pointer;transition:.3s background}
+#basketHeader button:hover{background:var(--btnh)}
+#basketTable th,#basketTable td{border:1px solid var(--border);padding:.5rem}
+#basketTable tbody tr:nth-child(even){background:var(--alt)!important}
+.sort-handle{cursor:move;user-select:none;text-align:center;font-size:1.2rem;width:2em}
+.qty-controls{display:flex;align-items:center}
+.qty-input{width:60px;text-align:center}
+.remove-btn{color:red;font-weight:bold;cursor:pointer}
+
+/* ---------- COLLAPSIBLE SECTION HEADERS ---------- */
+details{margin-bottom:1rem}
+summary{list-style:none;cursor:pointer;display:flex;align-items:center;
+  gap:.5rem;padding:.4rem .6rem;border-radius:4px;background:var(--header);
+  font-weight:bold}
+summary::-webkit-details-marker{display:none}
+summary:hover{background:var(--btn);color:#fff;transition:.2s}
+
+/* subtle colour accents per section (add more if needed) */
+.cat-0 summary{background:#dfe7fd} .cat-0 summary:hover{background:#a6c1ff;color:#000}
+.cat-1 summary{background:#e2f7e1} .cat-1 summary:hover{background:#b8e6b5;color:#000}
+.cat-2 summary{background:#fff4d6} .cat-2 summary:hover{background:#ffe4a3;color:#000}
+
+/* ---------- TOAST (now beside title) ---------- */
+#toast{margin-left:1rem;padding:.3rem .6rem;border-radius:4px;
+  background:var(--toast);color:var(--toastfg);transition:.3s opacity;
+  opacity:0}
+#toast.show{opacity:1}
+
+/* ---------- COPY FLASH ---------- */
+.copied-cell{background:#c8e6c9!important;transition:.15s background}
+
+/* ---------- SMALL ANIM ---------- */
+.basket-row{transition:.3s}
+.fade-out{opacity:0;transform:scale(.9)}
+</style>
 </head>
 <body>
-  <h1>In A Minnit Pricing Tool 1.0</h1>
-  <p><em>Tap any cell to copy its content. Beta version – features subject to change. Always check your work. Report bugs to Marco.</em></p>
-  <button id="darkModeToggle">Toggle Dark Mode</button>
-  
-  <!-- Tab Navigation for Sheets -->
-  <div id="sheetTabs"></div>
-  
-  <!-- Main Sheet Content -->
-  <div id="sheetContainer"></div>
-  
-  <!-- Fixed Basket at Bottom -->
-  <div id="basketContainer">
-    <div id="basketHeader">
-      <h3>Quote Basket</h3>
-      <div>
-        <button id="exportCsvBtn">Export quote CSV</button>
-        <button id="toggleBasketBtn">Hide Basket</button>
-      </div>
+<h1>In A Minnit Pricing Tool 1.0</h1>
+<p><em>Beta – features subject to change. Check your work. Report bugs to Marco.</em></p>
+<button id="darkModeToggle">Toggle Dark Mode</button>
+
+<div id="sheetTabs"></div>
+<div id="sheetContainer"></div>
+
+<!-- BASKET -->
+<div id="basketContainer">
+  <div id="basketHeader">
+    <div style="display:flex;align-items:center;gap:.5rem">
+      <h3>Quote Basket</h3>
+      <span id="toast"></span>
     </div>
-    <div id="basketContent">
-      <table id="basketTable">
-        <thead>
-          <tr>
-            <th class="sort-handle">≡</th>
-            <th>Item</th>
-            <th>Quantity</th>
-            <th>Price Ex. GST</th>
-            <th>Price Inc. GST</th>
-            <th>Line Total Ex. GST</th>
-            <th>Line Total Inc. GST</th>
-            <th>Remove</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-        <tfoot></tfoot>
-      </table>
+    <div>
+      <button id="exportCsvBtn">Export quote CSV</button>
+      <button id="toggleBasketBtn">Hide Basket</button>
     </div>
   </div>
-  
-  <!-- Toast Notification -->
-  <div id="toast"></div>
-  
-  <!-- Include SheetJS Library -->
-  <script src="xlsx.full.min.js"></script>
-  <!-- Include SortableJS for drag-and-drop in basket -->
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-  
-  <script>
-    (function(){
-      "use strict";
-      
-      /* ---------------- CONFIGURATION ---------------- */
-      const PRICE_COLUMNS_EX = ["Rate Ex. GST", "Price Ex. GST"];
-      const PRICE_COLUMN_INC = "Price Inc. GST";
-      const TOAST_DURATION = 3000; // 3 seconds for toast notifications
-      let lastRemovedItem = null;
-      let lastAddedItemIndex = null;
-      
-      /* ---------------- GLOBAL VARIABLES ---------------- */
-      let workbookGlobal = null;
-      let basket = [];
-      
-      /* ---------------- DOM ELEMENTS ---------------- */
-      const sheetTabs = document.getElementById("sheetTabs");
-      const sheetContainer = document.getElementById("sheetContainer");
-      const basketContainer = document.getElementById("basketContainer");
-      const basketContent = document.getElementById("basketContent");
-      const basketTableBody = document.querySelector("#basketTable tbody");
-      const darkModeToggle = document.getElementById("darkModeToggle");
-      const toggleBasketBtn = document.getElementById("toggleBasketBtn");
-      const exportCsvBtn = document.getElementById("exportCsvBtn");
-      const toast = document.getElementById("toast");
-      
-      /* ---------------- THEME TOGGLE ---------------- */
-      darkModeToggle.addEventListener("click", () => {
-        document.body.classList.toggle("dark-mode");
-      });
-      
-      /* ---------------- TOGGLE BASKET VISIBILITY ---------------- */
-      toggleBasketBtn.addEventListener("click", () => {
-        if(basketContent.style.display === "none") {
-          basketContent.style.display = "block";
-          toggleBasketBtn.textContent = "Hide Basket";
-        } else {
-          basketContent.style.display = "none";
-          toggleBasketBtn.textContent = "Show Basket";
-        }
-      });
-      
-      /* ---------------- FETCH & PARSE EXCEL ---------------- */
-      fetch("myFile.xlsx")
-        .then(response => response.arrayBuffer())
-        .then(data => {
-          workbookGlobal = XLSX.read(data, { type: "array" });
-          const sheetNames = Object.keys(workbookGlobal.Sheets);
-          buildTabs(sheetNames);
-          if(sheetNames.length) {
-            setActiveTab(sheetNames[0]);
-            showSheet(sheetNames[0]);
-          }
-        })
-        .catch(err => {
-          console.error("Failed to fetch Excel file:", err);
-          sheetContainer.textContent = "Error fetching Excel file.";
-        });
-      
-      /* ---------------- TAB NAVIGATION ---------------- */
-      function buildTabs(sheetNames) {
-        sheetTabs.innerHTML = "";
-        sheetNames.forEach(name => {
-          const btn = document.createElement("button");
-          btn.textContent = name;
-          btn.dataset.sheetName = name;
-          btn.addEventListener("click", () => {
-            setActiveTab(name);
-            showSheet(name);
-          });
-          sheetTabs.appendChild(btn);
-        });
-      }
-      function setActiveTab(activeName) {
-        Array.from(sheetTabs.children).forEach(btn => {
-          btn.classList.toggle("active", btn.dataset.sheetName === activeName);
-        });
-      }
-      
-      /* ---------------- SHOW SHEET & BUILD MAIN TABLE ---------------- */
-      function showSheet(sheetName) {
-        const sheet = workbookGlobal.Sheets[sheetName];
-        let rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", blankrows: true });
-        const maxCols = Math.max(...rows.map(r => r.length));
-        rows.forEach(row => { while (row.length < maxCols) row.push(""); });
-        buildTable(rows);
-      }
-      
-      function buildTable(rows) {
-        sheetContainer.innerHTML = "";
-        const wrapper = document.createElement("div");
-        wrapper.classList.add("sheet-view");
-        sheetContainer.appendChild(wrapper);
-        
-        // Search Container with extra spacing
-        const searchDiv = document.createElement("div");
-        searchDiv.classList.add("search-container");
-        const searchLabel = document.createElement("label");
-        searchLabel.classList.add("search-label");
-        searchLabel.textContent = "Search items:";
-        const searchInput = document.createElement("input");
-        searchInput.type = "text";
-        searchInput.placeholder = "Type to filter...";
-        searchInput.classList.add("search-input");
-        searchDiv.appendChild(searchLabel);
-        searchDiv.appendChild(searchInput);
-        wrapper.appendChild(searchDiv);
-        
-        // Table Container
-        const tableContainer = document.createElement("div");
-        wrapper.appendChild(tableContainer);
-        
-        const headers = rows.length > 0 ? rows[0].map(h => String(h).trim()) : [];
-        
-        function buildFilteredTable(filteredRows) {
-          tableContainer.innerHTML = "";
-          const table = document.createElement("table");
-          
-          // Create thead for sticky header
-          const thead = document.createElement("thead");
-          const trHead = document.createElement("tr");
-          // Extra empty header cell for add-to-basket button
-          const emptyTh = document.createElement("th");
-          emptyTh.textContent = "";
-          trHead.appendChild(emptyTh);
-          filteredRows[0].forEach(cell => {
-            const th = document.createElement("th");
-            th.textContent = cell;
-            trHead.appendChild(th);
-          });
-          thead.appendChild(trHead);
-          table.appendChild(thead);
-          
-          // Create tbody for data rows
-          const tbody = document.createElement("tbody");
-          filteredRows.slice(1).forEach((row, i) => {
-            const tr = document.createElement("tr");
-            tr.classList.add("basket-row");
-            // Add green "Add to Basket" button at far left
-            const addCell = document.createElement("td");
-            const addBtn = document.createElement("button");
-            addBtn.classList.add("add-button");
-            addBtn.textContent = "+";
-            addBtn.addEventListener("click", () => {
-              addToBasket(filteredRows[i+1], headers);
-              showToast("Item added to basket", () => undoLastAddition());
+  <div id="basketContent">
+    <table id="basketTable">
+      <thead><tr>
+        <th class="sort-handle">≡</th><th>Item</th><th>Quantity</th>
+        <th>Price Ex. GST</th><th>Price Inc. GST</th>
+        <th>Line Total Ex. GST</th><th>Line Total Inc. GST</th><th>Remove</th>
+      </tr></thead>
+      <tbody></tbody><tfoot></tfoot>
+    </table>
+  </div>
+</div>
+
+<script src="xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+(()=>{"use strict";
+/* ---------- CONFIG ---------- */
+const PRICE_EX=["Rate Ex. GST","Price Ex. GST"], PRICE_INC="Price Inc. GST";
+const TOAST_MS=3000; const EMOJI_MAP=[ "🪵","🛠️","🔩","⚙️","📦" ]; // fallback emojis
+
+/* ---------- STATE ---------- */
+let wb=null,basket=[];let lastRemoved=null,lastAdded=null;
+const tabs=document.getElementById("sheetTabs"),
+      container=document.getElementById("sheetContainer"),
+      toast=document.getElementById("toast");
+
+/* ---------- HELPERS ---------- */
+const esc=v=>v==null?'""':`"${v.toString().replace(/"/g,'""')}"`;
+const emojiFor=cat=>{
+  const key=cat.toLowerCase();
+  if(key.includes("timber"))return"🪵";
+  if(key.includes("fix"))return"🛠️";
+  if(key.includes("fasten"))return"🔩";
+  if(key.includes("steel"))return"⚙️";
+  return"📦";
+};
+const showToast=(msg,undo)=>{
+  toast.textContent=msg;toast.classList.add("show");
+  if(undo){toast.style.cursor="pointer";toast.onclick=()=>{undo();hideToast();}}
+  else{toast.style.cursor="default";toast.onclick=null;}
+  setTimeout(hideToast,TOAST_MS);
+};
+const hideToast=()=>toast.classList.remove("show");
+
+/* ---------- THEME ---------- */
+document.getElementById("darkModeToggle").onclick=()=>document.body.classList.toggle("dark-mode");
+
+/* ---------- FETCH EXCEL ---------- */
+fetch("myFile.xlsx").then(r=>r.arrayBuffer()).then(buf=>{
+  wb=XLSX.read(buf,{type:"array"});
+  const names=Object.keys(wb.Sheets);
+  names.forEach((n,i)=>{
+    const b=document.createElement("button");
+    b.textContent=n;b.dataset.sheet=n;
+    b.onclick=()=>{setActive(n);buildSheet(n);}
+    if(i===0){b.classList.add("active");buildSheet(n);}
+    tabs.appendChild(b);
+  });
+});
+
+/* ---------- ACTIVE TAB ---------- */
+function setActive(n){
+  [...tabs.children].forEach(b=>b.classList.toggle("active",b.dataset.sheet===n));
+}
+
+/* ---------- BUILD SHEET ---------- */
+function buildSheet(name){
+  const sheet=wb.Sheets[name];
+  const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:"",blankrows:true});
+  const header=rows[0].map(h=>String(h).trim());
+  const catIdx=header.indexOf("Category");
+  if(catIdx===-1){container.textContent='No "Category" column.';return;}
+  const data=rows.slice(1);
+  container.innerHTML="";
+  const searchDiv=document.createElement("div");
+  searchDiv.className="search-container";
+  searchDiv.innerHTML=`<label class="search-label">Search items:</label>
+    <input type="text" class="search-input" placeholder="Type to filter...">`;
+  container.appendChild(searchDiv);
+  const searchInput=searchDiv.querySelector("input");
+  const sectionWrap=document.createElement("div");
+  container.appendChild(sectionWrap);
+  render(data);
+  searchInput.oninput=()=>render(data.filter(r=>{
+      const term=searchInput.value.toLowerCase();
+      if(!term)return true;
+      return r.some(c=>String(c).toLowerCase().includes(term));
+  }));
+  function render(rowsFiltered){
+    sectionWrap.innerHTML="";
+    const groups={};
+    rowsFiltered.forEach(r=>{
+      const cat=r[catIdx]||"Uncategorised";
+      (groups[cat]=groups[cat]||[]).push(r);
+    });
+    let colCounter=0;
+    Object.entries(groups).forEach(([cat,rows])=>{
+      const det=document.createElement("details");det.open=true;
+      det.className=`cat-${colCounter%3}`;
+      const sum=document.createElement("summary");
+      sum.textContent=`${emojiFor(cat)}  ${cat}`;
+      det.appendChild(sum);
+      const tbl=document.createElement("table");det.appendChild(tbl);
+      const thead=document.createElement("thead");
+      const hr=header.slice();hr.splice(catIdx,1);// remove Category col
+      thead.innerHTML="<tr><th></th>"+hr.map(h=>`<th>${h}</th>`).join("")+"</tr>";
+      tbl.appendChild(thead);
+      const tbody=document.createElement("tbody");tbl.appendChild(tbody);
+      rows.forEach(r=>{
+        const tr=document.createElement("tr");
+        // add button
+        const tdBtn=document.createElement("td");
+        const btn=document.createElement("button");
+        btn.className="add-button";btn.textContent="+";
+        btn.onclick=()=>{addToBasket(r,header);showToast("Item added ✓",undoAdd);}
+        tdBtn.appendChild(btn);tr.appendChild(tdBtn);
+        r.forEach((cell,i)=>{
+          if(i===catIdx)return; // skip Category col
+          const td=document.createElement("td");
+          const h=header[i].toLowerCase();
+          if(/price|gst|rate/.test(h)&&!isNaN(parseFloat(cell)))td.textContent=parseFloat(cell).toFixed(2);
+          else td.textContent=cell;
+          if(/price|gst|rate/.test(h))td.style.fontWeight="bold";
+          td.onclick=e=>{
+            if(e.target.tagName==="BUTTON")return;
+            navigator.clipboard.writeText(td.textContent).then(()=>{
+              td.classList.add("copied-cell");void td.offsetWidth;
+              setTimeout(()=>td.classList.remove("copied-cell"),150);
             });
-            addCell.appendChild(addBtn);
-            tr.appendChild(addCell);
-            
-            row.forEach((cellValue, colIndex) => {
-              const td = document.createElement("td");
-              let formatted = formatIfPrice(i+1, headers[colIndex], cellValue);
-              if(searchInput.value.trim() !== "") {
-                formatted = highlightText(formatted, searchInput.value.trim());
-                td.innerHTML = formatted;
-              } else {
-                td.textContent = formatted;
-              }
-              // Bold all price-related cells
-              if(headers[colIndex] && (/price|gst|rate/i).test(headers[colIndex])) {
-                td.style.fontWeight = "bold";
-              }
-              td.addEventListener("click", (e) => {
-                if(e.target.tagName.toLowerCase() === "button") return;
-                copyCellText(td);
-              });
-              tr.appendChild(td);
-            });
-            tbody.appendChild(tr);
-          });
-          table.appendChild(tbody);
-          tableContainer.appendChild(table);
-        }
-        
-        buildFilteredTable(rows);
-        
-        // Live search filtering with highlighting
-        searchInput.addEventListener("input", () => {
-          const term = searchInput.value.trim().toLowerCase();
-          if(!term) {
-            buildFilteredTable(rows);
-            return;
-          }
-          const filtered = rows.filter((r, i) => {
-            if(i === 0) return true;
-            return r.some(cell => String(cell).toLowerCase().includes(term));
-          });
-          buildFilteredTable(filtered);
-        });
-      }
-      
-      function formatIfPrice(rowIndex, colHeader, cellValue) {
-        if(rowIndex === 1) return cellValue;
-        const lower = (colHeader || "").toLowerCase();
-        if(/price|gst|rate/i.test(lower)) {
-          const num = parseFloat(cellValue);
-          if(!isNaN(num)) return num.toFixed(2);
-        }
-        return cellValue;
-      }
-      
-      function highlightText(text, term) {
-        if(!term) return text;
-        const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = new RegExp(`(${escapedTerm})`, "gi");
-        return text.toString().replace(regex, '<span class="highlight">$1</span>');
-      }
-      
-      function copyCellText(td) {
-        const text = td.textContent;
-        navigator.clipboard.writeText(text)
-          .then(() => {
-            td.classList.add("copied-cell");
-            void td.offsetWidth; // force reflow for snappy effect
-            setTimeout(() => td.classList.remove("copied-cell"), 150);
-          })
-          .catch(err => console.error("Clipboard error:", err));
-      }
-      
-      /* ---------------- BASKET FUNCTIONS ---------------- */
-      function addToBasket(row, headers) {
-        const itemName = row[0] || "Untitled";
-        let exPrice = null;
-        let incPrice = null;
-        for(let i = 0; i < headers.length; i++) {
-          const head = headers[i];
-          const val = parseFloat(row[i]);
-          if(PRICE_COLUMNS_EX.includes(head) && !isNaN(val)) {
-            exPrice = val;
-          }
-          if(head === PRICE_COLUMN_INC && !isNaN(val)) {
-            incPrice = val;
-          }
-        }
-        const existing = basket.find(it => it.itemName === itemName);
-        if(existing) {
-          existing.quantity = parseFloat(existing.quantity) + 1;
-          lastAddedItemIndex = basket.indexOf(existing);
-        } else {
-          basket.push({
-            itemName,
-            quantity: 1,
-            exPrice,
-            incPrice
-          });
-          lastAddedItemIndex = basket.length - 1;
-        }
-        renderBasket();
-      }
-      
-      function renderBasket() {
-        if(basket.length === 0) {
-          basketContainer.style.display = "none";
-          return;
-        }
-        basketContainer.style.display = "block";
-        basketTableBody.innerHTML = "";
-        let totalEx = 0;
-        let totalInc = 0;
-        basket.forEach((item, index) => {
-          const tr = document.createElement("tr");
-          tr.classList.add("basket-row");
-          
-          // Sorting handle cell
-          const sortTd = document.createElement("td");
-          sortTd.classList.add("sort-handle");
-          sortTd.textContent = "≡";
-          tr.appendChild(sortTd);
-          
-          // Item Name
-          const nameTd = document.createElement("td");
-          nameTd.textContent = item.itemName;
-          tr.appendChild(nameTd);
-          
-          // Quantity Controls
-          const qtyTd = document.createElement("td");
-          const qtyControls = document.createElement("div");
-          qtyControls.classList.add("qty-controls");
-          const minusBtn = document.createElement("button");
-          minusBtn.textContent = "-";
-          minusBtn.onclick = () => {
-            let q = parseFloat(item.quantity) || 1;
-            q = q - 1;
-            if(q < 1) q = 1;
-            item.quantity = q;
-            renderBasket();
           };
-          const qtyInput = document.createElement("input");
-          qtyInput.type = "number";
-          qtyInput.step = "0.1";
-          qtyInput.classList.add("qty-input");
-          qtyInput.value = item.quantity;
-          qtyInput.onchange = () => {
-            let val = parseFloat(qtyInput.value);
-            if(isNaN(val) || val < 1) val = 1;
-            item.quantity = val;
-            renderBasket();
-          };
-          const plusBtn = document.createElement("button");
-          plusBtn.textContent = "+";
-          plusBtn.onclick = () => {
-            let q = parseFloat(item.quantity) || 1;
-            q = q + 1;
-            item.quantity = q;
-            renderBasket();
-          };
-          qtyControls.appendChild(minusBtn);
-          qtyControls.appendChild(qtyInput);
-          qtyControls.appendChild(plusBtn);
-          qtyTd.appendChild(qtyControls);
-          tr.appendChild(qtyTd);
-          
-          // Price Ex. GST (bold)
-          const priceExTd = document.createElement("td");
-          priceExTd.textContent = item.exPrice !== null ? item.exPrice.toFixed(2) : "N/A";
-          priceExTd.style.fontWeight = "bold";
-          tr.appendChild(priceExTd);
-          
-          // Price Inc. GST (bold)
-          const priceIncTd = document.createElement("td");
-          priceIncTd.textContent = item.incPrice !== null ? item.incPrice.toFixed(2) : "N/A";
-          priceIncTd.style.fontWeight = "bold";
-          tr.appendChild(priceIncTd);
-          
-          // Line Total Ex. GST
-          const qVal = parseFloat(item.quantity) || 1;
-          const lineExTd = document.createElement("td");
-          if(item.exPrice !== null) {
-            const lineEx = qVal * item.exPrice;
-            lineExTd.textContent = lineEx.toFixed(2);
-            totalEx += lineEx;
-          } else {
-            lineExTd.textContent = "N/A";
-          }
-          tr.appendChild(lineExTd);
-          
-          // Line Total Inc. GST
-          const lineIncTd = document.createElement("td");
-          if(item.incPrice !== null) {
-            const lineInc = qVal * item.incPrice;
-            lineIncTd.textContent = lineInc.toFixed(2);
-            totalInc += lineInc;
-          } else {
-            lineIncTd.textContent = "N/A";
-          }
-          tr.appendChild(lineIncTd);
-          
-          // Remove Button with Undo Option
-          const removeTd = document.createElement("td");
-          const removeBtn = document.createElement("span");
-          removeBtn.textContent = "X";
-          removeBtn.classList.add("remove-btn");
-          removeBtn.onclick = () => {
-            tr.classList.add("fade-out");
-            setTimeout(() => {
-              lastRemovedItem = { item: item, index: index };
-              basket.splice(index, 1);
-              renderBasket();
-              showToast("Item removed. Click to undo.", () => undoRemoval());
-            }, 300);
-          };
-          removeTd.appendChild(removeBtn);
-          tr.appendChild(removeTd);
-          
-          basketTableBody.appendChild(tr);
+          tr.appendChild(td);
         });
-        // Create footer row for grand totals, shifted one cell to the right.
-        const tfoot = document.createElement("tfoot");
-        const tfootRow = document.createElement("tr");
-        // Span first 5 columns with label "Grand Totals:"
-        const spanCell = document.createElement("td");
-        spanCell.colSpan = 5;
-        spanCell.style.textAlign = "right";
-        spanCell.style.fontWeight = "bold";
-        spanCell.textContent = "Grand Totals:";
-        tfootRow.appendChild(spanCell);
-        // Grand Total Ex. GST
-        const totalExTd = document.createElement("td");
-        totalExTd.style.fontWeight = "bold";
-        totalExTd.textContent = totalEx.toFixed(2);
-        tfootRow.appendChild(totalExTd);
-        // Grand Total Inc. GST
-        const totalIncTd = document.createElement("td");
-        totalIncTd.style.fontWeight = "bold";
-        totalIncTd.textContent = totalInc.toFixed(2);
-        tfootRow.appendChild(totalIncTd);
-        // Empty cell for Remove column
-        const emptyCell = document.createElement("td");
-        tfootRow.appendChild(emptyCell);
-        tfoot.appendChild(tfootRow);
-        
-        // Remove existing footer if present, then append new footer
-        const basketTable = document.getElementById("basketTable");
-        const existingTfoot = basketTable.querySelector("tfoot");
-        if(existingTfoot) basketTable.removeChild(existingTfoot);
-        basketTable.appendChild(tfoot);
-        
-        // Enable drag-and-drop sorting using SortableJS with handle.
-        Sortable.create(basketTableBody, {
-          handle: '.sort-handle',
-          onEnd: updateBasketOrder
-        });
-      }
-      
-      function updateBasketOrder(evt) {
-        const newOrder = [];
-        Array.from(basketTableBody.children).forEach(row => {
-          // The item name is in the second cell (index 1) because the first cell is the sort handle.
-          const itemName = row.children[1].textContent;
-          const found = basket.find(item => item.itemName === itemName);
-          if(found) newOrder.push(found);
-        });
-        basket = newOrder;
-        renderBasket();
-      }
-      
-      /* ---------------- TOAST NOTIFICATIONS ---------------- */
-      function showToast(message, undoCallback) {
-        toast.textContent = message;
-        toast.classList.add("show");
-        if(undoCallback) {
-          toast.style.cursor = "pointer";
-          toast.onclick = () => {
-            undoCallback();
-            hideToast();
-          };
-        } else {
-          toast.style.cursor = "default";
-          toast.onclick = null;
-        }
-        setTimeout(() => { hideToast(); }, TOAST_DURATION);
-      }
-      function hideToast() {
-        toast.classList.remove("show");
-      }
-      
-      /* ---------------- UNDO FUNCTIONS ---------------- */
-      function undoRemoval() {
-        if(lastRemovedItem) {
-          basket.splice(lastRemovedItem.index, 0, lastRemovedItem.item);
-          renderBasket();
-          lastRemovedItem = null;
-        }
-      }
-      function undoLastAddition() {
-        if(typeof lastAddedItemIndex === "number") {
-          const item = basket[lastAddedItemIndex];
-          if(item) {
-            if(item.quantity > 1) {
-              item.quantity = parseFloat(item.quantity) - 1;
-            } else {
-              basket.splice(lastAddedItemIndex, 1);
-            }
-            renderBasket();
-          }
-          lastAddedItemIndex = null;
-        }
-      }
-      
-      /* ---------------- CSV EXPORT FUNCTION (FIELDS ALWAYS QUOTED) ---------------- */
-      function csvEscape(value) {
-        if (value === null || value === undefined) return '""';
-        let str = value.toString();
-        str = str.replace(/"/g, '""');
-        return `"${str}"`;
-      }
-      
-      exportCsvBtn.onclick = () => {
-        if(basket.length === 0) return;
-        const lines = [];
-        const header = ["Item","Quantity","Price Ex. GST","Price Inc. GST","Line Ex","Line Inc"];
-        lines.push(header.map(csvEscape));
-        let totalEx = 0;
-        let totalInc = 0;
-        basket.forEach(item => {
-          const q = parseFloat(item.quantity) || 1;
-          const lineEx = (item.exPrice !== null) ? q * item.exPrice : 0;
-          const lineInc = (item.incPrice !== null) ? q * item.incPrice : 0;
-          totalEx += lineEx;
-          totalInc += lineInc;
-          const row = [
-            item.itemName,
-            String(q),
-            item.exPrice !== null ? item.exPrice.toFixed(2) : "N/A",
-            item.incPrice !== null ? item.incPrice.toFixed(2) : "N/A",
-            item.exPrice !== null ? lineEx.toFixed(2) : "N/A",
-            item.incPrice !== null ? lineInc.toFixed(2) : "N/A"
-          ];
-          lines.push(row.map(csvEscape));
-        });
-        const totalsRow = ["", "", "", "Totals:", totalEx.toFixed(2), totalInc.toFixed(2)];
-        lines.push(totalsRow.map(csvEscape));
-        const csvContent = lines.map(line => line.join(",")).join("\n");
-        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "quote_basket.csv";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      };
-      
-    })();
-  </script>
+        tbody.appendChild(tr);
+      });
+      sectionWrap.appendChild(det);
+      colCounter++;
+    });
+  }
+}
+
+/* ---------- BASKET ---------- */
+const basketBody=document.querySelector("#basketTable tbody");
+const basketFoot=document.querySelector("#basketTable tfoot");
+document.getElementById("toggleBasketBtn").onclick=()=>{
+  const cont=document.getElementById("basketContent");
+  cont.style.display=cont.style.display==="none"?"block":"none";
+  event.target.textContent=cont.style.display==="none"?"Show Basket":"Hide Basket";
+};
+function addToBasket(row,header){
+  const catIdx=header.indexOf("Category");
+  const item=row.filter((_,i)=>i!==catIdx)[0]||"Item";
+  const exIdx=header.findIndex(h=>PRICE_EX.includes(h));
+  const incIdx=header.indexOf(PRICE_INC);
+  const ex=parseFloat(row[exIdx]);const inc=parseFloat(row[incIdx]);
+  const existing=basket.find(b=>b.item===item);
+  if(existing){existing.qty+=1;lastAdded=existing;}
+  else{basket.push({item,qty:1,ex,is:inc});lastAdded=basket[basket.length-1];}
+  renderBasket();
+}
+function undoAdd(){
+  if(!lastAdded)return;
+  if(lastAdded.qty>1)lastAdded.qty-=1;
+  else basket=basket.filter(b=>b!==lastAdded);
+  lastAdded=null;renderBasket();
+}
+function renderBasket(){
+  if(!basket.length){document.getElementById("basketContainer").style.display="none";return;}
+  document.getElementById("basketContainer").style.display="block";
+  basketBody.innerHTML="";
+  let totEx=0,totInc=0;
+  basket.forEach((b,i)=>{
+    const tr=document.createElement("tr");tr.className="basket-row";
+    const handle=document.createElement("td");handle.className="sort-handle";handle.textContent="≡";tr.appendChild(handle);
+    tr.innerHTML+=`<td>${b.item}</td>`;
+    const tdQty=document.createElement("td");
+    tdQty.innerHTML=`<div class="qty-controls">
+      <button>-</button><input type="number" step="0.1" class="qty-input" value="${b.qty}">
+      <button>+</button></div>`;
+    const [minus,input,plus]=tdQty.querySelectorAll("button,input,button");
+    minus.onclick=()=>{b.qty=Math.max(1,b.qty-1);renderBasket();}
+    plus.onclick=()=>{b.qty+=1;renderBasket();}
+    input.onchange=()=>{b.qty=Math.max(1,parseFloat(input.value)||1);renderBasket();}
+    tr.appendChild(tdQty);
+    tr.innerHTML+=`<td style="font-weight:bold">${isNaN(b.ex)?"N/A":b.ex.toFixed(2)}</td>
+                   <td style="font-weight:bold">${isNaN(b.is)?"N/A":b.is.toFixed(2)}</td>`;
+    const lineEx=isNaN(b.ex)?0:b.qty*b.ex;const lineInc=isNaN(b.is)?0:b.qty*b.is;
+    totEx+=lineEx;totInc+=lineInc;
+    tr.innerHTML+=`<td>${isNaN(b.ex)?"N/A":lineEx.toFixed(2)}</td>
+                   <td>${isNaN(b.is)?"N/A":lineInc.toFixed(2)}</td>`;
+    const tdRem=document.createElement("td");
+    tdRem.innerHTML='<span class="remove-btn">X</span>';
+    tdRem.firstChild.onclick=()=>{
+      lastRemoved={b,i};tr.classList.add("fade-out");
+      setTimeout(()=>{basket.splice(i,1);renderBasket();
+        showToast("Item removed ↩",undoRemove);},300);
+    };
+    tr.appendChild(tdRem);basketBody.appendChild(tr);
+  });
+  basketFoot.innerHTML=`<tr><td colspan="5" style="text-align:right;font-weight:bold">Grand Totals:</td>
+    <td style="font-weight:bold">${totEx.toFixed(2)}</td>
+    <td style="font-weight:bold">${totInc.toFixed(2)}</td><td></td></tr>`;
+  Sortable.create(basketBody,{handle:".sort-handle",onEnd:()=>{basket=[...basketBody.children]
+    .map(r=>basket.find(b=>b.item===r.children[1].textContent));}});
+}
+function undoRemove(){if(lastRemoved){basket.splice(lastRemoved.i,0,lastRemoved.b);lastRemoved=null;renderBasket();}}
+
+/* ---------- CSV EXPORT ---------- */
+document.getElementById("exportCsvBtn").onclick=()=>{
+  if(!basket.length)return;
+  const lines=[["Item","Quantity","Price Ex. GST","Price Inc. GST","Line Ex","Line Inc"].map(esc)];
+  let tE=0,tI=0;
+  basket.forEach(b=>{
+    const le=isNaN(b.ex)?0:b.qty*b.ex,li=isNaN(b.is)?0:b.qty*b.is;tE+=le;tI+=li;
+    lines.push([b.item,b.qty.toString(),isNaN(b.ex)?"N/A":b.ex.toFixed(2),
+      isNaN(b.is)?"N/A":b.is.toFixed(2),isNaN(b.ex)?"N/A":le.toFixed(2),
+      isNaN(b.is)?"N/A":li.toFixed(2)].map(esc));
+  });
+  lines.push(["","","","Totals:",tE.toFixed(2),tI.toFixed(2)].map(esc));
+  const blob=new Blob([lines.map(l=>l.join(",")).join("\n")],{type:"text/csv"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="quote_basket.csv";
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+};
+})();
+</script>
 </body>
 </html>
