@@ -6,36 +6,33 @@
 <style>
 /* ---------- THEME VARS ---------- */
 :root{
-  --bg:#f7f7f7;--fg:#333;
+  --bg:#f7f7f7; --fg:#333;
   --header:#e0e0e0;
-  --btn:#007bff;--btn-hover:#0056b3;--btn-fg:#fff;
-  --border:#aaa;--alt:#f9f9f9;--panel:#fff;
+  --btn-bg:#007bff; --btn-bg-hover:#0056b3; --btn-fg:#fff;
+  --border:#aaa; --alt:#f9f9f9; --panel:#fff;
 }
 .dark-mode{
-  --bg:#222;--fg:#eee;
+  --bg:#222; --fg:#eee;
   --header:#444;
-  /* lighter blue so contrast is good on dark bg */
-  --btn:#3f8cff;--btn-hover:#2d75e6;--btn-fg:#fff;
-  --border:#555;--alt:#2a2a2a;--panel:#333;
+  --btn-bg:#3f8cff; --btn-bg-hover:#2d75e6; --btn-fg:#fff;
+  --border:#555; --alt:#2a2a2a; --panel:#333;
 }
 
 /* ---------- GLOBAL ---------- */
 body{font-family:sans-serif;margin:1rem;background:var(--bg);color:var(--fg);transition:.3s}
 h1{margin:.2rem 0}p{margin:0 0 2rem}
 
-/* ---------- DARK‑MODE BUTTON ---------- */
-#darkModeToggle{position:fixed;top:10px;right:10px;z-index:3000;
-  background:var(--btn);color:var(--btn-fg);border:none;padding:.5rem .75rem;
-  border-radius:4px;cursor:pointer;transition:.3s}
-#darkModeToggle:hover{background:var(--btn-hover)}
+#darkModeToggle{
+  position:fixed;top:10px;right:10px;z-index:3000;
+  background:var(--btn-bg);color:var(--btn-fg);border:none;
+  padding:.5rem .75rem;border-radius:4px;cursor:pointer;transition:.3s}
+#darkModeToggle:hover{background:var(--btn-bg-hover)}
 
-/* ---------- TABS ---------- */
 #sheetTabs{border-bottom:1px solid var(--border);margin-bottom:1rem}
 #sheetTabs button{background:none;border:none;padding:.5rem 1rem;margin-right:.5rem;
   font-size:1rem;color:var(--fg);cursor:pointer}
-#sheetTabs button.active{border-bottom:2px solid var(--btn);font-weight:bold}
+#sheetTabs button.active{border-bottom:2px solid var(--btn-bg);font-weight:bold}
 
-/* ---------- SEARCH BOX ---------- */
 .search-container{margin-bottom:1rem;padding:.5rem;background:var(--panel);
   border:1px solid var(--border);border-radius:4px}
 .search-label{font-weight:bold;margin-right:.5rem}
@@ -43,10 +40,8 @@ h1{margin:.2rem 0}p{margin:0 0 2rem}
   width:200px;background:var(--panel);color:var(--fg)}
 .highlight{background:yellow}
 
-/* ---------- SHEET AREA ---------- */
 #sheetContainer{padding-bottom:20vh}
 
-/* ---------- TABLES ---------- */
 table{border-collapse:collapse;width:100%}
 thead th{position:sticky;top:0;background:var(--header);border:1px solid var(--border);
   padding:.5rem;text-align:center;z-index:2}
@@ -54,7 +49,6 @@ tbody td{border:1px solid var(--border);padding:.5rem}
 tbody tr:nth-child(even){background:var(--alt)!important}
 tbody tr:hover{background:#ccc}
 
-/* ---------- SECTION HEADERS ---------- */
 details{margin-bottom:1rem}
 summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:.5rem;
   padding:.4rem .6rem;border-radius:4px;background:var(--header);font-weight:bold;color:#000}
@@ -66,19 +60,20 @@ summary::-webkit-details-marker{display:none}
 .cat-yellow summary{background:#fff8d6}
 .cat-green  summary{background:#e6f9e5}
 
-/* ---------- COPY FLASH ---------- */
 .copied-cell{background:#c8e6c9!important;transition:.15s}
 </style>
 </head>
 <body>
 <h1>In A Minnit Pricing Tool 1.0</h1>
 <p><em>Beta – features subject to change. Check your work. Report bugs to Marco.</em></p>
-<button id="darkModeToggle" aria-label="Toggle dark mode" aria-pressed="false">Toggle Dark Mode</button>
+<button id="darkModeToggle"
+        aria-label="Toggle dark mode"
+        aria-pressed="false">Toggle Dark Mode</button>
 
 <div id="sheetTabs"></div>
 <div id="sheetContainer"></div>
 
-<!-- use SheetJS mini (~180 kB gzipped) -->
+<!-- SheetJS mini build -->
 <script src="xlsx.mini.min.js"></script>
 <script>
 (()=>{"use strict";
@@ -103,56 +98,53 @@ const RATES_META=[
  ["standard rates - weekend work","cat-green","📆"],
  ["skip bin and trailer rates","cat-green","🚛"]
 ];
-
-/* helper: prefix match */
-const metaLookup=(str,table,unc)=>{
+const prefixMeta=(str,list,unc)=>{
   const norm=str.trim().toLowerCase();
-  for(const [key,cls,emo] of table){
-    if(norm.startsWith(key))return {idx:table.indexOf([key,cls,emo]),cls,emo};
-  }
+  for(const [key,cls,emo] of list) if(norm.startsWith(key))return {idx:list.indexOf([key,cls,emo]),cls,emo};
   return unc;
 };
-const PRICE_UNC=metaLookup("uncategorised",PRICE_META);
+const UNC_PRICE=prefixMeta("uncategorised",PRICE_META);
 
+/* ---------- STATE ---------- */
 let wb=null;
-const tabs=document.getElementById("sheetTabs"),
+const sheetTabs=document.getElementById("sheetTabs"),
       container=document.getElementById("sheetContainer"),
-      darkToggle=document.getElementById("darkModeToggle");
+      darkBtn=document.getElementById("darkModeToggle");
 
-darkToggle.onclick=()=>{
+darkBtn.onclick=()=>{
   const on=document.body.classList.toggle("dark-mode");
-  darkToggle.setAttribute("aria-pressed",on);
+  darkBtn.setAttribute("aria-pressed",on);
 };
 
-/* ---------- LOAD SHEETS ---------- */
+/* ---------- LOAD ---------- */
 fetch("myFile.xlsx").then(r=>r.arrayBuffer()).then(buf=>{
   wb=XLSX.read(buf,{type:"array"});
-  Object.keys(wb.Sheets).forEach((n,i)=>{
+  Object.keys(wb.Sheets).forEach((name,i)=>{
     const btn=document.createElement("button");
-    btn.textContent=n;btn.dataset.sheet=n;
-    btn.onclick=()=>{selectTab(n);renderSheet(n);}
-    if(i===0){btn.classList.add("active");renderSheet(n);}
-    tabs.appendChild(btn);
+    btn.textContent=name;btn.dataset.sheet=name;
+    btn.onclick=()=>{markTab(name);showSheet(name);}
+    if(i===0){btn.classList.add("active");showSheet(name);}
+    sheetTabs.appendChild(btn);
   });
 });
-const selectTab=n=>[...tabs.children].forEach(b=>b.classList.toggle("active",b.dataset.sheet===n));
+const markTab=name=>[...sheetTabs.children].forEach(b=>b.classList.toggle("active",b.dataset.sheet===name));
 
-/* ---------- RENDER SHEET ---------- */
-function renderSheet(name){
+/* ---------- SHOW SHEET ---------- */
+function showSheet(name){
   const sheet=wb.Sheets[name];
   const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:""});
   const header=rows[0].map(h=>String(h).trim()), catIdx=header.indexOf("Category");
   if(catIdx===-1){container.textContent='No "Category" column.';return;}
-  const data=rows.slice(1);
 
+  const data=rows.slice(1);
   container.innerHTML=
    '<div class="search-container"><label class="search-label">Search items:</label>\
     <input class="search-input" aria-label="Filter items" placeholder="Type to filter..."></div>';
   const searchInput=container.querySelector(".search-input");
   const wrap=document.createElement("div");container.appendChild(wrap);
 
-  const metaTable=/standard/i.test(name)?RATES_META:PRICE_META;
-  const unc=/standard/i.test(name)?RATES_META[RATES_META.length-1]:PRICE_UNC;
+  const metaTable=/standard/i.test(name)?RATES_META:PRICE_META,
+        unc=/standard/i.test(name)?RATES_META[RATES_META.length-1]:UNC_PRICE;
 
   const build=(arr,filtering)=>{
     wrap.innerHTML="";
@@ -161,18 +153,17 @@ function renderSheet(name){
       const c=r[catIdx]||"Uncategorised";(groups[c]=groups[c]||[]).push(r);
     });
     Object.keys(groups)
-      .sort((a,b)=>metaLookup(a,metaTable,unc).idx-metaLookup(b,metaTable,unc).idx)
+      .sort((a,b)=>prefixMeta(a,metaTable,unc).idx-prefixMeta(b,metaTable,unc).idx)
       .forEach(cat=>{
-        const m=metaLookup(cat,metaTable,unc);
+        const m=prefixMeta(cat,metaTable,unc);
         const det=document.createElement("details");
-        det.open=filtering;               /* auto‑expand when searching */
+        det.open=filtering;                 /* auto‑expand when filtering */
         det.className=m.cls;
         det.innerHTML=`<summary>${m.emo}&nbsp;&nbsp;${cat}</summary>`;
         const tbl=document.createElement("table");det.appendChild(tbl);
         const thead=document.createElement("thead");
         const hdr=header.slice();hdr.splice(catIdx,1);
-        thead.innerHTML='<tr>'+hdr.map(h=>`<th>${h}</th>`).join("")+'</tr>';
-        tbl.appendChild(thead);
+        thead.innerHTML='<tr>'+hdr.map(h=>`<th>${h}</th>`).join("")+'</tr>';tbl.appendChild(thead);
         const tbody=document.createElement("tbody");tbl.appendChild(tbody);
         groups[cat].forEach(r=>{
           const tr=document.createElement("tr");
@@ -187,11 +178,10 @@ function renderSheet(name){
                 setTimeout(()=>td.classList.remove("copied-cell"),150);
               });
             };
-            /* highlight if filtering */
-            if(filtering){
-              const term=searchInput.value.trim();
-              if(term){td.innerHTML=td.textContent.replace(
-                new RegExp(`(${term})`,"ig"),'<span class="highlight">$1</span>');}
+            if(filtering&&searchInput.value){
+              const term=searchInput.value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+              td.innerHTML=td.textContent.replace(new RegExp(`(${term})`,'ig'),
+                '<span class="highlight">$1</span>');
             }
             tr.appendChild(td);
           });
@@ -203,10 +193,8 @@ function renderSheet(name){
   build(data,false);
 
   searchInput.oninput=()=>{
-    const term=searchInput.value.trim().toLowerCase();
-    if(!term){build(data,false);return;}
-    const filtered=data.filter(r=>r.some(c=>String(c).toLowerCase().includes(term)));
-    build(filtered,true);
+    const t=searchInput.value.trim().toLowerCase();
+    build(t?data.filter(r=>r.some(c=>String(c).toLowerCase().includes(t))):data,Boolean(t));
   };
 }
 })();
