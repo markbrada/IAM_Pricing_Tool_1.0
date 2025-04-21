@@ -1,334 +1,515 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>In A Minnit Pricing Tool 1.0</title>
-<style>
-/* =====  THEME VARIABLES  ===== */
-:root{--bg:#f7f7f7;--fg:#333;--header:#e0e0e0;--btn:#007bff;--btnh:#0056b3;
---add:#28a745;--addh:#218838;--border:#aaa;--alt:#f9f9f9;--panel:#fff;
---toast:#007bff;--toastfg:#fff}
-.dark-mode{--bg:#222;--fg:#eee;--header:#444;--btn:#0d6efd;--btnh:#0a58ca;
---add:#198754;--addh:#157347;--border:#555;--alt:#2a2a2a;--panel:#333;
---toast:#0d6efd;--toastfg:#fff}
-
-/* =====  GLOBAL LAYOUT  ===== */
-body{font-family:sans-serif;margin:1rem;background:var(--bg);color:var(--fg);transition:.3s}
-h1{margin:.2rem 0}p{margin:0 0 2rem}
-
-/* =====  DARK‑MODE BUTTON  ===== */
-#darkModeToggle{position:fixed;top:10px;right:10px;z-index:3000;
-background:var(--btn);color:#fff;border:none;padding:.5rem .75rem;border-radius:4px;cursor:pointer}
-#darkModeToggle:hover{background:var(--btnh)}
-
-/* =====  SHEET TABS  ===== */
-#sheetTabs{border-bottom:1px solid var(--border);margin-bottom:1rem}
-#sheetTabs button{background:none;border:none;padding:.5rem 1rem;margin-right:.5rem;
-cursor:pointer;font-size:1rem;color:var(--fg)}
-#sheetTabs button.active{border-bottom:2px solid var(--btn);font-weight:bold}
-
-/* =====  SEARCH BOX  ===== */
-.search-container{margin-bottom:1rem;padding:.5rem;background:var(--panel);
-border:1px solid var(--border);border-radius:4px}
-.search-label{font-weight:bold;margin-right:.5rem}
-.search-input{padding:.4rem;border:1px solid var(--border);border-radius:4px;
-width:200px;background:var(--panel);color:var(--fg)}
-.highlight{background:yellow}
-
-/* =====  TABLES  ===== */
-table{border-collapse:collapse;width:100%}
-thead th{position:sticky;top:0;background:var(--header);border:1px solid var(--border);
-padding:.5rem;text-align:center;z-index:2}
-tbody td{border:1px solid var(--border);padding:.5rem}
-tbody tr:nth-child(even){background:var(--alt)!important}
-tbody tr:hover{background:#ccc}
-
-/* =====  SECTION HEADERS  ===== */
-details{margin-bottom:1rem}
-summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:.5rem;
-padding:.4rem .6rem;border-radius:4px;background:var(--header);font-weight:bold}
-summary::-webkit-details-marker{display:none}
-summary:hover{background:var(--btn);color:#fff}
-
-/* colour classes */
-.cat-orange summary{background:#ffe9d6}.cat-orange summary:hover{background:#ffc999;color:#000}
-.cat-blue   summary{background:#d8ebff}.cat-blue   summary:hover{background:#add6ff;color:#000}
-.cat-brown  summary{background:#f2e6d9}.cat-brown  summary:hover{background:#e0cbb9;color:#000}
-.cat-red    summary{background:#ffdede}.cat-red    summary:hover{background:#ffb7b7;color:#000}
-.cat-yellow summary{background:#fff8d6}.cat-yellow summary:hover{background:#ffea9f;color:#000}
-
-/* =====  BUTTONS / FLASH  ===== */
-.add-button{background:var(--add);color:#fff;border:none;padding:.3rem .6rem;
-border-radius:4px;font-weight:bold;cursor:pointer;transition:.3s}
-.add-button:hover{background:var(--addh)}
-.copied-cell{background:#c8e6c9!important;transition:.15s}
-
-/* =====  BASKET  ===== */
-#basketContainer{position:fixed;bottom:0;left:0;right:0;max-height:40%;
-background:var(--panel);border-top:1px solid var(--border);padding:1rem;
-box-shadow:0 -2px 5px rgba(0,0,0,.1);z-index:1000;overflow-y:auto}
-#basketHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem}
-#basketHeader h3{margin:0}
-#basketHeader button{background:var(--btn);color:#fff;border:none;padding:.3rem .6rem;
-border-radius:4px;cursor:pointer;transition:.3s}
-#basketHeader button:hover{background:var(--btnh)}
-#basketTable th,#basketTable td{border:1px solid var(--border);padding:.5rem}
-#basketTable tbody tr:nth-child(even){background:var(--alt)!important}
-.sort-handle{cursor:move;user-select:none;text-align:center;font-size:1.2rem;width:2em}
-.qty-input{width:60px;text-align:center}
-.remove-btn{color:red;font-weight:bold;cursor:pointer}
-
-/* =====  TOAST  ===== */
-#toast{margin-left:1rem;background:var(--toast);color:var(--toastfg);
-padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
-#toast.show{opacity:1}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>In A Minnit Pricing Tool 1.0</title>
+  <style>
+    /* Theme Variables */
+    :root {
+      --bg: #f7f7f7;
+      --fg: #333;
+      --header-bg: #e0e0e0;
+      --btn-bg: #007bff;
+      --btn-hover-bg: #0056b3;
+      --add-bg: #28a745;
+      --add-hover-bg: #218838;
+      --border: #aaa;
+      --alt-row: #f9f9f9;
+      --panel-bg: #fff;
+      --toast-bg: #007bff;
+      --toast-fg: #fff;
+    }
+    .dark-mode {
+      --bg: #222;
+      --fg: #eee;
+      --header-bg: #444;
+      --btn-bg: #0d6efd;
+      --btn-hover-bg: #0a58ca;
+      --add-bg: #198754;
+      --add-hover-bg: #157347;
+      --border: #555;
+      --alt-row: #2a2a2a;
+      --panel-bg: #333;
+      --toast-bg: #0d6efd;
+      --toast-fg: #fff;
+    }
+    /* Global Styles */
+    body {
+      margin: 1rem;
+      font-family: sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      transition: background 0.3s, color 0.3s;
+    }
+    h1 { margin-bottom: 0.2rem; }
+    p { margin-top: 0; margin-bottom: 1rem; }
+    /* Dark Mode Toggle */
+    #darkModeToggle {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: var(--btn-bg);
+      color: #fff;
+      border: none;
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+      z-index: 1000;
+      transition: background 0.3s;
+    }
+    #darkModeToggle:hover { background: var(--btn-hover-bg); }
+    /* Sheet Tabs */
+    #sheetTabs { margin-bottom: 1rem; border-bottom: 1px solid var(--border); }
+    #sheetTabs button {
+      background: none;
+      border: none;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      font-size: 1rem;
+      color: var(--fg);
+    }
+    #sheetTabs button.active { border-bottom: 2px solid var(--btn-bg); font-weight: bold; }
+    /* Search Box */
+    .search-container {
+      margin-bottom: 1rem;
+      padding: 0.5rem;
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+    .search-input {
+      padding: 0.4rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      width: 200px;
+      background: var(--panel-bg);
+      color: var(--fg);
+    }
+    .highlight { background: yellow; }
+    /* Tables */
+    table { border-collapse: collapse; width: 100%; }
+    thead th {
+      position: sticky;
+      top: 0;
+      background: var(--header-bg);
+      border: 1px solid var(--border);
+      padding: 0.5rem;
+      text-align: center;
+      z-index: 2;
+    }
+    tbody td {
+      border: 1px solid var(--border);
+      padding: 0.5rem;
+    }
+    tbody tr:nth-child(even) { background: var(--alt-row) !important; }
+    tbody tr:hover { background: #ccc; }
+    /* Add Button */
+    .add-button {
+      background: var(--add-bg);
+      color: #fff;
+      border: none;
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .add-button:hover { background: var(--add-hover-bg); }
+    /* Collapsible Sections */
+    details { margin-bottom: 1rem; }
+    summary {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.6rem;
+      border-radius: 4px;
+      background: var(--header-bg);
+      font-weight: bold;
+    }
+    summary::-webkit-details-marker { display: none; }
+    /* Section Colors */
+    .cat-orange summary { background: #ffe9d6; }
+    .cat-orange summary:hover { background: #ffc999; }
+    .cat-blue summary { background: #d8ebff; }
+    .cat-blue summary:hover { background: #add6ff; }
+    .cat-brown summary { background: #f2e6d9; }
+    .cat-brown summary:hover { background: #e0cbb9; }
+    .cat-red summary { background: #ffdede; }
+    .cat-red summary:hover { background: #ffb7b7; }
+    .cat-yellow summary { background: #fff8d6; }
+    .cat-yellow summary:hover { background: #ffea9f; }
+    /* Basket Styles */
+    #basketContainer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--panel-bg);
+      border-top: 1px solid var(--border);
+      padding: 1rem;
+      box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+      max-height: 40%;
+      overflow-y: auto;
+      z-index: 999;
+    }
+    #basketHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    #basketHeader h3 { margin: 0; }
+    #basketHeader button {
+      background: var(--btn-bg);
+      color: #fff;
+      border: none;
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    #basketHeader button:hover { background: var(--btn-hover-bg); }
+    #basketTable th, #basketTable td {
+      border: 1px solid var(--border);
+      padding: 0.5rem;
+      text-align: left;
+    }
+    #basketTable tbody tr:nth-child(even) { background: var(--alt-row) !important; }
+    .sort-handle {
+      cursor: move;
+      user-select: none;
+      text-align: center;
+      width: 2em;
+    }
+    .qty-controls { display: flex; align-items: center; }
+    .qty-input { width: 60px; text-align: center; }
+    .remove-btn { color: red; font-weight: bold; cursor: pointer; }
+    /* Toast */
+    #toast {
+      margin-left: 1rem;
+      background: var(--toast-bg);
+      color: var(--toast-fg);
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    #toast.show { opacity: 1; }
+  </style>
 </head>
 <body>
-<h1>In A Minnit Pricing Tool 1.0</h1>
-<p><em>Beta – features subject to change. Check your work. Report bugs to Marco.</em></p>
-<button id="darkModeToggle">Toggle Dark Mode</button>
+  <h1>In A Minnit Pricing Tool 1.0</h1>
+  <p><em>Beta version – features subject to change. Report bugs to Marco.</em></p>
+  <button id="darkModeToggle">Toggle Dark Mode</button>
 
-<div id="sheetTabs"></div>
-<div id="sheetContainer"></div>
+  <div id="sheetTabs"></div>
+  <div id="sheetContainer"></div>
 
-<!-- BASKET -->
-<div id="basketContainer">
-  <div id="basketHeader">
-    <div style="display:flex;align-items:center;gap:.5rem">
-      <h3>Quote Basket</h3><span id="toast"></span>
+  <div id="basketContainer">
+    <div id="basketHeader">
+      <div style="display:flex; align-items:center;">
+        <h3>Quote Basket</h3><span id="toast"></span>
+      </div>
+      <div>
+        <button id="exportCsvBtn">Export quote CSV</button>
+        <button id="toggleBasketBtn">Hide Basket</button>
+      </div>
     </div>
-    <div>
-      <button id="exportCsvBtn">Export quote CSV</button>
-      <button id="toggleBasketBtn">Hide Basket</button>
+    <div id="basketContent">
+      <table id="basketTable">
+        <thead>
+          <tr>
+            <th class="sort-handle">≡</th>
+            <th>Item</th>
+            <th>Quantity</th>
+            <th>Price Ex. GST</th>
+            <th>Price Inc. GST</th>
+            <th>Line Total Ex. GST</th>
+            <th>Line Total Inc. GST</th>
+            <th>Remove</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot></tfoot>
+      </table>
     </div>
   </div>
-  <div id="basketContent">
-    <table id="basketTable">
-      <thead><tr>
-        <th class="sort-handle">≡</th><th>Item</th><th>Quantity</th>
-        <th>Price Ex. GST</th><th>Price Inc. GST</th>
-        <th>Line Total Ex. GST</th><th>Line Total Inc. GST</th><th>Remove</th>
-      </tr></thead>
-      <tbody></tbody><tfoot></tfoot>
-    </table>
-  </div>
-</div>
 
-<script src="xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-<script>
-(()=>{"use strict";
-/* ---------- CATEGORY META (order, colour, emoji) ---------- */
-const ORDER=[
-  ["bannister rail"                           ,"cat-orange","🛠️"],
-  ["stainless steel grabrail"                 ,"cat-orange","🛠️"],
-  ["aluminium grabrail, powder coated"        ,"cat-orange","🛠️"],
-  ["shower parts"                             ,"cat-blue"  ,"🚿"],
-  ["plumbing"                                 ,"cat-blue"  ,"🔧"],
-  ["door components"                          ,"cat-brown" ,"🚪"],
-  ["fire safety"                              ,"cat-red"   ,"🧯"],
-  ["anti slip solutions"                      ,"cat-yellow","🥾"],
-  ["uncategorised"                            ,"cat-yellow","📦"]
-];
-const META=Object.fromEntries(ORDER.map((o,i)=>[o[0],{idx:i,cls:o[1],emo:o[2]}]));
-const FALLBACK=META["uncategorised"];
-const PRICE_EX=["Rate Ex. GST","Price Ex. GST"], PRICE_INC="Price Inc. GST";
-const TOAST_MS=3000;
+  <script src="xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <script>
+  (function() {
+    "use strict";
+    // Category order metadata
+    const ORDER = [
+      ["bannister rail", "cat-orange", "🛠️"],
+      ["stainless steel grabrail", "cat-orange", "🛠️"],
+      ["aluminium grabrail, powder coated", "cat-orange", "🛠️"],
+      ["shower parts", "cat-blue", "🚿"],
+      ["plumbing", "cat-blue", "🔧"],
+      ["door components", "cat-brown", "🚪"],
+      ["fire safety", "cat-red", "🧯"],
+      ["anti slip solutions", "cat-yellow", "🥾"],
+      ["uncategorised", "cat-yellow", "📦"]
+    ];
+    const META = Object.fromEntries(ORDER.map((o, i) => [o[0], { idx: i, cls: o[1], emo: o[2] }]));
+    const FALLBACK = META["uncategorised"];
+    const PRICE_EX = ["Rate Ex. GST", "Price Ex. GST"];
+    const PRICE_INC = "Price Inc. GST";
+    const TOAST_MS = 3000;
 
-/* ---------- STATE ---------- */
-let wb=null,basket=[],lastRemoved=null,lastAdded=null;
-const sheetTabs=document.getElementById("sheetTabs"),
-      sheetContainer=document.getElementById("sheetContainer"),
-      toast=document.getElementById("toast");
+    let workbook, basket = [], lastRemoved, lastAdded;
+    const tabs = document.getElementById('sheetTabs');
+    const container = document.getElementById('sheetContainer');
+    const toast = document.getElementById('toast');
 
-/* ---------- DARK MODE ---------- */
-document.getElementById("darkModeToggle").onclick=()=>document.body.classList.toggle("dark-mode");
-
-/* ---------- LOAD EXCEL ---------- */
-fetch("myFile.xlsx").then(r=>r.arrayBuffer()).then(buf=>{
-  wb=XLSX.read(buf,{type:"array"});
-  Object.keys(wb.Sheets).forEach((name,i)=>{
-    const b=document.createElement("button");
-    b.textContent=name;b.dataset.sheet=name;
-    b.onclick=()=>{setActive(name);buildSheet(name);}
-    if(i===0){b.classList.add("active");buildSheet(name);}
-    sheetTabs.appendChild(b);
-  });
-});
-
-/* ---------- TAB UI ---------- */
-function setActive(name){[...sheetTabs.children]
-  .forEach(btn=>btn.classList.toggle("active",btn.dataset.sheet===name));}
-
-/* ---------- BUILD SHEET ---------- */
-function buildSheet(name){
-  const rows=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:""});
-  const header=rows[0].map(h=>String(h).trim()), catIdx=header.indexOf("Category");
-  if(catIdx===-1){sheetContainer.textContent='No "Category" column.';return;}
-
-  const data=rows.slice(1);
-  sheetContainer.innerHTML="";
-  /* Search box */
-  const searchBox=document.createElement("div");searchBox.className="search-container";
-  searchBox.innerHTML='<label class="search-label">Search items:</label>\
-    <input class="search-input" placeholder="Type to filter...">';
-  sheetContainer.appendChild(searchBox);
-  const input=searchBox.querySelector("input"), wrap=document.createElement("div");
-  sheetContainer.appendChild(wrap);
-
-  input.oninput=()=>render();
-  render();            // first draw
-
-  function render(){
-    const term=input.value.trim().toLowerCase();
-    wrap.innerHTML="";
-    /* Group rows */
-    const groups={};
-    data.forEach(r=>{
-      if(term&& !r.some(c=>String(c).toLowerCase().includes(term)))return;
-      const cat=(r[catIdx]||"Uncategorised").toString().trim();
-      (groups[cat]=groups[cat]||[]).push(r);
+    // Dark mode toggle
+    document.getElementById('darkModeToggle').addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
     });
-    /* Order categories */
-    const cats=Object.keys(groups).sort((a,b)=>{
-      const A=(META[a.toLowerCase()]||FALLBACK).idx,
-            B=(META[b.toLowerCase()]||FALLBACK).idx;
-      return A-B;
-    });
-    cats.forEach(cat=>{
-      const m=META[cat.toLowerCase()]||FALLBACK;
-      const det=document.createElement("details");
-      det.open=!!term;              // open if searching
-      det.className=m.cls;
-      const sum=document.createElement("summary");
-      sum.textContent=`${m.emo}  ${cat}`;det.appendChild(sum);
 
-      /* build table */
-      const tbl=document.createElement("table");
-      tbl.innerHTML='<thead><tr><th></th>'+header.filter((_,i)=>i!==catIdx)
-        .map(h=>`<th>${h}</th>`).join("")+'</tr></thead>';
-      const tbody=document.createElement("tbody");tbl.appendChild(tbody);
-
-      groups[cat].forEach(r=>{
-        const tr=document.createElement("tr");
-        /* + button */
-        const tdBtn=document.createElement("td");
-        const add=document.createElement("button");add.className="add-button";add.textContent="+";
-        add.onclick=()=>{pushBasket(r,header);flash("Item added ✓",undoAdd);}
-        tdBtn.appendChild(add);tr.appendChild(tdBtn);
-
-        r.forEach((cell,i)=>{
-          if(i===catIdx)return;
-          const td=document.createElement("td"), h=header[i].toLowerCase();
-          let text=/price|gst|rate/.test(h)&&!isNaN(cell)?(+cell).toFixed(2):cell;
-          if(term){text=text.toString().replace(new RegExp(`(${term})`,"gi"),
-            '<span class="highlight">$1</span>');td.innerHTML=text;}
-          else td.textContent=text;
-          if(/price|gst|rate/.test(h))td.style.fontWeight="bold";
-          td.onclick=e=>{
-            if(e.target.tagName==="BUTTON")return;
-            navigator.clipboard.writeText(td.textContent).then(()=>{
-              td.classList.add("copied-cell");void td.offsetWidth;
-              setTimeout(()=>td.classList.remove("copied-cell"),150);
-            });
-          };
-          tr.appendChild(td);
+    // Fetch and parse Excel
+    fetch('myFile.xlsx')
+      .then(res => res.arrayBuffer())
+      .then(data => {
+        workbook = XLSX.read(data, { type: 'array' });
+        const sheetNames = workbook.SheetNames;
+        sheetNames.forEach((name, idx) => {
+          const btn = document.createElement('button');
+          btn.textContent = name;
+          btn.dataset.sheet = name;
+          btn.addEventListener('click', () => selectSheet(name));
+          if (idx === 0) btn.classList.add('active');
+          tabs.appendChild(btn);
         });
-        tbody.appendChild(tr);
+        selectSheet(sheetNames[0]);
       });
-      det.appendChild(tbl);wrap.appendChild(det);
+
+    function selectSheet(name) {
+      [...tabs.children].forEach(b => b.classList.toggle('active', b.dataset.sheet === name));
+      renderSheet(name);
+    }
+
+    function renderSheet(name) {
+      const sheet = workbook.Sheets[name];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+      const header = rows[0].map(h => String(h).trim());
+      const catIdx = header.indexOf('Category');
+      if (catIdx === -1) {
+        container.textContent = 'No "Category" column.';
+        return;
+      }
+      const data = rows.slice(1);
+
+      container.innerHTML = '';
+      const searchDiv = document.createElement('div');
+      searchDiv.className = 'search-container';
+      searchDiv.innerHTML = `
+        <label class="search-label">Search items:</label>
+        <input type="text" class="search-input" placeholder="Type to filter...">
+      `;
+      container.appendChild(searchDiv);
+      const searchInput = searchDiv.querySelector('.search-input');
+      const wrap = document.createElement('div');
+      container.appendChild(wrap);
+
+      function rebuild() {
+        const term = searchInput.value.trim().toLowerCase();
+        wrap.innerHTML = '';
+        const groups = {};
+        data.forEach(r => {
+          const textRow = r.map(c => String(c).toLowerCase());
+          if (term && !textRow.some(c => c.includes(term))) return;
+          const catKey = String(r[catIdx] || 'Uncategorised').trim();
+          (groups[catKey] = groups[catKey] || []).push(r);
+        });
+        const cats = Object.keys(groups).sort((a, b) => {
+          const A = META[a.toLowerCase()]?.idx ?? FALLBACK.idx;
+          const B = META[b.toLowerCase()]?.idx ?? FALLBACK.idx;
+          return A - B;
+        });
+        cats.forEach(cat => {
+          const meta = META[cat.toLowerCase()] || FALLBACK;
+          const details = document.createElement('details');
+          details.open = !!searchInput.value;
+          details.className = meta.cls;
+          const summary = document.createElement('summary');
+          summary.textContent = `${meta.emo}  ${cat}`;
+          details.appendChild(summary);
+
+          const table = document.createElement('table');
+          const ths = header.filter((_, i) => i !== catIdx)
+                         .map(h => `<th>${h}</th>`).join('');
+          table.innerHTML = `<thead><tr><th></th>${ths}</tr></thead><tbody></tbody>`;
+          const tbody = table.querySelector('tbody');
+
+          groups[cat].forEach(r => {
+            const tr = document.createElement('tr');
+            const btnCell = document.createElement('td');
+            const btn = document.createElement('button');
+            btn.className = 'add-button'; btn.textContent = '+';
+            btn.addEventListener('click', () => { addItem(r, header); flash('Item added ✓', undoAdd); });
+            btnCell.appendChild(btn);
+            tr.appendChild(btnCell);
+
+            r.forEach((cell, i) => {
+              if (i === catIdx) return;
+              const td = document.createElement('td');
+              const h = header[i].toLowerCase();
+              let text = (/price|gst|rate/.test(h) && !isNaN(cell))
+                         ? parseFloat(cell).toFixed(2)
+                         : cell;
+              if (term) {
+                const regex = new RegExp(`(${term.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
+                text = text.toString().replace(regex, '<span class="highlight">$1</span>');
+                td.innerHTML = text;
+              } else {
+                td.textContent = text;
+              }
+              if (/price|gst|rate/.test(h)) td.style.fontWeight = 'bold';
+              td.addEventListener('click', () => { copyCell(td); });
+              tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+          });
+          wrap.appendChild(details);
+        });
+      }
+
+      searchInput.addEventListener('input', rebuild);
+      rebuild();
+    }
+
+    // Copy cell text
+    function copyCell(td) {
+      const text = td.textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        td.classList.add('copied-cell');
+        void td.offsetWidth;
+        setTimeout(() => td.classList.remove('copied-cell'), 150);
+      });
+    }
+
+    /* ---------- Basket Functions ---------- */
+    const basketBody = document.querySelector('#basketTable tbody');
+    const basketFoot = document.querySelector('#basketTable tfoot');
+
+    document.getElementById('toggleBasketBtn').addEventListener('click', e => {
+      const bc = document.getElementById('basketContent');
+      bc.style.display = (bc.style.display === 'none') ? 'block' : 'none';
+      e.target.textContent = (bc.style.display === 'none') ? 'Show Basket' : 'Hide Basket';
     });
-  }
-}
 
-/* ---------- TOAST ---------- */
-function flash(msg,undo){
-  toast.textContent=msg;toast.classList.add("show");
-  if(undo){toast.style.cursor="pointer";toast.onclick=()=>{undo();toast.classList.remove("show");}}
-  else{toast.style.cursor="default";toast.onclick=null}
-  setTimeout(()=>toast.classList.remove("show"),TOAST_MS);
-}
+    function addItem(row, header) {
+      const idxItem = header.indexOf('Item');
+      const catIdx = header.indexOf('Category');
+      const item = row[idxItem] || row.filter((_,i) => i !== catIdx)[0] || 'Item';
+      const idxEx = header.findIndex(h => PRICE_EX.includes(h));
+      const idxInc = header.indexOf(PRICE_INC);
+      const ex = parseFloat(row[idxEx]);
+      const inc = parseFloat(row[idxInc]);
+      let obj = basket.find(b => b.item === item);
+      if (obj) obj.qty += 1;
+      else { obj = { item, qty: 1, ex, inc }; basket.push(obj); }
+      lastAdded = obj;
+      renderBasket();
+    }
 
-/* ---------- BASKET ---------- */
-const bBody=document.querySelector("#basketTable tbody"),
-      bFoot=document.querySelector("#basketTable tfoot");
-document.getElementById("toggleBasketBtn").onclick=e=>{
-  const bc=document.getElementById("basketContent");
-  bc.style.display=bc.style.display==="none"?"block":"none";
-  e.target.textContent=bc.style.display==="none"?"Show Basket":"Hide Basket";
-};
+    function undoAdd() {
+      if (!lastAdded) return;
+      if (lastAdded.qty > 1) lastAdded.qty -= 1;
+      else basket = basket.filter(b => b !== lastAdded);
+      lastAdded = null;
+      renderBasket();
+    }
 
-function pushBasket(r,h){
-  const item=r[h.indexOf("Item")]||"Item";
-  const ex=+r[h.findIndex(x=>PRICE_EX.includes(x))];
-  const inc=+r[h.indexOf(PRICE_INC)];
-  const row=basket.find(x=>x.item===item);
-  if(row)row.qty+=1; else basket.push({item,qty:1,ex,inc});
-  lastAdded=row||basket[basket.length-1];drawBasket();
-}
-function undoAdd(){if(lastAdded){lastAdded.qty>1?lastAdded.qty--:basket.splice(basket.indexOf(lastAdded),1);
-  lastAdded=null;drawBasket();}}
-function undoRemove(){if(lastRemoved){basket.splice(lastRemoved.i,0,lastRemoved.b);lastRemoved=null;drawBasket();}}
+    function undoRemove() {
+      if (!lastRemoved) return;
+      basket.splice(lastRemoved.i, 0, lastRemoved.b);
+      lastRemoved = null;
+      renderBasket();
+    }
 
-function drawBasket(){
-  const cont=document.getElementById("basketContainer");
-  if(!basket.length){cont.style.display="none";return;}
-  cont.style.display="block";
-  bBody.innerHTML="";let totE=0,totI=0;
-  basket.forEach((b,i)=>{
-    const tr=document.createElement("tr");
-    tr.innerHTML=`<td class="sort-handle">≡</td><td>${b.item}</td>`;
-    /* qty */
-    const td=document.createElement("td");
-    td.innerHTML='<div class="qty-controls"><button>-</button>\
-    <input type="number" step="0.1" class="qty-input">\
-    <button>+</button></div>';
-    const [minus,input,plus]=td.querySelectorAll("button,input,button");
-    input.value=b.qty;
-    minus.onclick=()=>{b.qty=Math.max(1,b.qty-1);drawBasket();}
-    plus.onclick =()=>{b.qty+=1;drawBasket();}
-    input.onchange=()=>{b.qty=Math.max(1,parseFloat(input.value)||1);drawBasket();}
-    tr.appendChild(td);
-    tr.innerHTML+=`<td style="font-weight:bold">${isNaN(b.ex)?"N/A":b.ex.toFixed(2)}</td>
-    <td style="font-weight:bold">${isNaN(b.inc)?"N/A":b.inc.toFixed(2)}</td>`;
-    const le=isNaN(b.ex)?0:b.qty*b.ex, li=isNaN(b.inc)?0:b.qty*b.inc;
-    totE+=le;totI+=li;
-    tr.innerHTML+=`<td>${isNaN(b.ex)?"N/A":le.toFixed(2)}</td>
-    <td>${isNaN(b.inc)?"N/A":li.toFixed(2)}</td>`;
-    const del=document.createElement("td");
-    del.innerHTML='<span class="remove-btn">X</span>';
-    del.firstChild.onclick=()=>{
-      lastRemoved={b,i};tr.classList.add("fade-out");
-      setTimeout(()=>{basket.splice(i,1);drawBasket();flash("Item removed ↩",undoRemove);},300);
-    };
-    tr.appendChild(del);bBody.appendChild(tr);
-  });
-  bFoot.innerHTML=`<tr><td colspan="5" style="text-align:right;font-weight:bold">Grand Totals:</td>
-  <td style="font-weight:bold">${totE.toFixed(2)}</td>
-  <td style="font-weight:bold">${totI.toFixed(2)}</td><td></td></tr>`;
-  Sortable.create(bBody,{handle:".sort-handle",onEnd:()=>basket=[...bBody.children]
-    .map(r=>basket.find(b=>b.item===r.children[1].textContent))});
-}
+    function flash(message, undo) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      if (undo) {
+        toast.style.cursor = 'pointer';
+        toast.onclick = () => { undo(); toast.classList.remove('show'); };
+      } else {
+        toast.style.cursor = 'default';
+        toast.onclick = null;
+      }
+      setTimeout(() => toast.classList.remove('show'), TOAST_MS);
+    }
 
-/* ---------- CSV EXPORT ---------- */
-document.getElementById("exportCsvBtn").onclick=()=>{
-  if(!basket.length)return;
-  const esc=v=>`"${String(v).replace(/"/g,'""')}"`;
-  const rows=[["Item","Quantity","Price Ex. GST","Price Inc. GST","Line Ex","Line Inc"].map(esc)];
-  let tE=0,tI=0;
-  basket.forEach(b=>{
-    const le=isNaN(b.ex)?0:b.qty*b.ex, li=isNaN(b.inc)?0:b.qty*b.inc;tE+=le;tI+=li;
-    rows.push([b.item,b.qty,isNaN(b.ex)?"N/A":b.ex.toFixed(2),
-      isNaN(b.inc)?"N/A":b.inc.toFixed(2),isNaN(b.ex)?"N/A":le.toFixed(2),
-      isNaN(b.inc)?"N/A":li.toFixed(2)].map(esc));
-  });
-  rows.push(['','','',"\"Totals:\"",tE.toFixed(2),tI.toFixed(2)]);
-  const blob=new Blob([rows.map(r=>r.join(",")).join("\n")],{type:"text/csv"});
-  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="quote_basket.csv";
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
-};
-})();
-</script>
+    function renderBasket() {
+      const container = document.getElementById('basketContainer');
+      if (!basket.length) { container.style.display = 'none'; return; }
+      container.style.display = 'block';
+      basketBody.innerHTML = '';
+      let totalEx = 0, totalInc = 0;
+      basket.forEach((b, i) => {
+        const tr = document.createElement('tr');
+        // sort handle
+        const tdHandle = document.createElement('td'); tdHandle.className = 'sort-handle'; tdHandle.textContent = '≡'; tr.appendChild(tdHandle);
+        // item
+        const tdItem = document.createElement('td'); tdItem.textContent = b.item; tdItem.addEventListener('click', () => copyCell(tdItem)); tr.appendChild(tdItem);
+        // quantity controls
+        const tdQty = document.createElement('td');
+        tdQty.innerHTML = `<div class="qty-controls"><button>-</button><input type="number" step="0.1" class="qty-input" value="${b.qty}"><button>+</button></div>`;
+        const [btnMinus, inputQty, btnPlus] = tdQty.querySelectorAll('button,input,button');
+        btnMinus.addEventListener('click', () => { b.qty = Math.max(1, b.qty - 1); renderBasket(); });
+        btnPlus.addEventListener('click', () => { b.qty += 1; renderBasket(); });
+        inputQty.addEventListener('change', () => { let v = parseFloat(inputQty.value); b.qty = isNaN(v) || v < 1 ? 1 : v; renderBasket(); });
+        tr.appendChild(tdQty);
+        // price ex
+        const tdEx = document.createElement('td'); tdEx.textContent = isNaN(b.ex) ? 'N/A' : b.ex.toFixed(2); tdEx.style.fontWeight = 'bold'; tdEx.addEventListener('click', () => copyCell(tdEx)); tr.appendChild(tdEx);
+        // price inc
+        const tdInc = document.createElement('td'); tdInc.textContent = isNaN(b.inc) ? 'N/A' : b.inc.toFixed(2); tdInc.style.fontWeight = 'bold'; tdInc.addEventListener('click', () => copyCell(tdInc)); tr.appendChild(tdInc);
+        // line totals
+        const lineEx = isNaN(b.ex) ? 0 : b.qty * b.ex;
+        const lineInc = isNaN(b.inc) ? 0 : b.qty * b.inc;
+        totalEx += lineEx; totalInc += lineInc;
+        const tdLineEx = document.createElement('td'); tdLineEx.textContent = lineEx.toFixed(2); tdLineEx.addEventListener('click', () => copyCell(tdLineEx)); tr.appendChild(tdLineEx);
+        const tdLineInc = document.createElement('td'); tdLineInc.textContent = lineInc.toFixed(2); tdLineInc.addEventListener('click', () => copyCell(tdLineInc)); tr.appendChild(tdLineInc);
+        // remove button
+        const tdRem = document.createElement('td'); tdRem.innerHTML = '<span class="remove-btn">X</span>';
+        tdRem.firstChild.addEventListener('click', () => {
+          lastRemoved = { b, i };
+          tr.classList.add('fade-out');
+          setTimeout(() => { basket.splice(i, 1); renderBasket(); flash('Item removed ↩', undoRemove); }, 300);
+        });
+        tr.appendChild(tdRem);
+        basketBody.appendChild(tr);
+      });
+      basketFoot.innerHTML = `<tr><td colspan="5" style="text-align:right;font-weight:bold">Grand Totals:</td><td style="font-weight:bold">${totalEx.toFixed(2)}</td><td style="font-weight:bold">${totalInc.toFixed(2)}</td><td></td></tr>`;
+      Sortable.create(basketBody, { handle: '.sort-handle', onEnd: () => {
+        basket = Array.from(basketBody.children).map(row => basket.find(b => b.item === row.children[1].textContent));
+      }});
+    }
+
+    // CSV export
+    document.getElementById('exportCsvBtn').addEventListener('click', () => {
+      if (!basket.length) return;
+      const esc = v => '"' + String(v).replace(/"/g, '""') + '"';
+      const lines = [["Item","Quantity","Price Ex. GST","Price Inc. GST","Line Ex","Line Inc"].map(esc)];
+      let totalEx = 0, totalInc = 0;
+      basket.forEach(b => {
+        const le = isNaN(b.ex) ? 0 : b.qty * b.ex;
+        const li = isNaN(b.inc) ? 0 : b.qty * b.inc;
+        totalEx += le; totalInc += li;
+        lines.push([b.item, b.qty, isNaN(b.ex) ? 'N/A' : b.ex.toFixed(2), isNaN(b.inc) ? 'N/A' : b.inc.toFixed(2), le.toFixed(2), li.toFixed(2)].map(esc));
+      });
+      lines.push(['','','','Totals:', totalEx.toFixed(2), totalInc.toFixed(2)].map(esc));
+      const csv = lines.map(l => l.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'quote_basket.csv';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    });
+  })();
+  </script>
 </body>
 </html>
