@@ -83,6 +83,13 @@ padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 .item-input{width:100%}
 .price-input{max-width:110px;text-align:right}
 
+/* editable inputs in basket */
+.editable{background:#ffe0ff;border:1px solid var(--border);padding:.2rem .3rem;border-radius:4px}
+.item-input{width:100%}
+.price-input{max-width:110px;text-align:right}
+.gst-cell{ text-align:center }
+.gst-input{ width:18px; height:18px }
+
 </style>
 </head>
 <body>
@@ -113,8 +120,8 @@ padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
     <table id="basketTable">
       <thead><tr>
         <th class="sort-handle">≡</th><th>Item</th><th>Quantity</th>
-        <th>Price Ex. GST</th><th>Price Inc. GST</th>
-        <th>Line Total Ex. GST</th><th>Line Total Inc. GST</th><th>Remove</th>
+        <th>Price Ex. GST</th><th>GST Apply</th>
+        <th>Line Total Ex. GST</th><th>GST</th><th>Line Total</th><th>Remove</th>
       </tr></thead>
       <tbody></tbody><tfoot></tfoot>
     </table>
@@ -289,7 +296,7 @@ function undoRemove(){if(lastRemoved){basket.splice(lastRemoved.i,0,lastRemoved.
 function renderBasket(){
   const cont=document.getElementById("basketContainer");cont.style.display=basket.length?"block":"none";
   if(!basket.length){bBody.innerHTML="";bFoot.innerHTML="";return;}
-  bBody.innerHTML="";let totE=0,totI=0;
+  bBody.innerHTML="";let totEx=0,totGst=0;
   basket.forEach((b,i)=>{
     const tr=document.createElement("tr");
     tr.dataset.id=String(b.id||"");
@@ -321,18 +328,20 @@ function renderBasket(){
     exInput.value=isNaN(b.ex)?"":Number(b.ex).toFixed(2);
     exInput.onchange=()=>{ const v=parseFloat(exInput.value); b.ex = isFinite(v)?v:NaN; renderBasket(); };
     tdEx.appendChild(exInput); tr.appendChild(tdEx);
-    // GST checkbox column
-    const tdGst=document.createElement("td"); tdGst.className="gst-cell";
+    // GST apply checkbox column
+    const tdGstApply=document.createElement("td"); tdGstApply.className="gst-cell";
     const gstInput=document.createElement("input"); gstInput.type="checkbox"; gstInput.className="gst-input"; gstInput.checked=!!b.gst;
     gstInput.onchange=()=>{ b.gst = gstInput.checked; renderBasket(); };
-    tdGst.appendChild(gstInput); tr.appendChild(tdGst);
+    tdGstApply.appendChild(gstInput); tr.appendChild(tdGstApply);
     // line totals
-    const le=isNaN(b.ex)?0:b.qty*b.ex; totE+=le;
-    const li=b.gst ? le*(1+GST_RATE) : le; totI+=li;
-    const tdLe=document.createElement("td"), tdLi=document.createElement("td");
-    tdLe.textContent=isNaN(b.ex)?"N/A":le.toFixed(2);
-    tdLi.textContent=isNaN(b.ex)?"N/A":li.toFixed(2);
-    tr.appendChild(tdLe); tr.appendChild(tdLi);
+    const le=isNaN(b.ex)?0:b.qty*b.ex; // ex-GST line total
+    const gstAmt = b.gst ? le*GST_RATE : 0;
+    const li = le + gstAmt;
+    totEx+=le; totGst+=gstAmt;
+    const tdLe=document.createElement("td"); tdLe.textContent=isNaN(b.ex)?"N/A":le.toFixed(2);
+    const tdG=document.createElement("td"); tdG.textContent=isNaN(b.ex)?"N/A":gstAmt.toFixed(2);
+    const tdLi=document.createElement("td"); tdLi.textContent=isNaN(b.ex)?"N/A":li.toFixed(2);
+    tr.appendChild(tdLe); tr.appendChild(tdG); tr.appendChild(tdLi);
     // remove
     const tdRem=document.createElement("td"); const x=document.createElement("span"); x.className="remove-btn"; x.textContent="X";
     x.onclick=()=>{lastRemoved={b,i}; tr.classList.add("fade-out");
@@ -347,8 +356,14 @@ function renderBasket(){
     });
     bBody.appendChild(tr);
   });
-  bFoot.innerHTML=`<tr><td colspan="5" style="text-align:right;font-weight:bold">Grand Totals:</td>
-  <td style="font-weight:bold">${totE.toFixed(2)}</td><td style="font-weight:bold">${totI.toFixed(2)}</td><td></td></tr>`;
+  const grand = totEx + totGst;
+  bFoot.innerHTML=`<tr>
+    <td colspan="5" style="text-align:right;font-weight:bold">Grand Totals:</td>
+    <td style="font-weight:bold">${totEx.toFixed(2)}</td>
+    <td style="font-weight:bold">${totGst.toFixed(2)}</td>
+    <td style="font-weight:bold">${grand.toFixed(2)}</td>
+    <td></td>
+  </tr>`;
   Sortable.create(bBody,{handle: ".sort-handle", animation: 150, onEnd: ()=>{
     const order=[...bBody.children].map(r=>r.dataset.id);
     basket = order.map(id => basket.find(b => String(b.id)===id));
@@ -359,16 +374,19 @@ function renderBasket(){
 document.getElementById("exportCsvBtn").onclick=()=>{
   if(!basket.length)return;
   const esc=v=>`"${String(v).replace(/"/g,'""')}"`;
-  const lines=[["Item","Quantity","Price Ex. GST","GST","Line Ex","Line Total"].map(esc)];
-  let tE=0,tI=0;
+  const lines=[["Item","Quantity","Price Ex. GST","GST Apply","Line Ex","GST","Line Total"].map(esc)];
+  let totEx=0,totGst=0;
   basket.forEach(b=>{
-    const le=isNaN(b.ex)?0:b.qty*b.ex; tE+=le;
-    const li=b.gst ? le*(1+GST_RATE) : le; tI+=li;
+    const le=isNaN(b.ex)?0:b.qty*b.ex; totEx+=le;
+    const gstAmt=b.gst?le*GST_RATE:0; totGst+=gstAmt;
+    const li=le+gstAmt;
     lines.push([b.item,b.qty,isNaN(b.ex)?"N/A":Number(b.ex).toFixed(2), b.gst?"Yes":"No",
-      isNaN(b.ex)?"N/A":le.toFixed(2), isNaN(b.ex)?"N/A":li.toFixed(2)].map(esc));
+      isNaN(b.ex)?"N/A":le.toFixed(2), isNaN(b.ex)?"N/A":gstAmt.toFixed(2), isNaN(b.ex)?"N/A":li.toFixed(2)].map(esc));
   });
-  lines.push(['','','','',tE.toFixed(2),tI.toFixed(2)]);
-  const blob=new Blob([lines.map(r=>r.join(",")).join("\n")],{type:"text/csv"});
+  const grand=(totEx+totGst).toFixed(2);
+  lines.push(['','','','Totals:',totEx.toFixed(2),totGst.toFixed(2),grand]);
+  const blob=new Blob([lines.map(r=>r.join(",")).join("
+")],{type:"text/csv"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="quote_basket.csv";
   document.body.appendChild(a);a.click();document.body.removeChild(a);
 };
