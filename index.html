@@ -83,6 +83,13 @@ padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 .item-input{width:100%}
 .price-input{max-width:110px;text-align:right}
 
+/* editable inputs in basket */
+.editable{background:#ffe0ff;border:1px solid var(--border);padding:.2rem .3rem;border-radius:4px}
+.item-input{width:100%}
+.price-input{max-width:110px;text-align:right}
+.gst-cell{ text-align:center }
+.gst-input{ width:18px; height:18px }
+
 </style>
 </head>
 <body>
@@ -108,8 +115,8 @@ padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
     <table id="basketTable">
       <thead><tr>
         <th class="sort-handle">≡</th><th>Item</th><th>Quantity</th>
-        <th>Price Ex. GST</th><th>Price Inc. GST</th>
-        <th>Line Total Ex. GST</th><th>Line Total Inc. GST</th><th>Remove</th>
+        <th>Price Ex. GST</th><th>GST</th>
+        <th>Line Total Ex. GST</th><th>Line Total</th><th>Remove</th>
       </tr></thead>
       <tbody></tbody><tfoot></tfoot>
     </table>
@@ -136,6 +143,7 @@ const META=Object.fromEntries(ORDER.map((o,i)=>[o[0],{idx:i,cls:o[1]}]));
 const FALL=META["uncategorised"];
 const PRICE_EX=["Rate Ex. GST","Price Ex. GST"], PRICE_INC="Price Inc. GST";
 const TOAST_MS=3000;
+const GST_RATE=0.10;
 
 /* ----------  STATE & DOM Refs  ---------- */
 let wb=null,basket=[],lastRemoved=null,lastAdded=null,uid=0;
@@ -243,8 +251,8 @@ function addItem(row,header){
   const catIdx=header.indexOf("Category");
   const itemCol=header.findIndex(h=>h.toLowerCase()==="item");
   let desc=itemCol!==-1?row[itemCol]:row.find((v,i)=>i!==catIdx && String(v).trim()!=='')||"Unnamed Item";
-  const ex=+row[header.findIndex(h=>PRICE_EX.includes(h))], inc=+row[header.indexOf(PRICE_INC)];
-  const newLine={id:++uid,item:desc,qty:1,ex,inc};
+  const ex=+row[header.findIndex(h=>PRICE_EX.includes(h))];
+  const newLine={id:++uid,item:desc,qty:1,ex,gst:true}; // default GST on
   basket.push(newLine);
   lastAdded=newLine;renderBasket();
 }
@@ -268,7 +276,7 @@ function renderBasket(){
     const tdItem=document.createElement("td");
     const itemInput=document.createElement("input");
     itemInput.type="text"; itemInput.value=b.item; itemInput.className="editable item-input";
-    itemInput.onchange=()=>{b.item=itemInput.value; renderBasket();};
+    itemInput.onchange=()=>{b.item=itemInput.value;};
     tdItem.appendChild(itemInput); tr.appendChild(tdItem);
     // qty
     const tdQ=document.createElement("td");
@@ -276,9 +284,9 @@ function renderBasket(){
     const minus=document.createElement("button"); minus.textContent="-";
     const inp=document.createElement("input"); inp.type="number"; inp.step="0.1"; inp.className="qty-input"; inp.value=b.qty;
     const plus=document.createElement("button"); plus.textContent="+";
-    minus.onclick=()=>{b.qty=Math.max(1,b.qty-1);renderBasket();};
-    plus.onclick =()=>{b.qty+=1;renderBasket();};
-    inp.onchange=()=>{b.qty=Math.max(1,parseFloat(inp.value)||1);renderBasket();};
+    minus.onclick=()=>{b.qty=Math.max(1,b.qty-1); renderBasket();};
+    plus.onclick =()=>{b.qty+=1; renderBasket();};
+    inp.onchange=()=>{b.qty=Math.max(1,parseFloat(inp.value)||1); renderBasket();};
     qc.append(minus,inp,plus); tdQ.appendChild(qc); tr.appendChild(tdQ);
     // price ex editable
     const tdEx=document.createElement("td");
@@ -287,17 +295,17 @@ function renderBasket(){
     exInput.value=isNaN(b.ex)?"":Number(b.ex).toFixed(2);
     exInput.onchange=()=>{ b.ex = parseFloat(exInput.value); renderBasket(); };
     tdEx.appendChild(exInput); tr.appendChild(tdEx);
-    // price inc editable
-    const tdInc=document.createElement("td");
-    const incInput=document.createElement("input");
-    incInput.type="number"; incInput.step="0.01"; incInput.className="editable price-input";
-    incInput.value=isNaN(b.inc)?"":Number(b.inc).toFixed(2);
-    incInput.onchange=()=>{ b.inc = parseFloat(incInput.value); renderBasket(); };
-    tdInc.appendChild(incInput); tr.appendChild(tdInc);
+    // GST checkbox column
+    const tdGst=document.createElement("td"); tdGst.className="gst-cell";
+    const gstInput=document.createElement("input"); gstInput.type="checkbox"; gstInput.className="gst-input"; gstInput.checked=!!b.gst;
+    gstInput.onchange=()=>{ b.gst = gstInput.checked; renderBasket(); };
+    tdGst.appendChild(gstInput); tr.appendChild(tdGst);
     // line totals
-    const le=isNaN(b.ex)?0:b.qty*b.ex, li=isNaN(b.inc)?0:b.qty*b.inc; totE+=le; totI+=li;
+    const le=isNaN(b.ex)?0:b.qty*b.ex; totE+=le;
+    const li=b.gst ? le*(1+GST_RATE) : le; totI+=li;
     const tdLe=document.createElement("td"), tdLi=document.createElement("td");
-    tdLe.textContent=isNaN(b.ex)?"N/A":le.toFixed(2); tdLi.textContent=isNaN(b.inc)?"N/A":li.toFixed(2);
+    tdLe.textContent=isNaN(b.ex)?"N/A":le.toFixed(2);
+    tdLi.textContent=isNaN(b.ex)?"N/A":li.toFixed(2);
     tr.appendChild(tdLe); tr.appendChild(tdLi);
     // remove
     const tdRem=document.createElement("td"); const x=document.createElement("span"); x.className="remove-btn"; x.textContent="X";
@@ -325,15 +333,17 @@ function renderBasket(){
 document.getElementById("exportCsvBtn").onclick=()=>{
   if(!basket.length)return;
   const esc=v=>`"${String(v).replace(/"/g,'""')}"`;
-  const lines=[["Item","Quantity","Price Ex. GST","Price Inc. GST","Line Ex","Line Inc"].map(esc)];
+  const lines=[["Item","Quantity","Price Ex. GST","GST","Line Ex","Line Total"].map(esc)];
   let tE=0,tI=0;
   basket.forEach(b=>{
-    const le=isNaN(b.ex)?0:b.qty*b.ex, li=isNaN(b.inc)?0:b.qty*b.inc;tE+=le;tI+=li;
-    lines.push([b.item,b.qty,isNaN(b.ex)?"N/A":b.ex.toFixed(2),isNaN(b.inc)?"N/A":b.inc.toFixed(2),
-      isNaN(b.ex)?"N/A":le.toFixed(2),isNaN(b.inc)?"N/A":li.toFixed(2)].map(esc));
+    const le=isNaN(b.ex)?0:b.qty*b.ex; tE+=le;
+    const li=b.gst ? le*(1+GST_RATE) : le; tI+=li;
+    lines.push([b.item,b.qty,isNaN(b.ex)?"N/A":Number(b.ex).toFixed(2), b.gst?"Yes":"No",
+      isNaN(b.ex)?"N/A":le.toFixed(2), isNaN(b.ex)?"N/A":li.toFixed(2)].map(esc));
   });
-  lines.push(['','','','"Totals:"',tE.toFixed(2),tI.toFixed(2)]);
-  const blob=new Blob([lines.map(r=>r.join(",")).join("\n")],{type:"text/csv"});
+  lines.push(['','','','',tE.toFixed(2),tI.toFixed(2)]);
+  const blob=new Blob([lines.map(r=>r.join(",")).join("
+")],{type:"text/csv"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="quote_basket.csv";
   document.body.appendChild(a);a.click();document.body.removeChild(a);
 };
