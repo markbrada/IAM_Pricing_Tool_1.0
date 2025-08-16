@@ -176,7 +176,14 @@ const tabs=document.getElementById("sheetTabs"),
       toast=document.getElementById("toast");
 
 /* ---------- helpers & persistence ---------- */
-function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));}
+function escapeHtml(s){
+  s = String(s==null?'':s);
+  return s.replace(/[&<>"']/g, function(m){
+    return ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]) || m;
+  });
+}[m]) || m;
+  });
+}[m]));}
 function saveBasket(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(basket)); }catch(e){} }
 function loadBasket(){ try{ const raw=localStorage.getItem(LS_KEY); if(raw){ const arr=JSON.parse(raw); if(Array.isArray(arr)){ basket=arr; uid=Math.max(0,...arr.map(x=>+x.id||0)); renderBasket(); } } }catch(e){} }
 loadBasket();
@@ -462,6 +469,26 @@ document.getElementById("exportCsvBtn").onclick=()=>{
 };
 })();
 console.log('IAM Pricing Tool — script loaded OK');
+window.__iam_main_ok__=true;
+</script>
+<script>
+(function(){
+  try{
+    if(!window.__iam_main_ok__){
+      var status=document.getElementById('status');
+      if(status){status.innerHTML='<span style="color:#b00">Main script didn\'t finish loading. Check Console for the first red error above.</span>';}
+      // Minimal fallback: try to render first sheet so the page is not blank
+      if(window.XLSX){
+        fetch('./myFile.xlsx', {cache:'no-store'}).then(function(r){return r.arrayBuffer();}).then(function(buf){
+          var wb=XLSX.read(buf,{type:'array'});
+          var names=Object.keys(wb.Sheets||{}); if(!names.length) return;
+          var html=XLSX.utils.sheet_to_html(wb.Sheets[names[0]]);
+          document.getElementById('sheetContainer').innerHTML=html;
+        }).catch(function(){});
+      }
+    }
+  }catch(e){/* ignore */}
+})();
 </script>
 </body>
 </html>
