@@ -82,7 +82,7 @@ border-radius:4px;cursor:pointer}
 padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 #toast.show{opacity:1}
 /* editable inputs in basket */
-.editable{background:#ffe0ff;border:1px solid var(--border);padding:.2rem .3rem;border-radius:4px}
+.editable{background:#fff;border:1px solid var(--border);padding:.2rem .3rem;border-radius:4px}
 .item-input{width:100%}
 .price-input{max-width:110px;text-align:right}
 
@@ -92,6 +92,19 @@ padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 .price-input{max-width:110px;text-align:right}
 .gst-cell{ text-align:center }
 .gst-input{ width:18px; height:18px }
+
+/* expander + details */
+.expander{background:none;border:1px solid var(--border);border-radius:4px;padding:.1rem .35rem;cursor:pointer}
+.details-row td{background:var(--panel)}
+.details-panel{padding:.75rem;border-top:1px dashed var(--border);background:var(--alt)}
+.details-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem}
+.details-grid .notes{grid-column:1/-1}
+.details-grid .line-note{grid-column:1/-1}
+.details-panel label{font-weight:bold;font-size:.85rem;display:block;margin-bottom:.25rem}
+.details-panel .ro{padding:.45rem .6rem;border:1px solid var(--border);border-radius:4px;background:var(--panel)}
+.hours-input,.line-note-input{width:100%;border:1px solid var(--border);border-radius:4px;padding:.3rem;background:#fff}
+.dup-btn{background:var(--btn);color:#fff;border:none;padding:.3rem .6rem;border-radius:4px;cursor:pointer}
+.dup-btn:hover{background:var(--btnh)}
 
 </style>
 </head>
@@ -115,6 +128,8 @@ padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
       <h3>Quote Basket</h3><span id="toast"></span>
     </div>
     <div>
+      <button id="addCustomBtn">Add custom line</button>
+      <button id="clearBasketBtn">Clear</button>
       <button id="exportCsvBtn">Export quote CSV</button>
       <button id="toggleBasketBtn">Hide Basket</button>
     </div>
@@ -152,13 +167,19 @@ const ORDER=[
 const META=Object.fromEntries(ORDER.map((o,i)=>[o[0],{idx:i,cls:o[1]}]));
 const FALL=META["uncategorised"];
 const PRICE_EX=["Rate Ex. GST","Price Ex. GST"];
-const TOAST_MS=3000, GST_RATE=0.10;
+const TOAST_MS=3000, GST_RATE=0.10, LS_KEY='iam_basket_v2';
 
 /* ----------  STATE & DOM Refs  ---------- */
 let wb=null,basket=[],lastRemoved=null,lastAdded=null,uid=0;
 const tabs=document.getElementById("sheetTabs"),
       container=document.getElementById("sheetContainer"),
       toast=document.getElementById("toast");
+
+/* ---------- helpers & persistence ---------- */
+function escapeHtml(s){return String(s??'').replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));}
+function saveBasket(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(basket)); }catch(e){} }
+function loadBasket(){ try{ const raw=localStorage.getItem(LS_KEY); if(raw){ const arr=JSON.parse(raw); if(Array.isArray(arr)){ basket=arr; uid=Math.max(0,...arr.map(x=>+x.id||0)); renderBasket(); } } }catch(e){} }
+loadBasket();
 
 /* ----------  Dark‑mode toggle  ---------- */
 document.getElementById("darkModeToggle").onclick=()=>document.body.classList.toggle("dark-mode");
@@ -294,15 +315,36 @@ document.getElementById("toggleBasketBtn").onclick=e=>{
   bc.style.display=bc.style.display==="none"?"block":"none";
   e.target.textContent=bc.style.display==="none"?"Show Basket":"Hide Basket";
 };
+// header controls
+const addCustomBtn=document.getElementById('addCustomBtn');
+const clearBasketBtn=document.getElementById('clearBasketBtn');
+if(addCustomBtn){addCustomBtn.onclick=()=>{const nl={id:++uid,item:'Custom item',code:'',unit:'',notes:'',hours:0,qty:1,ex:0,gst:true,lineNote:'',open:true};basket.push(nl);renderBasket();};}
+if(clearBasketBtn){clearBasketBtn.onclick=()=>{if(!basket.length)return;basket=[];renderBasket();showToast('Basket cleared');};}
+  bc.style.display=bc.style.display==="none"?"block":"none";
+  e.target.textContent=bc.style.display==="none"?"Show Basket":"Hide Basket";
+};
 
 function addItem(row,header){
   const catIdx=header.indexOf("Category");
-  const itemCol=header.findIndex(h=>h.toLowerCase()==="item");
-  const firstNonEmpty = row.find((v,i)=>i!==catIdx && String(v).trim()!=='');
+  const itemCol=header.findIndex(h=>String(h).toLowerCase()==="item");
+  const hL=header.map(h=>String(h).toLowerCase());
+  const codeIdx=hL.indexOf('code');
+  const unitIdx=hL.indexOf('unit');
+  const notesIdx=hL.indexOf('notes');
+  const hoursIdx=hL.findIndex(h=>h.includes('estimated') && h.includes('time'));
+  const firstNonEmpty=row.find((v,i)=>i!==catIdx && String(v).trim()!=='');
   let desc=itemCol!==-1?row[itemCol]:firstNonEmpty||"Unnamed Item";
   const exIdx=header.findIndex(h=>PRICE_EX.includes(h));
   const ex = exIdx===-1 ? NaN : +row[exIdx];
-  const newLine={id:++uid,item:desc,qty:1,ex,gst:true}; // default GST on
+  const newLine={
+    id:++uid,
+    item:desc,
+    code: codeIdx>-1? row[codeIdx]:"",
+    unit: unitIdx>-1? row[unitIdx]:"",
+    notes: notesIdx>-1? row[notesIdx]:"",
+    hours: hoursIdx>-1? (parseFloat(row[hoursIdx])||0):0,
+    qty:1, ex, gst:true, lineNote:'', open:false
+  };
   basket.push(newLine);
   lastAdded=newLine;renderBasket();
 }
@@ -311,25 +353,24 @@ function undoRemove(){if(lastRemoved){basket.splice(lastRemoved.i,0,lastRemoved.
 
 function renderBasket(){
   const cont=document.getElementById("basketContainer");cont.style.display=basket.length?"block":"none";
-  if(!basket.length){bBody.innerHTML="";bFoot.innerHTML="";return;}
+  if(!basket.length){bBody.innerHTML="";bFoot.innerHTML="";saveBasket();return;}
   bBody.innerHTML="";let totEx=0,totGst=0;
   basket.forEach((b,i)=>{
-    const tr=document.createElement("tr");
+    const tr=document.createElement("tr"); tr.className='main-row';
     tr.dataset.id=String(b.id||"");
-    // sort handle
-    const tdHandle=document.createElement("td");
-    tdHandle.className="sort-handle";
-    tdHandle.textContent="≡";
-    tr.appendChild(tdHandle);
+    // handle + expander
+    const tdHandle=document.createElement("td"); tdHandle.className="sort-handle";
+    const exp=document.createElement('button'); exp.className='expander'; exp.textContent=b.open?'▾':'▸';
+    exp.onclick=()=>{ b.open=!b.open; renderBasket(); };
+    const bars=document.createElement('span'); bars.textContent=' ≡';
+    tdHandle.appendChild(exp); tdHandle.appendChild(bars); tr.appendChild(tdHandle);
     // item editable
     const tdItem=document.createElement("td");
-    const itemInput=document.createElement("input");
-    itemInput.type="text"; itemInput.value=b.item; itemInput.className="editable item-input";
-    itemInput.onchange=()=>{b.item=itemInput.value;};
+    const itemInput=document.createElement("input"); itemInput.type="text"; itemInput.value=b.item; itemInput.className="editable item-input";
+    itemInput.onchange=()=>{b.item=itemInput.value; saveBasket();};
     tdItem.appendChild(itemInput); tr.appendChild(tdItem);
     // qty
-    const tdQ=document.createElement("td");
-    const qc=document.createElement("div"); qc.className="qty-controls";
+    const tdQ=document.createElement("td"); const qc=document.createElement("div"); qc.className="qty-controls";
     const minus=document.createElement("button"); minus.textContent="-";
     const inp=document.createElement("input"); inp.type="number"; inp.step="0.1"; inp.className="qty-input"; inp.value=b.qty;
     const plus=document.createElement("button"); plus.textContent="+";
@@ -339,12 +380,11 @@ function renderBasket(){
     qc.append(minus,inp,plus); tdQ.appendChild(qc); tr.appendChild(tdQ);
     // price ex editable
     const tdEx=document.createElement("td");
-    const exInput=document.createElement("input");
-    exInput.type="number"; exInput.step="0.01"; exInput.className="editable price-input";
+    const exInput=document.createElement("input"); exInput.type="number"; exInput.step="0.01"; exInput.className="editable price-input";
     exInput.value=isNaN(b.ex)?"":Number(b.ex).toFixed(2);
     exInput.onchange=()=>{ const v=parseFloat(exInput.value); b.ex = isFinite(v)?v:NaN; renderBasket(); };
     tdEx.appendChild(exInput); tr.appendChild(tdEx);
-    // GST apply checkbox column
+    // GST apply checkbox
     const tdGstApply=document.createElement("td"); tdGstApply.className="gst-cell";
     const gstInput=document.createElement("input"); gstInput.type="checkbox"; gstInput.className="gst-input"; gstInput.checked=!!b.gst;
     gstInput.onchange=()=>{ b.gst = gstInput.checked; renderBasket(); };
@@ -363,14 +403,23 @@ function renderBasket(){
     x.onclick=()=>{lastRemoved={b,i}; tr.classList.add("fade-out");
       setTimeout(()=>{basket.splice(i,1); renderBasket(); showToast("Item removed ↩", undoRemove);},300);} ;
     tdRem.appendChild(x); tr.appendChild(tdRem);
-    // copy-on-click (ignore inputs/buttons)
-    [...tr.children].forEach(c=>c.onclick=e=>{
-      if(["BUTTON","INPUT","SPAN"].includes(e.target.tagName))return;
-      navigator.clipboard.writeText(c.textContent).then(()=>{
-        c.classList.add("copied-cell"); void c.offsetWidth; setTimeout(()=>c.classList.remove("copied-cell"),150);
-      });
-    });
     bBody.appendChild(tr);
+    // details row
+    const dtr=document.createElement('tr'); dtr.className='details-row'; dtr.style.display=b.open?'table-row':'none';
+    const dtd=document.createElement('td'); dtd.colSpan=9;
+    const panel=document.createElement('div'); panel.className='details-panel';
+    const grid=document.createElement('div'); grid.className='details-grid'; panel.appendChild(grid);
+    const elCode=document.createElement('div'); elCode.innerHTML=`<label>Code</label><div class="ro">${escapeHtml(b.code||'')}</div>`; grid.appendChild(elCode);
+    const elUnit=document.createElement('div'); elUnit.innerHTML=`<label>Unit</label><div class="ro">${escapeHtml(b.unit||'')}</div>`; grid.appendChild(elUnit);
+    const elHours=document.createElement('div'); elHours.innerHTML=`<label>Hours</label><input type="number" step="0.1" class="hours-input" value="${b.hours??''}">`; grid.appendChild(elHours);
+    const elNotes=document.createElement('div'); elNotes.className='notes'; elNotes.innerHTML=`<label>Notes (from sheet)</label><div class="ro">${escapeHtml(b.notes||'')}</div>`; grid.appendChild(elNotes);
+    const elLineNote=document.createElement('div'); elLineNote.className='line-note'; elLineNote.innerHTML=`<label>Line note (editable)</label><textarea rows="2" class="line-note-input">${b.lineNote||''}</textarea>`; grid.appendChild(elLineNote);
+    const elAct=document.createElement('div'); elAct.className='actions'; const dup=document.createElement('button'); dup.className='dup-btn'; dup.textContent='Duplicate line'; elAct.appendChild(dup); grid.appendChild(elAct);
+    dtd.appendChild(panel); dtr.appendChild(dtd); bBody.appendChild(dtr);
+    // bind detail inputs
+    const hIn=elHours.querySelector('.hours-input'); if(hIn){ hIn.onchange=()=>{ const v=parseFloat(hIn.value); b.hours=isNaN(v)?0:v; saveBasket(); }; }
+    const ln=elLineNote.querySelector('.line-note-input'); if(ln){ ln.onchange=()=>{ b.lineNote=ln.value; saveBasket(); }; }
+    dup.onclick=()=>{ const clone=JSON.parse(JSON.stringify({...b,id:++uid,open:false})); basket.splice(i+1,0,clone); renderBasket(); showToast('Line duplicated'); };
   });
   const grand = totEx + totGst;
   bFoot.innerHTML=`<tr>
@@ -381,11 +430,13 @@ function renderBasket(){
     <td></td>
   </tr>`;
   if(window.Sortable){
-    Sortable.create(bBody,{handle: ".sort-handle", animation: 150, onEnd: ()=>{
-      const order=[...bBody.children].map(r=>r.dataset.id);
+    Sortable.create(bBody,{handle: ".sort-handle", draggable: "tr.main-row", animation: 150, onEnd: ()=>{
+      const order=[...bBody.querySelectorAll('tr.main-row')].map(r=>r.dataset.id);
       basket = order.map(id => basket.find(b => String(b.id)===id));
+      saveBasket();
     }});
   }
+  saveBasket();
 }
 
 /* ----------  CSV ---------- */
@@ -413,3 +464,4 @@ console.log('IAM Pricing Tool — script loaded OK');
 </script>
 </body>
 </html>
+
