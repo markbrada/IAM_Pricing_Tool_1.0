@@ -233,79 +233,18 @@ fetch('./myFile.xlsx', {cache:'no-store'})
   .then(buf=>{ whenXLSXReady(()=>parseAndBuild(buf)); })
   .catch(err=>{ console.error(err); showPicker(err.message || 'network error'); });
 
-if(picker){
-  picker.addEventListener('change', async (e)=>{
-    const tgt=e && e.target; const files=tgt && tgt.files; const f=files && files[0];
-    if(!f) return; const ab = await f.arrayBuffer(); whenXLSXReady(()=>parseAndBuild(ab));
+if(if(picker){
+  picker.addEventListener('change', function(e){
+    var tgt = e && e.target; var files = tgt && tgt.files; var f = files && files[0];
+    if(!f) return;
+    if(f.arrayBuffer){
+      f.arrayBuffer().then(function(ab){ whenXLSXReady(function(){ parseAndBuild(ab); }); });
+    } else {
+      var reader = new FileReader();
+      reader.onload = function(ev){ var ab = ev.target.result; whenXLSXReady(function(){ parseAndBuild(ab); }); };
+      reader.readAsArrayBuffer(f);
+    }
   });
-}
-
-function active(n){[...tabs.children].forEach(b=>b.classList.toggle('active',b.dataset.sheet===n));}
-
-/* ----------  Draw one sheet  ---------- */
-function draw(name){
-  const rows=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:""});
-  if(!rows.length){container.textContent='Empty sheet.';return;}
-  const header=rows[0].map(h=>String(h).trim()), catIdx=header.indexOf("Category");
-  if(catIdx===-1){container.textContent='No "Category" column in this sheet.';return;}
-  const body=rows.slice(1);
-
-  container.innerHTML="";
-  const sDiv=document.createElement("div");sDiv.className="search-container";
-  sDiv.innerHTML='<label class="search-label">Search items:</label>\
-    <input class="search-input" placeholder="Type to filter...">';
-  container.appendChild(sDiv);
-  const inp=sDiv.querySelector("input"), wrap=document.createElement("div");container.appendChild(wrap);
-  inp.oninput=render; render();
-
-  function render(){
-    const term=inp.value.toLowerCase();
-    wrap.innerHTML="";
-    const groups={};
-    body.forEach(r=>{
-      if(term && !r.some(c=>String(c).toLowerCase().includes(term)))return;
-      const cat=(r[catIdx]||"Uncategorised").toString().trim();
-      (groups[cat]=groups[cat]||[]).push(r);
-    });
-    Object.keys(groups).sort((a,b)=>{
-      const A=(META[a.toLowerCase()]||FALL).idx,B=(META[b.toLowerCase()]||FALL).idx;return A-B;
-    }).forEach(cat=>{
-      const cls=(META[cat.toLowerCase()]||FALL).cls;
-      const det=document.createElement("details");det.open=!!term;det.className=cls;
-      const sum=document.createElement("summary");sum.textContent=cat;det.appendChild(sum);
-      const tbl=document.createElement("table");
-      tbl.innerHTML='<thead><tr><th></th>'+header.filter((_,i)=>i!==catIdx)
-        .map(h=>`<th>${h}</th>`).join("")+'</tr></thead>';
-      const tbody=document.createElement("tbody");tbl.appendChild(tbody);
-
-      groups[cat].forEach(r=>{
-        const tr=document.createElement("tr");
-        const tdAdd=document.createElement("td");
-        const btn=document.createElement("button");btn.className="add-button";btn.textContent="+";
-        btn.onclick=()=>{addItem(r,header);showToast("Item added ✓",undoAdd);} 
-        tdAdd.appendChild(btn);tr.appendChild(tdAdd);
-
-        r.forEach((cell,i)=>{
-          if(i===catIdx)return;
-          const td=document.createElement("td");
-          const h=header[i].toLowerCase();
-          let txt=/price|gst|rate/.test(h)&&!isNaN(cell)?(+cell).toFixed(2):cell;
-          if(term)txt=txt.toString().replace(new RegExp(`(${term})`,`gi`),'<span class="highlight">$1</span>');
-          td.innerHTML=txt;if(/price|gst|rate/.test(h))td.style.fontWeight="bold";
-          td.onclick=e=>{
-            if(e.target.tagName==="BUTTON")return;
-            navigator.clipboard.writeText(td.textContent).then(()=>{
-              td.classList.add("copied-cell");void td.offsetWidth;
-              setTimeout(()=>td.classList.remove("copied-cell"),150);
-            });
-          };
-          tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-      });
-      det.appendChild(tbl);wrap.appendChild(det);
-    });
-  }
 }
 
 /* ----------  Toast ---------- */
@@ -360,87 +299,89 @@ function undoAdd(){if(lastAdded){const i=basket.findIndex(x=>x.id===lastAdded.id
 function undoRemove(){if(lastRemoved){basket.splice(lastRemoved.i,0,lastRemoved.b);lastRemoved=null;renderBasket();}}
 
 function renderBasket(){
-  const cont=document.getElementById("basketContainer");cont.style.display=basket.length?"block":"none";
-  if(!basket.length){bBody.innerHTML="";bFoot.innerHTML="";saveBasket();return;}
-  bBody.innerHTML="";let totEx=0,totGst=0;
-  basket.forEach((b,i)=>{
-    const tr=document.createElement("tr"); tr.className='main-row';
-    tr.dataset.id=String(b.id||"");
+  var cont=document.getElementById('basketContainer'); cont.style.display=basket.length?'block':'none';
+  if(!basket.length){ bBody.innerHTML=''; bFoot.innerHTML=''; saveBasket(); return; }
+  bBody.innerHTML=''; var totEx=0, totGst=0;
+  basket.forEach(function(b,i){
+    var tr=document.createElement('tr'); tr.className='main-row'; tr.dataset.id=String(b.id||'');
     // handle + expander
-    const tdHandle=document.createElement("td"); tdHandle.className="sort-handle";
-    const exp=document.createElement('button'); exp.className='expander'; exp.textContent=b.open?'▾':'▸';
-    exp.onclick=()=>{ b.open=!b.open; renderBasket(); };
-    const bars=document.createElement('span'); bars.textContent=' ≡';
+    var tdHandle=document.createElement('td'); tdHandle.className='sort-handle';
+    var exp=document.createElement('button'); exp.className='expander'; exp.textContent=b.open?'▾':'▸';
+    exp.onclick=function(){ b.open=!b.open; renderBasket(); };
+    var bars=document.createElement('span'); bars.textContent=' ≡';
     tdHandle.appendChild(exp); tdHandle.appendChild(bars); tr.appendChild(tdHandle);
     // item editable
-    const tdItem=document.createElement("td");
-    const itemInput=document.createElement("input"); itemInput.type="text"; itemInput.value=b.item; itemInput.className="editable item-input";
-    itemInput.onchange=()=>{b.item=itemInput.value; saveBasket();};
+    var tdItem=document.createElement('td');
+    var itemInput=document.createElement('input'); itemInput.type='text'; itemInput.value=b.item; itemInput.className='editable item-input';
+    itemInput.onchange=function(){ b.item=itemInput.value; saveBasket(); };
     tdItem.appendChild(itemInput); tr.appendChild(tdItem);
     // qty
-    const tdQ=document.createElement("td"); const qc=document.createElement("div"); qc.className="qty-controls";
-    const minus=document.createElement("button"); minus.textContent="-";
-    const inp=document.createElement("input"); inp.type="number"; inp.step="0.1"; inp.className="qty-input"; inp.value=b.qty;
-    const plus=document.createElement("button"); plus.textContent="+";
-    minus.onclick=()=>{b.qty=Math.max(1,b.qty-1); renderBasket();};
-    plus.onclick =()=>{b.qty+=1; renderBasket();};
-    inp.onchange=()=>{b.qty=Math.max(1,parseFloat(inp.value)||1); renderBasket();};
-    qc.append(minus,inp,plus); tdQ.appendChild(qc); tr.appendChild(tdQ);
+    var tdQ=document.createElement('td'); var qc=document.createElement('div'); qc.className='qty-controls';
+    var minus=document.createElement('button'); minus.textContent='-';
+    var inp=document.createElement('input'); inp.type='number'; inp.step='0.1'; inp.className='qty-input'; inp.value=b.qty;
+    var plus=document.createElement('button'); plus.textContent='+';
+    minus.onclick=function(){ b.qty=Math.max(1,b.qty-1); renderBasket(); };
+    plus.onclick=function(){ b.qty+=1; renderBasket(); };
+    inp.onchange=function(){ b.qty=Math.max(1,parseFloat(inp.value)||1); renderBasket(); };
+    qc.appendChild(minus); qc.appendChild(inp); qc.appendChild(plus); tdQ.appendChild(qc); tr.appendChild(tdQ);
     // price ex editable
-    const tdEx=document.createElement("td");
-    const exInput=document.createElement("input"); exInput.type="number"; exInput.step="0.01"; exInput.className="editable price-input";
-    exInput.value=isNaN(b.ex)?"":Number(b.ex).toFixed(2);
-    exInput.onchange=()=>{ const v=parseFloat(exInput.value); b.ex = isFinite(v)?v:NaN; renderBasket(); };
+    var tdEx=document.createElement('td');
+    var exInput=document.createElement('input'); exInput.type='number'; exInput.step='0.01'; exInput.className='editable price-input';
+    exInput.value=isNaN(b.ex)?'':Number(b.ex).toFixed(2);
+    exInput.onchange=function(){ var v=parseFloat(exInput.value); b.ex=isFinite(v)?v:NaN; renderBasket(); };
     tdEx.appendChild(exInput); tr.appendChild(tdEx);
     // GST apply checkbox
-    const tdGstApply=document.createElement("td"); tdGstApply.className="gst-cell";
-    const gstInput=document.createElement("input"); gstInput.type="checkbox"; gstInput.className="gst-input"; gstInput.checked=!!b.gst;
-    gstInput.onchange=()=>{ b.gst = gstInput.checked; renderBasket(); };
+    var tdGstApply=document.createElement('td'); tdGstApply.className='gst-cell';
+    var gstInput=document.createElement('input'); gstInput.type='checkbox'; gstInput.className='gst-input'; gstInput.checked=!!b.gst;
+    gstInput.onchange=function(){ b.gst=gstInput.checked; renderBasket(); };
     tdGstApply.appendChild(gstInput); tr.appendChild(tdGstApply);
     // line totals
-    const le=isNaN(b.ex)?0:b.qty*b.ex; // ex-GST line total
-    const gstAmt = b.gst ? le*GST_RATE : 0;
-    const li = le + gstAmt;
-    totEx+=le; totGst+=gstAmt;
-    const tdLe=document.createElement("td"); tdLe.textContent=isNaN(b.ex)?"N/A":le.toFixed(2);
-    const tdG=document.createElement("td"); tdG.textContent=isNaN(b.ex)?"N/A":gstAmt.toFixed(2);
-    const tdLi=document.createElement("td"); tdLi.textContent=isNaN(b.ex)?"N/A":li.toFixed(2);
+    var le=isNaN(b.ex)?0:b.qty*b.ex; // ex-GST line total
+    var gstAmt=b.gst?le*GST_RATE:0; var li=le+gstAmt; totEx+=le; totGst+=gstAmt;
+    var tdLe=document.createElement('td'); tdLe.textContent=isNaN(b.ex)?'N/A':le.toFixed(2);
+    var tdG=document.createElement('td'); tdG.textContent=isNaN(b.ex)?'N/A':gstAmt.toFixed(2);
+    var tdLi=document.createElement('td'); tdLi.textContent=isNaN(b.ex)?'N/A':li.toFixed(2);
     tr.appendChild(tdLe); tr.appendChild(tdG); tr.appendChild(tdLi);
     // remove
-    const tdRem=document.createElement("td"); const x=document.createElement("span"); x.className="remove-btn"; x.textContent="X";
-    x.onclick=()=>{lastRemoved={b,i}; tr.classList.add("fade-out");
-      setTimeout(()=>{basket.splice(i,1); renderBasket(); showToast("Item removed ↩", undoRemove);},300);} ;
+    var tdRem=document.createElement('td'); var x=document.createElement('span'); x.className='remove-btn'; x.textContent='X';
+    x.onclick=function(){ lastRemoved={b:b,i:i}; tr.classList.add('fade-out'); setTimeout(function(){ basket.splice(i,1); renderBasket(); showToast('Item removed ↩', undoRemove); },300); };
     tdRem.appendChild(x); tr.appendChild(tdRem);
     bBody.appendChild(tr);
-    // details row
-    const dtr=document.createElement('tr'); dtr.className='details-row'; dtr.style.display=b.open?'table-row':'none';
-    const dtd=document.createElement('td'); dtd.colSpan=9;
-    const panel=document.createElement('div'); panel.className='details-panel';
-    const grid=document.createElement('div'); grid.className='details-grid'; panel.appendChild(grid);
-    const elCode=document.createElement('div'); elCode.innerHTML=`<label>Code</label><div class="ro">${escapeHtml(b.code||'')}</div>`; grid.appendChild(elCode);
-    const elUnit=document.createElement('div'); elUnit.innerHTML=`<label>Unit</label><div class="ro">${escapeHtml(b.unit||'')}</div>`; grid.appendChild(elUnit);
-    const elHours=document.createElement('div'); elHours.innerHTML=`<label>Hours</label><input type="number" step="0.1" class="hours-input" value="${(b.hours!=null?b.hours:'')}">`; grid.appendChild(elHours);
-    const elNotes=document.createElement('div'); elNotes.className='notes'; elNotes.innerHTML=`<label>Notes (from sheet)</label><div class="ro">${escapeHtml(b.notes||'')}</div>`; grid.appendChild(elNotes);
-    const elLineNote=document.createElement('div'); elLineNote.className='line-note'; elLineNote.innerHTML=`<label>Line note (editable)</label><textarea rows="2" class="line-note-input">${b.lineNote||''}</textarea>`; grid.appendChild(elLineNote);
-    const elAct=document.createElement('div'); elAct.className='actions'; const dup=document.createElement('button'); dup.className='dup-btn'; dup.textContent='Duplicate line'; elAct.appendChild(dup); grid.appendChild(elAct);
+    // details row (DOM-built, no template strings)
+    var dtr=document.createElement('tr'); dtr.className='details-row'; dtr.style.display=b.open?'table-row':'none';
+    var dtd=document.createElement('td'); dtd.colSpan=9;
+    var panel=document.createElement('div'); panel.className='details-panel';
+    var grid=document.createElement('div'); grid.className='details-grid'; panel.appendChild(grid);
+    function addRO(labelText, valueText){
+      var wrap=document.createElement('div'); var lab=document.createElement('label'); lab.textContent=labelText; wrap.appendChild(lab);
+      var box=document.createElement('div'); box.className='ro'; box.textContent=valueText||''; wrap.appendChild(box); return wrap;
+    }
+    grid.appendChild(addRO('Code', b.code));
+    grid.appendChild(addRO('Unit', b.unit));
+    var hoursWrap=document.createElement('div'); var hLab=document.createElement('label'); hLab.textContent='Hours'; hoursWrap.appendChild(hLab);
+    var hInput=document.createElement('input'); hInput.type='number'; hInput.step='0.1'; hInput.className='hours-input'; hInput.value=(b.hours!=null?b.hours:''); hoursWrap.appendChild(hInput); grid.appendChild(hoursWrap);
+    grid.appendChild(addRO('Notes (from sheet)', b.notes));
+    var lnWrap=document.createElement('div'); lnWrap.className='line-note'; var lnLab=document.createElement('label'); lnLab.textContent='Line note (editable)'; lnWrap.appendChild(lnLab);
+    var lnTA=document.createElement('textarea'); lnTA.rows=2; lnTA.className='line-note-input'; lnTA.value=b.lineNote||''; lnWrap.appendChild(lnTA); grid.appendChild(lnWrap);
+    var act=document.createElement('div'); act.className='actions'; var dup=document.createElement('button'); dup.className='dup-btn'; dup.textContent='Duplicate line'; act.appendChild(dup); grid.appendChild(act);
     dtd.appendChild(panel); dtr.appendChild(dtd); bBody.appendChild(dtr);
     // bind detail inputs
-    const hIn=elHours.querySelector('.hours-input'); if(hIn){ hIn.onchange=()=>{ const v=parseFloat(hIn.value); b.hours=isNaN(v)?0:v; saveBasket(); }; }
-    const ln=elLineNote.querySelector('.line-note-input'); if(ln){ ln.onchange=()=>{ b.lineNote=ln.value; saveBasket(); }; }
-    dup.onclick=()=>{ const clone = JSON.parse(JSON.stringify(b)); clone.id=++uid; clone.open=false; basket.splice(i+1,0,clone); renderBasket(); showToast('Line duplicated'); };
+    hInput.onchange=function(){ var v=parseFloat(hInput.value); b.hours=isNaN(v)?0:v; saveBasket(); };
+    lnTA.onchange=function(){ b.lineNote=lnTA.value; saveBasket(); };
+    dup.onclick=function(){ var clone=JSON.parse(JSON.stringify(b)); clone.id=++uid; clone.open=false; basket.splice(i+1,0,clone); renderBasket(); showToast('Line duplicated'); };
   });
-  const grand = totEx + totGst;
-  bFoot.innerHTML=`<tr>
-    <td colspan="5" style="text-align:right;font-weight:bold">Grand Totals:</td>
-    <td style="font-weight:bold">${totEx.toFixed(2)}</td>
-    <td style="font-weight:bold">${totGst.toFixed(2)}</td>
-    <td style="font-weight:bold">${grand.toFixed(2)}</td>
-    <td></td>
-  </tr>`;
+  var grand=totEx+totGst;
+  bFoot.innerHTML='<tr>'+
+    '<td colspan="5" style="text-align:right;font-weight:bold">Grand Totals:</td>'+
+    '<td style="font-weight:bold">'+totEx.toFixed(2)+'</td>'+
+    '<td style="font-weight:bold">'+totGst.toFixed(2)+'</td>'+
+    '<td style="font-weight:bold">'+grand.toFixed(2)+'</td>'+
+    '<td></td>'+
+  '</tr>';
   if(window.Sortable){
-    Sortable.create(bBody,{handle: ".sort-handle", draggable: "tr.main-row", animation: 150, onEnd: ()=>{
-      const order=[...bBody.querySelectorAll('tr.main-row')].map(r=>r.dataset.id);
-      basket = order.map(id => basket.find(b => String(b.id)===id));
+    Sortable.create(bBody,{handle: '.sort-handle', draggable: 'tr.main-row', animation: 150, onEnd: function(){
+      var rows=bBody.querySelectorAll('tr.main-row'); var order=[]; for(var k=0;k<rows.length;k++){ order.push(rows[k].dataset.id); }
+      basket = order.map(function(id){ for(var j=0;j<basket.length;j++){ if(String(basket[j].id)===id) return basket[j]; } });
       saveBasket();
     }});
   }
