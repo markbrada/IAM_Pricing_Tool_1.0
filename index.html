@@ -89,18 +89,6 @@ padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 .gst-cell{ text-align:center }
 .gst-input{ width:18px; height:18px }
 
-/* expander + details */
-.expander{background:none;border:1px solid var(--border);border-radius:4px;padding:.1rem .35rem;cursor:pointer}
-.details-row td{background:var(--panel)}
-.details-panel{padding:.75rem;border-top:1px dashed var(--border);background:var(--alt)}
-.details-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem}
-.details-grid .notes{grid-column:1/-1}
-.details-grid .line-note{grid-column:1/-1}
-.details-panel label{font-weight:bold;font-size:.85rem;display:block;margin-bottom:.25rem}
-.details-panel .ro{padding:.45rem .6rem;border:1px solid var(--border);border-radius:4px;background:var(--panel)}
-.hours-input,.line-note-input{width:100%;border:1px solid var(--border);border-radius:4px;padding:.3rem;background:#fff}
-.dup-btn{background:var(--btn);color:#fff;border:none;padding:.3rem .6rem;border-radius:4px;cursor:pointer}
-.dup-btn:hover{background:var(--btnh)}
 
 </style>
 </head>
@@ -340,7 +328,17 @@ document.getElementById("toggleBasketBtn").onclick=e=>{
 // header controls
 const addCustomBtn=document.getElementById('addCustomBtn');
 const clearBasketBtn=document.getElementById('clearBasketBtn');
-if(addCustomBtn){addCustomBtn.onclick=()=>{const nl={id:++uid,item:'Custom item',code:'',unit:'',notes:'',hours:0,qty:1,ex:0,gst:true,lineNote:'',open:true};basket.push(nl);renderBasket();};}
+if(addCustomBtn){
+  addCustomBtn.onclick=function(){
+    var nl={id:++uid,item:'Custom item',qty:1,ex:0,gst:true};
+    basket.push(nl);
+    renderBasket();
+    try{
+      var inputs=bBody.querySelectorAll('tr.main-row input.item-input');
+      if(inputs.length){ inputs[inputs.length-1].focus(); }
+    }catch(e){}
+  };
+};basket.push(nl);renderBasket();};}
 if(clearBasketBtn){clearBasketBtn.onclick=()=>{if(!basket.length)return;basket=[];renderBasket();showToast('Basket cleared');};}
   bc.style.display=bc.style.display==="none"?"block":"none";
   e.target.textContent=bc.style.display==="none"?"Show Basket":"Hide Basket";
@@ -379,25 +377,20 @@ function renderBasket(){
   bBody.innerHTML=''; var totEx=0, totGst=0;
   basket.forEach(function(b,i){
     var tr=document.createElement('tr'); tr.className='main-row'; tr.dataset.id=String(b.id||'');
-    // handle + expander
-    var tdHandle=document.createElement('td'); tdHandle.className='sort-handle';
-    var isOpen=!!b.open; var exp=document.createElement('button'); exp.className='expander'; exp.textContent=isOpen?'▾':'▸';
-    exp.title=isOpen?'Hide details':'Show details';
-    exp.onclick=function(){ b.open=!b.open; saveBasket(); renderBasket(); };
-    var bars=document.createElement('span'); bars.textContent=' ≡';
-    tdHandle.appendChild(exp); tdHandle.appendChild(bars); tr.appendChild(tdHandle);
+    // handle (no expander)
+    var tdHandle=document.createElement('td'); tdHandle.className='sort-handle'; tdHandle.textContent='≡'; tr.appendChild(tdHandle);
     // item editable
     var tdItem=document.createElement('td');
-    var itemInput=document.createElement('input'); itemInput.type='text'; itemInput.value=b.item; itemInput.className='editable item-input';
+    var itemInput=document.createElement('input'); itemInput.type='text'; itemInput.value=b.item||''; itemInput.className='editable item-input';
     itemInput.onchange=function(){ b.item=itemInput.value; saveBasket(); };
     tdItem.appendChild(itemInput); tr.appendChild(tdItem);
     // qty
     var tdQ=document.createElement('td'); var qc=document.createElement('div'); qc.className='qty-controls';
     var minus=document.createElement('button'); minus.textContent='-';
-    var inp=document.createElement('input'); inp.type='number'; inp.step='0.1'; inp.className='qty-input'; inp.value=b.qty;
+    var inp=document.createElement('input'); inp.type='number'; inp.step='0.1'; inp.className='qty-input'; inp.value=b.qty||1;
     var plus=document.createElement('button'); plus.textContent='+';
-    minus.onclick=function(){ b.qty=Math.max(1,b.qty-1); renderBasket(); };
-    plus.onclick=function(){ b.qty+=1; renderBasket(); };
+    minus.onclick=function(){ b.qty=Math.max(1,(b.qty||1)-1); renderBasket(); };
+    plus.onclick=function(){ b.qty=(b.qty||1)+1; renderBasket(); };
     inp.onchange=function(){ b.qty=Math.max(1,parseFloat(inp.value)||1); renderBasket(); };
     qc.appendChild(minus); qc.appendChild(inp); qc.appendChild(plus); tdQ.appendChild(qc); tr.appendChild(tdQ);
     // price ex editable
@@ -412,8 +405,7 @@ function renderBasket(){
     gstInput.onchange=function(){ b.gst=gstInput.checked; renderBasket(); };
     tdGstApply.appendChild(gstInput); tr.appendChild(tdGstApply);
     // line totals
-    var le=isNaN(b.ex)?0:b.qty*b.ex; // ex-GST line total
-    var gstAmt=b.gst?le*GST_RATE:0; var li=le+gstAmt; totEx+=le; totGst+=gstAmt;
+    var le=isNaN(b.ex)?0:(b.qty||1)*b.ex; var gstAmt=b.gst?le*GST_RATE:0; var li=le+gstAmt; totEx+=le; totGst+=gstAmt;
     var tdLe=document.createElement('td'); tdLe.textContent=isNaN(b.ex)?'N/A':le.toFixed(2);
     var tdG=document.createElement('td'); tdG.textContent=isNaN(b.ex)?'N/A':gstAmt.toFixed(2);
     var tdLi=document.createElement('td'); tdLi.textContent=isNaN(b.ex)?'N/A':li.toFixed(2);
@@ -423,28 +415,6 @@ function renderBasket(){
     x.onclick=function(){ lastRemoved={b:b,i:i}; tr.classList.add('fade-out'); setTimeout(function(){ basket.splice(i,1); renderBasket(); showToast('Item removed ↩', undoRemove); },300); };
     tdRem.appendChild(x); tr.appendChild(tdRem);
     bBody.appendChild(tr);
-    // details row (DOM-built, no template strings)
-    var isOpenRow=!!b.open; var dtr=document.createElement('tr'); dtr.className='details-row'; dtr.style.display=isOpenRow?'table-row':'none';
-    var dtd=document.createElement('td'); dtd.colSpan=9;
-    var panel=document.createElement('div'); panel.className='details-panel';
-    var grid=document.createElement('div'); grid.className='details-grid'; panel.appendChild(grid);
-    function addRO(labelText, valueText){
-      var wrap=document.createElement('div'); var lab=document.createElement('label'); lab.textContent=labelText; wrap.appendChild(lab);
-      var box=document.createElement('div'); box.className='ro'; box.textContent=valueText||''; wrap.appendChild(box); return wrap;
-    }
-    grid.appendChild(addRO('Code', b.code));
-    grid.appendChild(addRO('Unit', b.unit));
-    var hoursWrap=document.createElement('div'); var hLab=document.createElement('label'); hLab.textContent='Hours'; hoursWrap.appendChild(hLab);
-    var hInput=document.createElement('input'); hInput.type='number'; hInput.step='0.1'; hInput.className='hours-input'; hInput.value=(b.hours!=null?b.hours:''); hoursWrap.appendChild(hInput); grid.appendChild(hoursWrap);
-    grid.appendChild(addRO('Notes (from sheet)', b.notes));
-    var lnWrap=document.createElement('div'); lnWrap.className='line-note'; var lnLab=document.createElement('label'); lnLab.textContent='Line note (editable)'; lnWrap.appendChild(lnLab);
-    var lnTA=document.createElement('textarea'); lnTA.rows=2; lnTA.className='line-note-input'; lnTA.value=b.lineNote||''; lnWrap.appendChild(lnTA); grid.appendChild(lnWrap);
-    var act=document.createElement('div'); act.className='actions'; var dup=document.createElement('button'); dup.className='dup-btn'; dup.textContent='Duplicate line'; act.appendChild(dup); grid.appendChild(act);
-    dtd.appendChild(panel); dtr.appendChild(dtd); bBody.appendChild(dtr);
-    // bind detail inputs
-    hInput.onchange=function(){ var v=parseFloat(hInput.value); b.hours=isNaN(v)?0:v; saveBasket(); };
-    lnTA.onchange=function(){ b.lineNote=lnTA.value; saveBasket(); };
-    dup.onclick=function(){ var clone=JSON.parse(JSON.stringify(b)); clone.id=++uid; clone.open=false; basket.splice(i+1,0,clone); renderBasket(); showToast('Line duplicated'); };
   });
   var grand=totEx+totGst;
   bFoot.innerHTML='<tr>'+
