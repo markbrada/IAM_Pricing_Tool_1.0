@@ -177,9 +177,17 @@ const tabs=document.getElementById("sheetTabs"),
 
 /* ---------- helpers & persistence ---------- */
 function escapeHtml(s){
-  s = String(s==null?'':s);
+  s = String(s == null ? '' : s);
   return s.replace(/[&<>"']/g, function(m){
-    return ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]) || m;
+    switch(m){
+      case '&': return '&amp;';
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '"': return '&quot;';
+      default: return '&#39;';
+    }
+  });
+}[m]) || m;
   });
 }[m]) || m;
   });
