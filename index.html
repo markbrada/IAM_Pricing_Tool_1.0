@@ -164,17 +164,27 @@ const statusEl=document.getElementById('status');
 const pickerWrap=document.getElementById('manualLoad');
 const picker=document.getElementById('xlsxPicker');
 
-function showStatus(html){ statusEl.innerHTML = html; }
+function showStatus(html){ if(statusEl){ statusEl.innerHTML = html; } }
 function showPicker(reason){
   showStatus(`<span style="color:#b00">Couldn't load <code>myFile.xlsx</code> (${reason}).</span> You can upload the workbook manually below.`);
-  pickerWrap.style.display='block';
+  if(pickerWrap) pickerWrap.style.display='block';
+}
+function whenXLSXReady(cb){
+  if(window.XLSX){ cb(); return; }
+  // try to load via CDN if missing
+  if(!document.querySelector('script[data-sheetjs]')){
+    const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/xlsx@0.20.3/dist/xlsx.full.min.js'; s.setAttribute('data-sheetjs','1');
+    s.onload=()=>cb(); s.onerror=()=>showPicker('SheetJS failed to load'); document.head.appendChild(s);
+  } else {
+    let tries=0; const t=setInterval(()=>{ if(window.XLSX){ clearInterval(t); cb(); } else if(++tries>50){ clearInterval(t); showPicker('SheetJS failed to load'); } },100);
+  }
 }
 function parseAndBuild(buf){
   try{ wb = XLSX.read(buf,{type:'array'}); }
   catch(e){ console.error(e); showPicker('invalid file'); return; }
   const sheetNames = Object.keys(wb.Sheets||{});
   if(!sheetNames.length){ showPicker('workbook has no sheets'); return; }
-  tabs.innerHTML=''; container.innerHTML=''; showStatus(''); pickerWrap.style.display='none';
+  tabs.innerHTML=''; container.innerHTML=''; showStatus(''); if(pickerWrap) pickerWrap.style.display='none';
   sheetNames.forEach((name,i)=>{
     const b=document.createElement('button'); b.textContent=name; b.dataset.sheet=name;
     b.onclick=()=>{active(name); draw(name);} 
@@ -183,16 +193,18 @@ function parseAndBuild(buf){
   });
 }
 
+window.addEventListener('error', (e)=>{ showStatus(`<span style='color:#b00'>Error:</span> ${e.message}`); });
+
 showStatus('Loading <code>myFile.xlsx</code>…');
 fetch('./myFile.xlsx', {cache:'no-store'})
   .then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.arrayBuffer(); })
-  .then(buf=>{ parseAndBuild(buf); })
+  .then(buf=>{ whenXLSXReady(()=>parseAndBuild(buf)); })
   .catch(err=>{ console.error(err); showPicker(err.message || 'network error'); });
 
 picker?.addEventListener('change', async (e)=>{
   const f=e.target.files?.[0]; if(!f) return;
   const ab = await f.arrayBuffer();
-  parseAndBuild(ab);
+  whenXLSXReady(()=>parseAndBuild(ab));
 });
 
 function active(n){[...tabs.children].forEach(b=>b.classList.toggle('active',b.dataset.sheet===n));}
@@ -364,10 +376,12 @@ function renderBasket(){
     <td style="font-weight:bold">${grand.toFixed(2)}</td>
     <td></td>
   </tr>`;
-  Sortable.create(bBody,{handle: ".sort-handle", animation: 150, onEnd: ()=>{
-    const order=[...bBody.children].map(r=>r.dataset.id);
-    basket = order.map(id => basket.find(b => String(b.id)===id));
-  }});
+  if(window.Sortable){
+    Sortable.create(bBody,{handle: ".sort-handle", animation: 150, onEnd: ()=>{
+      const order=[...bBody.children].map(r=>r.dataset.id);
+      basket = order.map(id => basket.find(b => String(b.id)===id));
+    }});
+  }
 }
 
 /* ----------  CSV ---------- */
