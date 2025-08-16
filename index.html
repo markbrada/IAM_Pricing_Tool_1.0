@@ -127,7 +127,7 @@ padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
 (()=>{"use strict";
-/* ----------  CATEGORY META (no emoji field now)  ---------- */
+/* ----------  CATEGORY META  ---------- */
 const ORDER=[
  ["bannister rail","cat-orange"],
  ["stainless steel grabrail","cat-orange"],
@@ -141,9 +141,8 @@ const ORDER=[
 ];
 const META=Object.fromEntries(ORDER.map((o,i)=>[o[0],{idx:i,cls:o[1]}]));
 const FALL=META["uncategorised"];
-const PRICE_EX=["Rate Ex. GST","Price Ex. GST"], PRICE_INC="Price Inc. GST";
-const TOAST_MS=3000;
-const GST_RATE=0.10;
+const PRICE_EX=["Rate Ex. GST","Price Ex. GST"];
+const TOAST_MS=3000, GST_RATE=0.10;
 
 /* ----------  STATE & DOM Refs  ---------- */
 let wb=null,basket=[],lastRemoved=null,lastAdded=null,uid=0;
@@ -155,22 +154,31 @@ const tabs=document.getElementById("sheetTabs"),
 document.getElementById("darkModeToggle").onclick=()=>document.body.classList.toggle("dark-mode");
 
 /* ----------  Load Excel & build tabs  ---------- */
-fetch("myFile.xlsx").then(r=>r.arrayBuffer()).then(buf=>{
-  wb=XLSX.read(buf,{type:"array"});
-  Object.keys(wb.Sheets).forEach((name,i)=>{
-    const b=document.createElement("button");b.textContent=name;b.dataset.sheet=name;
-    b.onclick=()=>{active(name);draw(name);} 
-    if(i===0){b.classList.add("active");draw(name);} 
-    tabs.appendChild(b);
+fetch("myFile.xlsx")
+  .then(r=>r.arrayBuffer())
+  .then(buf=>{
+    wb=XLSX.read(buf,{type:"array"});
+    const sheetNames=Object.keys(wb.Sheets);
+    if(!sheetNames.length){container.textContent='No sheets in workbook.';return;}
+    sheetNames.forEach((name,i)=>{
+      const b=document.createElement("button");b.textContent=name;b.dataset.sheet=name;
+      b.onclick=()=>{active(name);draw(name);} 
+      if(i===0){b.classList.add("active");draw(name);} 
+      tabs.appendChild(b);
+    });
+  })
+  .catch(err=>{
+    console.error(err);
+    container.innerHTML='<div style="padding:1rem;color:#b00;background:#fee;border:1px solid #fbb">Failed to load <code>myFile.xlsx</code>. Make sure it is in the same folder as this HTML file.</div>';
   });
-});
 function active(n){[...tabs.children].forEach(b=>b.classList.toggle("active",b.dataset.sheet===n));}
 
 /* ----------  Draw one sheet  ---------- */
 function draw(name){
   const rows=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:""});
+  if(!rows.length){container.textContent='Empty sheet.';return;}
   const header=rows[0].map(h=>String(h).trim()), catIdx=header.indexOf("Category");
-  if(catIdx===-1){container.textContent='No "Category" column.';return;}
+  if(catIdx===-1){container.textContent='No "Category" column in this sheet.';return;}
   const body=rows.slice(1);
 
   container.innerHTML="";
@@ -250,19 +258,20 @@ document.getElementById("toggleBasketBtn").onclick=e=>{
 function addItem(row,header){
   const catIdx=header.indexOf("Category");
   const itemCol=header.findIndex(h=>h.toLowerCase()==="item");
-  let desc=itemCol!==-1?row[itemCol]:row.find((v,i)=>i!==catIdx && String(v).trim()!=='')||"Unnamed Item";
-  const ex=+row[header.findIndex(h=>PRICE_EX.includes(h))];
+  const firstNonEmpty = row.find((v,i)=>i!==catIdx && String(v).trim()!=='');
+  let desc=itemCol!==-1?row[itemCol]:firstNonEmpty||"Unnamed Item";
+  const exIdx=header.findIndex(h=>PRICE_EX.includes(h));
+  const ex = exIdx===-1 ? NaN : +row[exIdx];
   const newLine={id:++uid,item:desc,qty:1,ex,gst:true}; // default GST on
   basket.push(newLine);
   lastAdded=newLine;renderBasket();
 }
-function undoAdd(){if(lastAdded){lastAdded.qty>1?lastAdded.qty--:basket.splice(basket.indexOf(lastAdded),1);
-  lastAdded=null;renderBasket();}}
+function undoAdd(){if(lastAdded){const i=basket.findIndex(x=>x.id===lastAdded.id);if(i>-1)basket.splice(i,1);lastAdded=null;renderBasket();}}
 function undoRemove(){if(lastRemoved){basket.splice(lastRemoved.i,0,lastRemoved.b);lastRemoved=null;renderBasket();}}
 
 function renderBasket(){
   const cont=document.getElementById("basketContainer");cont.style.display=basket.length?"block":"none";
-  if(!basket.length)return;
+  if(!basket.length){bBody.innerHTML="";bFoot.innerHTML="";return;}
   bBody.innerHTML="";let totE=0,totI=0;
   basket.forEach((b,i)=>{
     const tr=document.createElement("tr");
@@ -293,7 +302,7 @@ function renderBasket(){
     const exInput=document.createElement("input");
     exInput.type="number"; exInput.step="0.01"; exInput.className="editable price-input";
     exInput.value=isNaN(b.ex)?"":Number(b.ex).toFixed(2);
-    exInput.onchange=()=>{ b.ex = parseFloat(exInput.value); renderBasket(); };
+    exInput.onchange=()=>{ const v=parseFloat(exInput.value); b.ex = isFinite(v)?v:NaN; renderBasket(); };
     tdEx.appendChild(exInput); tr.appendChild(tdEx);
     // GST checkbox column
     const tdGst=document.createElement("td"); tdGst.className="gst-cell";
