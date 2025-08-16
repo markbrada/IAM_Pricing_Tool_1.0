@@ -83,13 +83,6 @@ padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 .item-input{width:100%}
 .price-input{max-width:110px;text-align:right}
 
-/* editable inputs in basket */
-.editable{background:#ffe0ff;border:1px solid var(--border);padding:.2rem .3rem;border-radius:4px}
-.item-input{width:100%}
-.price-input{max-width:110px;text-align:right}
-.gst-cell{ text-align:center }
-.gst-input{ width:18px; height:18px }
-
 </style>
 </head>
 <body>
@@ -98,6 +91,11 @@ padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 <button id="darkModeToggle">Toggle Dark Mode</button>
 
 <div id="sheetTabs"></div>
+<div id="status" style="margin:.5rem 0;font-size:.9rem"></div>
+<div id="manualLoad" style="display:none;margin:.5rem 0">
+  <label class="search-label">Load workbook:</label>
+  <input type="file" id="xlsxPicker" accept=".xlsx">
+</div>
 <div id="sheetContainer"></div>
 
 <!-- =====  BASKET  ===== -->
@@ -115,8 +113,8 @@ padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
     <table id="basketTable">
       <thead><tr>
         <th class="sort-handle">≡</th><th>Item</th><th>Quantity</th>
-        <th>Price Ex. GST</th><th>GST</th>
-        <th>Line Total Ex. GST</th><th>Line Total</th><th>Remove</th>
+        <th>Price Ex. GST</th><th>Price Inc. GST</th>
+        <th>Line Total Ex. GST</th><th>Line Total Inc. GST</th><th>Remove</th>
       </tr></thead>
       <tbody></tbody><tfoot></tfoot>
     </table>
@@ -124,6 +122,7 @@ padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 </div>
 
 <script src="xlsx.full.min.js"></script>
+<script>if(!window.XLSX){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/xlsx@0.20.3/dist/xlsx.full.min.js';document.head.appendChild(s);}</script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
 (()=>{"use strict";
@@ -154,24 +153,42 @@ const tabs=document.getElementById("sheetTabs"),
 document.getElementById("darkModeToggle").onclick=()=>document.body.classList.toggle("dark-mode");
 
 /* ----------  Load Excel & build tabs  ---------- */
-fetch("myFile.xlsx")
-  .then(r=>r.arrayBuffer())
-  .then(buf=>{
-    wb=XLSX.read(buf,{type:"array"});
-    const sheetNames=Object.keys(wb.Sheets);
-    if(!sheetNames.length){container.textContent='No sheets in workbook.';return;}
-    sheetNames.forEach((name,i)=>{
-      const b=document.createElement("button");b.textContent=name;b.dataset.sheet=name;
-      b.onclick=()=>{active(name);draw(name);} 
-      if(i===0){b.classList.add("active");draw(name);} 
-      tabs.appendChild(b);
-    });
-  })
-  .catch(err=>{
-    console.error(err);
-    container.innerHTML='<div style="padding:1rem;color:#b00;background:#fee;border:1px solid #fbb">Failed to load <code>myFile.xlsx</code>. Make sure it is in the same folder as this HTML file.</div>';
+const statusEl=document.getElementById('status');
+const pickerWrap=document.getElementById('manualLoad');
+const picker=document.getElementById('xlsxPicker');
+
+function showStatus(html){ statusEl.innerHTML = html; }
+function showPicker(reason){
+  showStatus(`<span style="color:#b00">Couldn't load <code>myFile.xlsx</code> (${reason}).</span> You can upload the workbook manually below.`);
+  pickerWrap.style.display='block';
+}
+function parseAndBuild(buf){
+  try{ wb = XLSX.read(buf,{type:'array'}); }
+  catch(e){ console.error(e); showPicker('invalid file'); return; }
+  const sheetNames = Object.keys(wb.Sheets||{});
+  if(!sheetNames.length){ showPicker('workbook has no sheets'); return; }
+  tabs.innerHTML=''; container.innerHTML=''; showStatus(''); pickerWrap.style.display='none';
+  sheetNames.forEach((name,i)=>{
+    const b=document.createElement('button'); b.textContent=name; b.dataset.sheet=name;
+    b.onclick=()=>{active(name); draw(name);} 
+    if(i===0){ b.classList.add('active'); draw(name);} 
+    tabs.appendChild(b);
   });
-function active(n){[...tabs.children].forEach(b=>b.classList.toggle("active",b.dataset.sheet===n));}
+}
+
+showStatus('Loading <code>myFile.xlsx</code>…');
+fetch('./myFile.xlsx', {cache:'no-store'})
+  .then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.arrayBuffer(); })
+  .then(buf=>{ parseAndBuild(buf); })
+  .catch(err=>{ console.error(err); showPicker(err.message || 'network error'); });
+
+picker?.addEventListener('change', async (e)=>{
+  const f=e.target.files?.[0]; if(!f) return;
+  const ab = await f.arrayBuffer();
+  parseAndBuild(ab);
+});
+
+function active(n){[...tabs.children].forEach(b=>b.classList.toggle('active',b.dataset.sheet===n));}
 
 /* ----------  Draw one sheet  ---------- */
 function draw(name){
@@ -351,8 +368,7 @@ document.getElementById("exportCsvBtn").onclick=()=>{
       isNaN(b.ex)?"N/A":le.toFixed(2), isNaN(b.ex)?"N/A":li.toFixed(2)].map(esc));
   });
   lines.push(['','','','',tE.toFixed(2),tI.toFixed(2)]);
-  const blob=new Blob([lines.map(r=>r.join(",")).join("
-")],{type:"text/csv"});
+  const blob=new Blob([lines.map(r=>r.join(",")).join("\n")],{type:"text/csv"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="quote_basket.csv";
   document.body.appendChild(a);a.click();document.body.removeChild(a);
 };
