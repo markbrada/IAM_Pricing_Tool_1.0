@@ -171,6 +171,14 @@ const tabs=document.getElementById("sheetTabs"),
       container=document.getElementById("sheetContainer"),
       toast=document.getElementById("toast");
 
+// restored: highlight active tab
+function active(n){
+  if(!tabs) return;
+  var kids=tabs.children; for(var i=0;i<kids.length;i++){
+    var b=kids[i]; b.classList.toggle('active', b.dataset && b.dataset.sheet===n);
+  }
+}
+
 /* ---------- helpers & persistence ---------- */
 function escapeHtml(s){
   s = String(s == null ? '' : s);
