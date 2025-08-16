@@ -75,14 +75,14 @@ border-radius:4px;cursor:pointer}
 /* Removed basket zebra as well for consistency */
 /* #basketTable tbody tr:nth-child(even){background:var(--alt)!important} */
 #basketTable tbody tr:hover{background:var(--rowHover)}
-.sort-handle{cursor:move;user-select:none;text-align:center;font-size:1.2rem;width:2em}
+.sort-handle{display:flex;align-items:center;gap:.25rem;cursor:move;user-select:none;text-align:left;font-size:1.1rem;min-width:3.2em}
 .qty-input{width:60px;text-align:center}
 .remove-btn{color:red;font-weight:bold;cursor:pointer}
 #toast{margin-left:1rem;background:var(--toast);color:var(--toastfg);
 padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 #toast.show{opacity:1}
 /* editable inputs in basket */
-.editable{background:#fff;border:1px solid var(--border);padding:.2rem .3rem;border-radius:4px}
+.editable{background:#fff !important;border:1px solid var(--border);padding:.2rem .3rem;border-radius:4px}
 .item-input{width:100%}
 .price-input{max-width:110px;text-align:right}
 
@@ -381,8 +381,9 @@ function renderBasket(){
     var tr=document.createElement('tr'); tr.className='main-row'; tr.dataset.id=String(b.id||'');
     // handle + expander
     var tdHandle=document.createElement('td'); tdHandle.className='sort-handle';
-    var exp=document.createElement('button'); exp.className='expander'; exp.textContent=b.open?'▾':'▸';
-    exp.onclick=function(){ b.open=!b.open; renderBasket(); };
+    var isOpen=!!b.open; var exp=document.createElement('button'); exp.className='expander'; exp.textContent=isOpen?'▾':'▸';
+    exp.title=isOpen?'Hide details':'Show details';
+    exp.onclick=function(){ b.open=!b.open; saveBasket(); renderBasket(); };
     var bars=document.createElement('span'); bars.textContent=' ≡';
     tdHandle.appendChild(exp); tdHandle.appendChild(bars); tr.appendChild(tdHandle);
     // item editable
@@ -423,7 +424,7 @@ function renderBasket(){
     tdRem.appendChild(x); tr.appendChild(tdRem);
     bBody.appendChild(tr);
     // details row (DOM-built, no template strings)
-    var dtr=document.createElement('tr'); dtr.className='details-row'; dtr.style.display=b.open?'table-row':'none';
+    var isOpenRow=!!b.open; var dtr=document.createElement('tr'); dtr.className='details-row'; dtr.style.display=isOpenRow?'table-row':'none';
     var dtd=document.createElement('td'); dtd.colSpan=9;
     var panel=document.createElement('div'); panel.className='details-panel';
     var grid=document.createElement('div'); grid.className='details-grid'; panel.appendChild(grid);
