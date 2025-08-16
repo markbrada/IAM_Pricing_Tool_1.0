@@ -176,7 +176,7 @@ const tabs=document.getElementById("sheetTabs"),
       toast=document.getElementById("toast");
 
 /* ---------- helpers & persistence ---------- */
-function escapeHtml(s){return String(s??'').replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));}
+function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));}
 function saveBasket(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(basket)); }catch(e){} }
 function loadBasket(){ try{ const raw=localStorage.getItem(LS_KEY); if(raw){ const arr=JSON.parse(raw); if(Array.isArray(arr)){ basket=arr; uid=Math.max(0,...arr.map(x=>+x.id||0)); renderBasket(); } } }catch(e){} }
 loadBasket();
@@ -226,11 +226,12 @@ fetch('./myFile.xlsx', {cache:'no-store'})
   .then(buf=>{ whenXLSXReady(()=>parseAndBuild(buf)); })
   .catch(err=>{ console.error(err); showPicker(err.message || 'network error'); });
 
-picker?.addEventListener('change', async (e)=>{
-  const f=e.target.files?.[0]; if(!f) return;
-  const ab = await f.arrayBuffer();
-  whenXLSXReady(()=>parseAndBuild(ab));
-});
+if(picker){
+  picker.addEventListener('change', async (e)=>{
+    const tgt=e && e.target; const files=tgt && tgt.files; const f=files && files[0];
+    if(!f) return; const ab = await f.arrayBuffer(); whenXLSXReady(()=>parseAndBuild(ab));
+  });
+}
 
 function active(n){[...tabs.children].forEach(b=>b.classList.toggle('active',b.dataset.sheet===n));}
 
@@ -411,7 +412,7 @@ function renderBasket(){
     const grid=document.createElement('div'); grid.className='details-grid'; panel.appendChild(grid);
     const elCode=document.createElement('div'); elCode.innerHTML=`<label>Code</label><div class="ro">${escapeHtml(b.code||'')}</div>`; grid.appendChild(elCode);
     const elUnit=document.createElement('div'); elUnit.innerHTML=`<label>Unit</label><div class="ro">${escapeHtml(b.unit||'')}</div>`; grid.appendChild(elUnit);
-    const elHours=document.createElement('div'); elHours.innerHTML=`<label>Hours</label><input type="number" step="0.1" class="hours-input" value="${b.hours??''}">`; grid.appendChild(elHours);
+    const elHours=document.createElement('div'); elHours.innerHTML=`<label>Hours</label><input type="number" step="0.1" class="hours-input" value="${(b.hours!=null?b.hours:'')}">`; grid.appendChild(elHours);
     const elNotes=document.createElement('div'); elNotes.className='notes'; elNotes.innerHTML=`<label>Notes (from sheet)</label><div class="ro">${escapeHtml(b.notes||'')}</div>`; grid.appendChild(elNotes);
     const elLineNote=document.createElement('div'); elLineNote.className='line-note'; elLineNote.innerHTML=`<label>Line note (editable)</label><textarea rows="2" class="line-note-input">${b.lineNote||''}</textarea>`; grid.appendChild(elLineNote);
     const elAct=document.createElement('div'); elAct.className='actions'; const dup=document.createElement('button'); dup.className='dup-btn'; dup.textContent='Duplicate line'; elAct.appendChild(dup); grid.appendChild(elAct);
@@ -419,7 +420,7 @@ function renderBasket(){
     // bind detail inputs
     const hIn=elHours.querySelector('.hours-input'); if(hIn){ hIn.onchange=()=>{ const v=parseFloat(hIn.value); b.hours=isNaN(v)?0:v; saveBasket(); }; }
     const ln=elLineNote.querySelector('.line-note-input'); if(ln){ ln.onchange=()=>{ b.lineNote=ln.value; saveBasket(); }; }
-    dup.onclick=()=>{ const clone=JSON.parse(JSON.stringify({...b,id:++uid,open:false})); basket.splice(i+1,0,clone); renderBasket(); showToast('Line duplicated'); };
+    dup.onclick=()=>{ const clone = JSON.parse(JSON.stringify(b)); clone.id=++uid; clone.open=false; basket.splice(i+1,0,clone); renderBasket(); showToast('Line duplicated'); };
   });
   const grand = totEx + totGst;
   bFoot.innerHTML=`<tr>
@@ -464,4 +465,3 @@ console.log('IAM Pricing Tool — script loaded OK');
 </script>
 </body>
 </html>
-
