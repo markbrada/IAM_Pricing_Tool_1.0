@@ -86,10 +86,6 @@ padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 .item-input{width:100%}
 .price-input{max-width:110px;text-align:right}
 
-/* editable inputs in basket */
-.editable{background:#ffe0ff;border:1px solid var(--border);padding:.2rem .3rem;border-radius:4px}
-.item-input{width:100%}
-.price-input{max-width:110px;text-align:right}
 .gst-cell{ text-align:center }
 .gst-input{ width:18px; height:18px }
 
@@ -179,19 +175,15 @@ const tabs=document.getElementById("sheetTabs"),
 function escapeHtml(s){
   s = String(s == null ? '' : s);
   return s.replace(/[&<>"']/g, function(m){
-    switch(m){
+    switch (m) {
       case '&': return '&amp;';
       case '<': return '&lt;';
       case '>': return '&gt;';
       case '"': return '&quot;';
-      default: return '&#39;';
+      default:  return '&#39;';
     }
   });
-}[m]) || m;
-  });
-}[m]) || m;
-  });
-}[m]));}
+}
 function saveBasket(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(basket)); }catch(e){} }
 function loadBasket(){ try{ const raw=localStorage.getItem(LS_KEY); if(raw){ const arr=JSON.parse(raw); if(Array.isArray(arr)){ basket=arr; uid=Math.max(0,...arr.map(x=>+x.id||0)); renderBasket(); } } }catch(e){} }
 loadBasket();
@@ -241,7 +233,7 @@ fetch('./myFile.xlsx', {cache:'no-store'})
   .then(buf=>{ whenXLSXReady(()=>parseAndBuild(buf)); })
   .catch(err=>{ console.error(err); showPicker(err.message || 'network error'); });
 
-if(if(picker){
+if(picker){
   picker.addEventListener('change', function(e){
     var tgt = e && e.target; var files = tgt && tgt.files; var f = files && files[0];
     if(!f) return;
@@ -267,9 +259,6 @@ function showToast(msg,undo){
 const bBody=document.querySelector("#basketTable tbody"), bFoot=document.querySelector("#basketTable tfoot");
 document.getElementById("toggleBasketBtn").onclick=e=>{
   const bc=document.getElementById("basketContent");
-  bc.style.display=bc.style.display==="none"?"block":"none";
-  e.target.textContent=bc.style.display==="none"?"Show Basket":"Hide Basket";
-};
 // header controls
 const addCustomBtn=document.getElementById('addCustomBtn');
 const clearBasketBtn=document.getElementById('clearBasketBtn');
