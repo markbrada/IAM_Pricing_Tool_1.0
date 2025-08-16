@@ -247,6 +247,76 @@ if(picker){
   });
 }
 
+/* ----------  Draw one sheet (restored)  ---------- */
+function draw(name){
+  if(!wb || !wb.Sheets || !wb.Sheets[name]){ container.textContent='No such sheet.'; return; }
+  var rows = XLSX.utils.sheet_to_json(wb.Sheets[name], {header:1, defval:""});
+  if(!rows.length){ container.textContent='Empty sheet.'; return; }
+  var header = rows[0].map(function(h){ return String(h).trim(); });
+  var catIdx = header.indexOf("Category");
+  if(catIdx===-1){ container.textContent='No "Category" column in this sheet.'; return; }
+  var body = rows.slice(1);
+
+  container.innerHTML="";
+  var sDiv=document.createElement("div"); sDiv.className="search-container";
+  sDiv.innerHTML='<label class="search-label">Search items:</label>\
+    <input class="search-input" placeholder="Type to filter...">';
+  container.appendChild(sDiv);
+  var inp=sDiv.querySelector("input"); var wrap=document.createElement("div"); container.appendChild(wrap);
+  inp.oninput=render; render();
+
+  function render(){
+    var term=(inp.value||"").toLowerCase();
+    wrap.innerHTML="";
+    var groups={};
+    body.forEach(function(r){
+      if(term && !r.some(function(c){ return String(c).toLowerCase().includes(term); })) return;
+      var cat=(r[catIdx]||"Uncategorised").toString().trim();
+      (groups[cat]=groups[cat]||[]).push(r);
+    });
+    Object.keys(groups).sort(function(a,b){
+      var A=(META[a.toLowerCase()]||FALL).idx; var B=(META[b.toLowerCase()]||FALL).idx; return A-B;
+    }).forEach(function(cat){
+      var cls=(META[cat.toLowerCase()]||FALL).cls;
+      var det=document.createElement("details"); det.open=!!term; det.className=cls;
+      var sum=document.createElement("summary"); sum.textContent=cat; det.appendChild(sum);
+      var tbl=document.createElement("table");
+      tbl.innerHTML='<thead><tr><th></th>'+header.filter(function(_,i){return i!==catIdx;})
+        .map(function(h){return '<th>'+h+'</th>';}).join("")+'</tr></thead>';
+      var tbody=document.createElement("tbody"); tbl.appendChild(tbody);
+
+      groups[cat].forEach(function(r){
+        var tr=document.createElement("tr");
+        var tdAdd=document.createElement("td");
+        var btn=document.createElement("button"); btn.className="add-button"; btn.textContent="+";
+        btn.onclick=function(){ addItem(r,header); showToast("Item added ✓", undoAdd); };
+        tdAdd.appendChild(btn); tr.appendChild(tdAdd);
+
+        r.forEach(function(cell,i){
+          if(i===catIdx) return;
+          var td=document.createElement("td");
+          var h=(header[i]||"").toLowerCase();
+          var txt=/price|gst|rate/.test(h)&&!isNaN(cell)?(+cell).toFixed(2):cell;
+          if(term){
+            try{ td.innerHTML=String(txt).replace(new RegExp('('+term+')','gi'), '<span class="highlight">$1</span>'); }
+            catch(e){ td.textContent=String(txt); }
+          } else { td.textContent=String(txt); }
+          if(/price|gst|rate/.test(h)) td.style.fontWeight="bold";
+          td.onclick=function(e){
+            if(e.target && (e.target.tagName==='BUTTON')) return;
+            navigator.clipboard.writeText(td.textContent).then(function(){
+              td.classList.add("copied-cell"); void td.offsetWidth; setTimeout(function(){ td.classList.remove("copied-cell"); },150);
+            });
+          };
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      det.appendChild(tbl); wrap.appendChild(det);
+    });
+  }
+}
+
 /* ----------  Toast ---------- */
 function showToast(msg,undo){
   toast.textContent=msg;toast.classList.add("show");
