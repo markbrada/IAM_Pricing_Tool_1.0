@@ -326,23 +326,30 @@ const bBody=document.querySelector("#basketTable tbody"), bFoot=document.querySe
 document.getElementById("toggleBasketBtn").onclick=e=>{
   const bc=document.getElementById("basketContent");
 // header controls
-const addCustomBtn=document.getElementById('addCustomBtn');
-const clearBasketBtn=document.getElementById('clearBasketBtn');
+var addCustomBtn=document.getElementById('addCustomBtn');
+var clearBasketBtn=document.getElementById('clearBasketBtn');
 if(addCustomBtn){
-  addCustomBtn.onclick=function(){
+  addCustomBtn.addEventListener('click', function(){
     var nl={id:++uid,item:'Custom item',qty:1,ex:0,gst:true};
     basket.push(nl);
     renderBasket();
     try{
-      var inputs=bBody.querySelectorAll('tr.main-row input.item-input');
-      if(inputs.length){ inputs[inputs.length-1].focus(); }
-    }catch(e){}
-  };
-};basket.push(nl);renderBasket();};}
-if(clearBasketBtn){clearBasketBtn.onclick=()=>{if(!basket.length)return;basket=[];renderBasket();showToast('Basket cleared');};}
-  bc.style.display=bc.style.display==="none"?"block":"none";
-  e.target.textContent=bc.style.display==="none"?"Show Basket":"Hide Basket";
-};
+      var rows=bBody.querySelectorAll('tr.main-row');
+      if(rows.length){
+        var last=rows[rows.length-1].querySelector('input.item-input');
+        if(last) last.focus();
+      }
+    }catch(_){ }
+  });
+}
+if(clearBasketBtn){
+  clearBasketBtn.addEventListener('click', function(){
+    if(!basket.length) return;
+    basket=[];
+    renderBasket();
+    showToast('Basket cleared');
+  });
+}
 
 function addItem(row,header){
   const catIdx=header.indexOf("Category");
