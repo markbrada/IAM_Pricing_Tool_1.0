@@ -398,9 +398,10 @@ document.getElementById("exportCsvBtn").onclick=()=>{
       isNaN(b.ex)?"N/A":le.toFixed(2), isNaN(b.ex)?"N/A":gstAmt.toFixed(2), isNaN(b.ex)?"N/A":li.toFixed(2)].map(esc));
   });
   const grand=(totEx+totGst).toFixed(2);
-  lines.push(['','','','Totals:',totEx.toFixed(2),totGst.toFixed(2),grand]);
-  const blob=new Blob([lines.map(r=>r.join(",")).join("
-")],{type:"text/csv"});
+  lines.push(['','','','Totals:',totEx.toFixed(2),totGst.toFixed(2),grand].map(esc));
+  const csv = lines.map(r=>r.join(",")).join("
+");
+  const blob=new Blob([csv],{type:"text/csv"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="quote_basket.csv";
   document.body.appendChild(a);a.click();document.body.removeChild(a);
 };
