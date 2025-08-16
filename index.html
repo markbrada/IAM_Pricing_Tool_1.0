@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <title>In A Minnit Pricing Tool 1.2</title>
 <style>
-/* === theme, layout, tables, basket, toast — identical to previous version === */
+/* === theme, layout, tables, basket, toast — identical to previous version (with small fixes) === */
 :root{--bg:#f7f7f7;--fg:#333;--header:#e0e0e0;--btn:#007bff;--btnh:#0056b3;
 --add:#28a745;--addh:#218838;--border:#aaa;--alt:#f9f9f9;--panel:#fff;
---toast:#007bff;--toastfg:#fff}
+--toast:#007bff;--toastfg:#fff;--rowHover:#e9f1ff}
 .dark-mode{--bg:#222;--fg:#eee;--header:#444;--btn:#0d6efd;--btnh:#0a58ca;
 --add:#198754;--addh:#157347;--border:#555;--alt:#2a2a2a;--panel:#333;
---toast:#0d6efd;--toastfg:#fff}
+--toast:#0d6efd;--toastfg:#fff;--rowHover:#383838}
 body{font-family:sans-serif;margin:1rem;background:var(--bg);color:var(--fg);transition:.3s}
 h1{margin:.2rem 0}p{margin:0 0 2rem}
 #darkModeToggle{position:fixed;top:10px;right:10px;z-index:3000;background:var(--btn);
@@ -20,32 +20,46 @@ color:#fff;border:none;padding:.5rem .75rem;border-radius:4px;cursor:pointer}
 #sheetTabs button{background:none;border:none;padding:.5rem 1rem;margin-right:.5rem;
 cursor:pointer;font-size:1rem;color:var(--fg)}
 #sheetTabs button.active{border-bottom:2px solid var(--btn);font-weight:bold}
+/* Keep light text for tabs in dark mode unless the button itself has a light bg; summaries below are forced to black for readability */
+/* .dark-mode #sheetTabs button{color:#000}  — uncomment if your tab buttons have a light/yellow bg */
 .search-container{margin-bottom:1rem;padding:.5rem;background:var(--panel);
 border:1px solid var(--border);border-radius:4px}
 .search-label{font-weight:bold;margin-right:.5rem}
 .search-input{padding:.4rem;border:1px solid var(--border);border-radius:4px;
 width:200px;background:var(--panel);color:var(--fg)}
 .highlight{background:yellow}
+
+/* === tables === */
 table{border-collapse:collapse;width:100%}
 thead th{position:sticky;top:0;background:var(--header);border:1px solid var(--border);
 padding:.5rem;text-align:center;z-index:2}
 tbody td{border:1px solid var(--border);padding:.5rem}
-tbody tr:nth-child(even){background:var(--alt)!important}
-tbody tr:hover{background:#ccc}
+/* Removed zebra striping so hover applies uniformly */
+/* tbody tr:nth-child(even){background:var(--alt)!important} */
+tbody tr{background:transparent}
+tbody tr:hover{background:var(--rowHover)}
+
 .add-button{background:var(--add);color:#fff;border:none;padding:.3rem .6rem;
 border-radius:4px;font-weight:bold;cursor:pointer}
 .add-button:hover{background:var(--addh)}
 .copied-cell{background:#c8e6c9!important;transition:.15s}
+
+/* details/summary category blocks */
 details{margin-bottom:1rem}
 summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:.5rem;
 padding:.4rem .6rem;border-radius:4px;background:var(--header);font-weight:bold}
 summary::-webkit-details-marker{display:none}
 summary:hover{background:var(--btn);color:#fff}
+/* Force dark-mode text to black on light category headers (yellow/red/orange/blue/brown) */
+.dark-mode summary{color:#000}
+.dark-mode summary:hover{color:#fff}
 .cat-orange summary{background:#ffe9d6}.cat-orange summary:hover{background:#ffc999;color:#000}
 .cat-blue   summary{background:#d8ebff}.cat-blue   summary:hover{background:#add6ff;color:#000}
 .cat-brown  summary{background:#f2e6d9}.cat-brown  summary:hover{background:#e0cbb9;color:#000}
 .cat-red    summary{background:#ffdede}.cat-red    summary:hover{background:#ffb7b7;color:#000}
 .cat-yellow summary{background:#fff8d6}.cat-yellow summary:hover{background:#ffea9f;color:#000}
+
+/* === basket === */
 #basketContainer{position:fixed;bottom:0;left:0;right:0;max-height:40%;
 background:var(--panel);border-top:1px solid var(--border);padding:1rem;
 box-shadow:0 -2px 5px rgba(0,0,0,.1);z-index:1000;overflow-y:auto}
@@ -55,7 +69,9 @@ box-shadow:0 -2px 5px rgba(0,0,0,.1);z-index:1000;overflow-y:auto}
 border-radius:4px;cursor:pointer}
 #basketHeader button:hover{background:var(--btnh)}
 #basketTable th,#basketTable td{border:1px solid var(--border);padding:.5rem}
-#basketTable tbody tr:nth-child(even){background:var(--alt)!important}
+/* Removed basket zebra as well for consistency */
+/* #basketTable tbody tr:nth-child(even){background:var(--alt)!important} */
+#basketTable tbody tr:hover{background:var(--rowHover)}
 .sort-handle{cursor:move;user-select:none;text-align:center;font-size:1.2rem;width:2em}
 .qty-input{width:60px;text-align:center}
 .remove-btn{color:red;font-weight:bold;cursor:pointer}
@@ -130,8 +146,8 @@ fetch("myFile.xlsx").then(r=>r.arrayBuffer()).then(buf=>{
   wb=XLSX.read(buf,{type:"array"});
   Object.keys(wb.Sheets).forEach((name,i)=>{
     const b=document.createElement("button");b.textContent=name;b.dataset.sheet=name;
-    b.onclick=()=>{active(name);draw(name);}
-    if(i===0){b.classList.add("active");draw(name);}
+    b.onclick=()=>{active(name);draw(name);} 
+    if(i===0){b.classList.add("active");draw(name);} 
     tabs.appendChild(b);
   });
 });
@@ -176,7 +192,7 @@ function draw(name){
         const tr=document.createElement("tr");
         const tdAdd=document.createElement("td");
         const btn=document.createElement("button");btn.className="add-button";btn.textContent="+";
-        btn.onclick=()=>{addItem(r,header);showToast("Item added ✓",undoAdd);}
+        btn.onclick=()=>{addItem(r,header);showToast("Item added ✓",undoAdd);} 
         tdAdd.appendChild(btn);tr.appendChild(tdAdd);
 
         r.forEach((cell,i)=>{
@@ -184,7 +200,7 @@ function draw(name){
           const td=document.createElement("td");
           const h=header[i].toLowerCase();
           let txt=/price|gst|rate/.test(h)&&!isNaN(cell)?(+cell).toFixed(2):cell;
-          if(term)txt=txt.toString().replace(new RegExp(`(${term})`,"gi"),'<span class="highlight">$1</span>');
+          if(term)txt=txt.toString().replace(new RegExp(`(${term})`,`gi`),'<span class="highlight">$1</span>');
           td.innerHTML=txt;if(/price|gst|rate/.test(h))td.style.fontWeight="bold";
           td.onclick=e=>{
             if(e.target.tagName==="BUTTON")return;
@@ -221,7 +237,7 @@ document.getElementById("toggleBasketBtn").onclick=e=>{
 function addItem(row,header){
   const catIdx=header.indexOf("Category");
   const itemCol=header.findIndex(h=>h.toLowerCase()==="item");
-  let desc=itemCol!==-1?row[itemCol]:row.find((v,i)=>i!==catIdx && String(v).trim()!=="")||"Unnamed Item";
+  let desc=itemCol!==-1?row[itemCol]:row.find((v,i)=>i!==catIdx && String(v).trim()!=='')||"Unnamed Item";
   const ex=+row[header.findIndex(h=>PRICE_EX.includes(h))], inc=+row[header.indexOf(PRICE_INC)];
   const found=basket.find(x=>x.item===desc);found?found.qty++:basket.push({item:desc,qty:1,ex,inc});
   lastAdded=found||basket[basket.length-1];renderBasket();
@@ -253,7 +269,7 @@ function renderBasket(){
     tdLe.textContent=isNaN(b.ex)?"N/A":le.toFixed(2);tdLi.textContent=isNaN(b.inc)?"N/A":li.toFixed(2);
     const tdRem=document.createElement("td");const x=document.createElement("span");x.className="remove-btn";x.textContent="X";
     x.onclick=()=>{lastRemoved={b,i};tr.classList.add("fade-out");
-      setTimeout(()=>{basket.splice(i,1);renderBasket();showToast("Item removed ↩",undoRemove);},300);}
+      setTimeout(()=>{basket.splice(i,1);renderBasket();showToast("Item removed ↩",undoRemove);},300);} 
     tdRem.appendChild(x);tr.append(tdEx,tdInc,tdLe,tdLi,tdRem);
     [...tr.children].forEach(c=>c.onclick=e=>{
       if(["BUTTON","INPUT","SPAN"].includes(e.target.tagName))return;
@@ -279,7 +295,7 @@ document.getElementById("exportCsvBtn").onclick=()=>{
     lines.push([b.item,b.qty,isNaN(b.ex)?"N/A":b.ex.toFixed(2),isNaN(b.inc)?"N/A":b.inc.toFixed(2),
       isNaN(b.ex)?"N/A":le.toFixed(2),isNaN(b.inc)?"N/A":li.toFixed(2)].map(esc));
   });
-  lines.push(['','','',"\"Totals:\"",tE.toFixed(2),tI.toFixed(2)]);
+  lines.push(['','','','"Totals:"',tE.toFixed(2),tI.toFixed(2)]);
   const blob=new Blob([lines.map(r=>r.join(",")).join("\n")],{type:"text/csv"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="quote_basket.csv";
   document.body.appendChild(a);a.click();document.body.removeChild(a);
