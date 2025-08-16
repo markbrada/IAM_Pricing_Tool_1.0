@@ -78,6 +78,11 @@ border-radius:4px;cursor:pointer}
 #toast{margin-left:1rem;background:var(--toast);color:var(--toastfg);
 padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 #toast.show{opacity:1}
+/* editable inputs in basket */
+.editable{background:#ffe0ff;border:1px solid var(--border);padding:.2rem .3rem;border-radius:4px}
+.item-input{width:100%}
+.price-input{max-width:110px;text-align:right}
+
 </style>
 </head>
 <body>
@@ -133,7 +138,7 @@ const PRICE_EX=["Rate Ex. GST","Price Ex. GST"], PRICE_INC="Price Inc. GST";
 const TOAST_MS=3000;
 
 /* ----------  STATE & DOM Refs  ---------- */
-let wb=null,basket=[],lastRemoved=null,lastAdded=null;
+let wb=null,basket=[],lastRemoved=null,lastAdded=null,uid=0;
 const tabs=document.getElementById("sheetTabs"),
       container=document.getElementById("sheetContainer"),
       toast=document.getElementById("toast");
@@ -239,8 +244,9 @@ function addItem(row,header){
   const itemCol=header.findIndex(h=>h.toLowerCase()==="item");
   let desc=itemCol!==-1?row[itemCol]:row.find((v,i)=>i!==catIdx && String(v).trim()!=='')||"Unnamed Item";
   const ex=+row[header.findIndex(h=>PRICE_EX.includes(h))], inc=+row[header.indexOf(PRICE_INC)];
-  const found=basket.find(x=>x.item===desc);found?found.qty++:basket.push({item:desc,qty:1,ex,inc});
-  lastAdded=found||basket[basket.length-1];renderBasket();
+  const newLine={id:++uid,item:desc,qty:1,ex,inc};
+  basket.push(newLine);
+  lastAdded=newLine;renderBasket();
 }
 function undoAdd(){if(lastAdded){lastAdded.qty>1?lastAdded.qty--:basket.splice(basket.indexOf(lastAdded),1);
   lastAdded=null;renderBasket();}}
@@ -252,36 +258,67 @@ function renderBasket(){
   bBody.innerHTML="";let totE=0,totI=0;
   basket.forEach((b,i)=>{
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td class="sort-handle">≡</td><td>${b.item}</td>`;
-    const tdQ=document.createElement("td");const qc=document.createElement("div");qc.className="qty-controls";
-    const minus=document.createElement("button");minus.textContent="-";
-    const inp=document.createElement("input");inp.type="number";inp.step="0.1";inp.className="qty-input";inp.value=b.qty;
-    const plus=document.createElement("button");plus.textContent="+";
-    minus.onclick=()=>{b.qty=Math.max(1,b.qty-1);renderBasket();}
-    plus.onclick =()=>{b.qty+=1;renderBasket();}
-    inp.onchange=()=>{b.qty=Math.max(1,parseFloat(inp.value)||1);renderBasket();}
-    qc.append(minus,inp,plus);tdQ.appendChild(qc);tr.appendChild(tdQ);
-    const tdEx=document.createElement("td"), tdInc=document.createElement("td");
-    tdEx.textContent=isNaN(b.ex)?"N/A":b.ex.toFixed(2);tdInc.textContent=isNaN(b.inc)?"N/A":b.inc.toFixed(2);
-    tdEx.style.fontWeight=tdInc.style.fontWeight="bold";
-    const le=isNaN(b.ex)?0:b.qty*b.ex, li=isNaN(b.inc)?0:b.qty*b.inc;totE+=le;totI+=li;
+    tr.dataset.id=String(b.id||"");
+    // sort handle
+    const tdHandle=document.createElement("td");
+    tdHandle.className="sort-handle";
+    tdHandle.textContent="≡";
+    tr.appendChild(tdHandle);
+    // item editable
+    const tdItem=document.createElement("td");
+    const itemInput=document.createElement("input");
+    itemInput.type="text"; itemInput.value=b.item; itemInput.className="editable item-input";
+    itemInput.onchange=()=>{b.item=itemInput.value; renderBasket();};
+    tdItem.appendChild(itemInput); tr.appendChild(tdItem);
+    // qty
+    const tdQ=document.createElement("td");
+    const qc=document.createElement("div"); qc.className="qty-controls";
+    const minus=document.createElement("button"); minus.textContent="-";
+    const inp=document.createElement("input"); inp.type="number"; inp.step="0.1"; inp.className="qty-input"; inp.value=b.qty;
+    const plus=document.createElement("button"); plus.textContent="+";
+    minus.onclick=()=>{b.qty=Math.max(1,b.qty-1);renderBasket();};
+    plus.onclick =()=>{b.qty+=1;renderBasket();};
+    inp.onchange=()=>{b.qty=Math.max(1,parseFloat(inp.value)||1);renderBasket();};
+    qc.append(minus,inp,plus); tdQ.appendChild(qc); tr.appendChild(tdQ);
+    // price ex editable
+    const tdEx=document.createElement("td");
+    const exInput=document.createElement("input");
+    exInput.type="number"; exInput.step="0.01"; exInput.className="editable price-input";
+    exInput.value=isNaN(b.ex)?"":Number(b.ex).toFixed(2);
+    exInput.onchange=()=>{ b.ex = parseFloat(exInput.value); renderBasket(); };
+    tdEx.appendChild(exInput); tr.appendChild(tdEx);
+    // price inc editable
+    const tdInc=document.createElement("td");
+    const incInput=document.createElement("input");
+    incInput.type="number"; incInput.step="0.01"; incInput.className="editable price-input";
+    incInput.value=isNaN(b.inc)?"":Number(b.inc).toFixed(2);
+    incInput.onchange=()=>{ b.inc = parseFloat(incInput.value); renderBasket(); };
+    tdInc.appendChild(incInput); tr.appendChild(tdInc);
+    // line totals
+    const le=isNaN(b.ex)?0:b.qty*b.ex, li=isNaN(b.inc)?0:b.qty*b.inc; totE+=le; totI+=li;
     const tdLe=document.createElement("td"), tdLi=document.createElement("td");
-    tdLe.textContent=isNaN(b.ex)?"N/A":le.toFixed(2);tdLi.textContent=isNaN(b.inc)?"N/A":li.toFixed(2);
-    const tdRem=document.createElement("td");const x=document.createElement("span");x.className="remove-btn";x.textContent="X";
-    x.onclick=()=>{lastRemoved={b,i};tr.classList.add("fade-out");
-      setTimeout(()=>{basket.splice(i,1);renderBasket();showToast("Item removed ↩",undoRemove);},300);} 
-    tdRem.appendChild(x);tr.append(tdEx,tdInc,tdLe,tdLi,tdRem);
+    tdLe.textContent=isNaN(b.ex)?"N/A":le.toFixed(2); tdLi.textContent=isNaN(b.inc)?"N/A":li.toFixed(2);
+    tr.appendChild(tdLe); tr.appendChild(tdLi);
+    // remove
+    const tdRem=document.createElement("td"); const x=document.createElement("span"); x.className="remove-btn"; x.textContent="X";
+    x.onclick=()=>{lastRemoved={b,i}; tr.classList.add("fade-out");
+      setTimeout(()=>{basket.splice(i,1); renderBasket(); showToast("Item removed ↩", undoRemove);},300);} ;
+    tdRem.appendChild(x); tr.appendChild(tdRem);
+    // copy-on-click (ignore inputs/buttons)
     [...tr.children].forEach(c=>c.onclick=e=>{
       if(["BUTTON","INPUT","SPAN"].includes(e.target.tagName))return;
       navigator.clipboard.writeText(c.textContent).then(()=>{
-        c.classList.add("copied-cell");void c.offsetWidth;
-        setTimeout(()=>c.classList.remove("copied-cell"),150);});});
+        c.classList.add("copied-cell"); void c.offsetWidth; setTimeout(()=>c.classList.remove("copied-cell"),150);
+      });
+    });
     bBody.appendChild(tr);
   });
   bFoot.innerHTML=`<tr><td colspan="5" style="text-align:right;font-weight:bold">Grand Totals:</td>
   <td style="font-weight:bold">${totE.toFixed(2)}</td><td style="font-weight:bold">${totI.toFixed(2)}</td><td></td></tr>`;
-  Sortable.create(bBody,{handle:".sort-handle",animation:150,onEnd:()=>{
-    basket=[...bBody.children].map(r=>basket.find(b=>b.item===r.children[1].textContent));}});
+  Sortable.create(bBody,{handle: ".sort-handle", animation: 150, onEnd: ()=>{
+    const order=[...bBody.children].map(r=>r.dataset.id);
+    basket = order.map(id => basket.find(b => String(b.id)===id));
+  }});
 }
 
 /* ----------  CSV ---------- */
