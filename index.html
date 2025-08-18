@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
 <meta charset="UTF-8">
-<title>In A Minnit Pricing Tool 2.1.8</title>
+<title>In A Minnit Pricing Tool 2.1.9</title>
 <style>
 :root{--bg:#f7f7f7;--fg:#333;--header:#e0e0e0;--btn:#007bff;--btnh:#0056b3;--add:#28a745;--addh:#218838;--border:#aaa;--alt:#f9f9f9;--panel:#fff;--toast:#007bff;--toastfg:#fff;--rowHover:#e9f1ff}
 .dark-mode{--bg:#222;--fg:#eee;--header:#444;--btn:#0d6efd;--btnh:#0a58ca;--add:#198754;--addh:#157347;--border:#555;--alt:#2a2a2a;--panel:#333;--toast:#0d6efd;--toastfg:#fff;--rowHover:#383838}
@@ -78,7 +78,7 @@ input[type=number]{-moz-appearance:textfield}
 </style>
 </head>
 <body>
-<h1>In A Minnit Pricing Tool 2.1.8</h1>
+<h1>In A Minnit Pricing Tool 2.1.9</h1>
 <p><em>Beta version – features subject to change. Always check your work. Report bugs to marco@inaminnit.com.au</em></p>
 <button id="darkModeToggle">Toggle Dark Mode</button>
 <div id="sheetTabs"></div>
@@ -180,9 +180,15 @@ var addCustomBtn=document.getElementById('addCustomBtn');var clearBasketBtn=docu
 if(addCustomBtn){addCustomBtn.addEventListener('click',function(){var nl={id:++uid,item:'Custom item',qty:1,ex:0,gst:true};basket.push(nl);renderBasket();try{var rows=bBody.querySelectorAll('tr.main-row');if(rows.length){var last=rows[rows.length-1].querySelector('.item-input');if(last)last.focus();}}catch(_){} });}
 if(clearBasketBtn){clearBasketBtn.addEventListener('click',function(){if(!basket.length)return;basket=[];renderBasket();showToast('Basket cleared');});}
 function updateBasketHeaderOffset(){
-  var cont = document.getElementById('basketContainer');
-  var hdr  = document.getElementById('basketHeader');
-  if(!cont || !hdr){ return; }
+  var cont=document.getElementById('basketContainer');
+  var hdr=document.getElementById('basketHeader');
+  if(!cont||!hdr) return;
+  var mb=0, cs=null;
+  if(window.getComputedStyle){ cs=getComputedStyle(hdr,null); if(cs&&cs.marginBottom){ mb=parseFloat(cs.marginBottom)||0; } }
+  else if(hdr.currentStyle&&hdr.currentStyle.marginBottom){ mb=parseFloat(hdr.currentStyle.marginBottom)||0; }
+  var h=(hdr.offsetHeight||0)+mb;
+  cont.style.setProperty('--bh', h+'px');
+}
   var mb = 0;
   var cs = null;
   if (window.getComputedStyle){
@@ -192,7 +198,7 @@ function updateBasketHeaderOffset(){
     mb = parseFloat(hdr.currentStyle.marginBottom) || 0;
   }
   var h = (hdr.offsetHeight || 0) + mb;
-  try { cont.style.setProperty('--bh', h + 'px'); } catch(_) { cont.style['--bh'] = h + 'px'; }
+  cont.style.setProperty('--bh', h + 'px')
 }
   var mb=0;
   try{
