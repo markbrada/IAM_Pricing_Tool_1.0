@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
 <meta charset="UTF-8">
-<title>In A Minnit Pricing Tool 2.2.4</title>
+<title>In A Minnit Pricing Tool 2.2.5</title>
 <style>
 :root{--bg:#f7f7f7;--fg:#333;--header:#e0e0e0;--btn:#007bff;--btnh:#0056b3;--add:#28a745;--addh:#218838;--border:#aaa;--alt:#f9f9f9;--panel:#fff;--toast:#007bff;--toastfg:#fff;--rowHover:#e9f1ff}
 .dark-mode{--bg:#222;--fg:#eee;--header:#444;--btn:#0d6efd;--btnh:#0a58ca;--add:#198754;--addh:#157347;--border:#555;--alt:#2a2a2a;--panel:#333;--toast:#0d6efd;--toastfg:#fff;--rowHover:#383838}
@@ -39,7 +39,7 @@ summary:hover{background:var(--btn);color:#fff}
 .cat-brown summary{background:#f2e6d9}.cat-brown summary:hover{background:#e0cbb9;color:#000}
 .cat-red summary{background:#ffdede}.cat-red summary:hover{background:#ffb7b7;color:#000}
 .cat-yellow summary{background:#fff8d6}.cat-yellow summary:hover{background:#ffea9f;color:#000}
-#basketContainer{position:fixed;bottom:0;left:0;right:0;max-height:40%;background:var(--panel);border-top:1px solid var(--border);padding:1rem;box-shadow:0 -2px 5px rgba(0,0,0,.1);z-index:9999;overflow-y:auto;transform:translateZ(0);isolation:isolate}
+#basketContainer{position:fixed;bottom:0;left:0;right:0;max-height:40%;background:var(--panel);padding:0 1rem 1rem;box-shadow:0 -2px 5px rgba(0,0,0,.1);z-index:9999;overflow-y:auto;transform:translateZ(0);isolation:isolate;scrollbar-gutter:stable both-edges}
 #basketHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem}
 #basketHeader h3{margin:0}
 #basketHeader button{background:var(--btn);color:#fff;border:none;padding:.3rem .6rem;border-radius:4px;cursor:pointer}
@@ -71,7 +71,7 @@ summary:hover{background:var(--btn);color:#fff}
 .qty-controls button{padding:.2rem .45rem;line-height:1}
 #basketFab{position:fixed;right:16px;bottom:16px;background:var(--btn);color:#fff;border:none;border-radius:999px;padding:.6rem .9rem;box-shadow:0 6px 16px rgba(0,0,0,.2);cursor:pointer;z-index:1200;display:none}
 #basketFab:hover{background:var(--btnh)}
-#basketSticky{position:sticky;top:0;z-index:4;background:var(--panel);box-shadow:0 2px 4px rgba(0,0,0,.06)}
+#basketSticky{position:sticky;top:0;z-index:4;background:var(--panel);box-shadow:0 2px 4px rgba(0,0,0,.06);padding:1rem 0 0;border-top:1px solid var(--border)}
 #basketStickyHead{background:var(--panel)}
 #basketStickyHead table{width:100%;table-layout:fixed;border-collapse:collapse}
 #basketStickyHead thead th{background:var(--header);border:1px solid var(--border);padding:.28rem;text-align:center}
@@ -81,7 +81,7 @@ input[type=number]{-moz-appearance:textfield}
 </style>
 </head>
 <body>
-<h1>In A Minnit Pricing Tool 2.2.4</h1>
+<h1>In A Minnit Pricing Tool 2.2.5</h1>
 <p><em>Beta version – features subject to change. Always check your work. Report bugs to marco@inaminnit.com.au</em></p>
 <button id="darkModeToggle">Toggle Dark Mode</button>
 <div id="sheetTabs"></div>
