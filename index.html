@@ -107,15 +107,20 @@ body{font-family:sans-serif;margin:1rem;background:var(--bg);color:var(--fg);tra
 </style>
 </head>
 <body>
-<h1>In A Minnit Pricing Tool 2.2.0</h1>
-<p><em>Beta version – features subject to change. Always check your work. Report bugs to marco@inaminnit.com.au</em></p>
-<button id="darkModeToggle">Toggle Dark Mode</button>
+<h1>In A Minnit Pricing Tool 2.2.0</h1>
+<p><em>Beta version – features subject to change. Always check your work. Report bugs to marco@inaminnit.com.au</em></p>
+<button id="darkModeToggle">Toggle Dark Mode</button>
+
 <div id="sheetTabs"></div>
 <div id="status" style="margin:.5rem 0;font-size:.9rem"></div>
-<div id="manualLoad" style="display:none;margin:.5rem 0"><label class="search-label">Load workbook:</label><input type="file" id="xlsxPicker" accept=".xlsx"></div>
+<div id="manualLoad" style="display:none;margin:.5rem 0">
+  <label class="search-label">Load workbook:</label>
+  <input type="file" id="xlsxPicker" accept=".xlsx">
+</div>
 <div id="sheetContainer"></div>
 
-<div id="basketContainer" class="bwin" style="display:none; left:16px; top:auto; right:16px; bottom:16px; width:auto; height:auto;">
+<!-- =====  BASKET (floating window)  ===== -->
+<div id="basketContainer" class="bwin" style="left:16px;right:16px;bottom:16px;top:auto;width:auto;height:40vh;display:block;">
   <div class="resize-handle" id="basketResize"></div>
   <div id="basketHeader" class="titlebar">
     <div class="title-left">
@@ -135,95 +140,179 @@ body{font-family:sans-serif;margin:1rem;background:var(--bg);color:var(--fg);tra
     <table id="basketTable">
       <thead><tr>
         <th class="sort-handle">≡</th><th>Item</th><th>Quantity</th>
-        <th>Price Ex. GST</th><th>GST</th>
-        <th>Line Total Ex. GST</th><th>GST</th><th>Line Total</th><th>Remove</th>
+        <th>Price Ex. GST</th><th>GST Apply</th>
+        <th>Line Total Ex. GST</th><th>GST</th><th>Line Total</th><th>Remove</th>
       </tr></thead>
       <tbody></tbody><tfoot></tfoot>
     </table>
   </div>
 </div>
+<button id="basketReopen" title="Open basket" style="display:none">Basket</button>
 
+<script src="xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
-// MacOS control behaviours
-const basket = document.getElementById('basketContainer');
-document.getElementById('closeBasket').onclick = ()=> basket.style.display='none';
-document.getElementById('minBasket').onclick = ()=> basket.style.height='40px';
-document.getElementById('maxBasket').onclick = ()=> {basket.style.width='90%'; basket.style.height='90%'; basket.style.top='5%'; basket.style.left='5%';};
-// Temporary trigger to show basket for testing
-window.addEventListener('keydown',e=>{if(e.key==='b'){basket.style.display='block';}});
-</script>
-<button id="basketReopen" title="Open basket">Basket</button>
-<script>
-(function(){
-  // ===== Basket Window Controller (floating, draggable, resizable, macOS controls, persistence) =====
-  var WIN_KEY='iam_basket_window_v1';
-  var el=document.getElementById('basketContainer');
-  var header=document.getElementById('basketHeader');
-  var btnClose=document.getElementById('closeBasket');
-  var btnMin=document.getElementById('minBasket');
-  var btnMax=document.getElementById('maxBasket');
-  var reopen=document.getElementById('basketReopen');
-  var resizeHandle=document.getElementById('basketResize');
-  var state={mode:'normal',x:null,y:null,w:Math.max(420, window.innerWidth - 32),h:Math.max(240, Math.floor(window.innerHeight*0.4))};
-  // Load state
-  try{ var raw=localStorage.getItem(WIN_KEY); if(raw){ var s=JSON.parse(raw); if(s && typeof s==='object'){ for(var k in s){ state[k]=s[k]; } } } }catch(e){}
-  function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
-  function isMobile(){ return window.innerWidth < 768; }
-  function defaultXY(){ var top = Math.max(16, window.innerHeight - state.h - 16); var left = 16; return {left:left, top:top}; }; }
-  function save(){ try{ localStorage.setItem(WIN_KEY, JSON.stringify(state)); }catch(e){} }
-  function showReopen(v){ reopen.style.display = v?'block':'none'; }
-  function apply(){
-    if(state.mode==='hidden'){ el.style.display='none'; showReopen(true); return; }
-    showReopen(false); el.style.display='block';
-    // stretch to full width by default (unless maximized/minimized/mobile)
-    el.classList.remove('min','max','mobile');
-    if(isMobile()) el.classList.add('mobile');
-    if(state.mode==='min') el.classList.add('min');
-    if(state.mode==='max') el.classList.add('max');
-    if(state.mode==='max'){
-      // handled by CSS
-    } else if(el.classList.contains('mobile')){
-      // bottom sheet by CSS; width auto
-    } else {
-      if(state.x==null || state.y==null){ var d=defaultXY(); state.x=d.left; state.y=d.top; }
-      el.style.left=state.x+'px'; el.style.top=state.y+'px';
-      // full width: use right instead of fixed width when near full stretch
-      var wantFull = Math.abs(state.w - (window.innerWidth-32)) < 24; // heuristic
-      if(wantFull){ el.style.right='16px'; el.style.left='16px'; el.style.width='auto'; }
-      else { el.style.right='auto'; el.style.width=state.w+'px'; }
-      el.style.height=(state.mode==='min'?34:state.h)+'px';
-    }
-    save();
+(function(){ 'use strict';
+// ====== SAFETY: visible build marker ======
+console.log('IAM Pricing Tool — build', new Date().toISOString());
+
+/* ----------  CATEGORY META  ---------- */
+var ORDER=[
+ ["bannister rail","cat-orange"],
+ ["stainless steel grabrail","cat-orange"],
+ ["aluminium grabrail, powder coated","cat-orange"],
+ ["shower parts","cat-blue"],
+ ["plumbing","cat-blue"],
+ ["door components","cat-brown"],
+ ["fire safety","cat-red"],
+ ["anti slip solutions","cat-yellow"],
+ ["uncategorised","cat-yellow"]
+];
+var META={}; for(var i=0;i<ORDER.length;i++){ META[ORDER[i][0]]={idx:i,cls:ORDER[i][1]}; }
+var FALL=META['uncategorised'];
+var PRICE_EX=["Rate Ex. GST","Price Ex. GST"], GST_RATE=0.10;
+var TOAST_MS=3000, LS_KEY='iam_basket_v2';
+
+/* ----------  STATE & DOM Refs  ---------- */
+var wb=null,basket=[],lastRemoved=null,lastAdded=null,uid=0;
+var tabs=document.getElementById('sheetTabs'),
+    container=document.getElementById('sheetContainer'),
+    toast=document.getElementById('toast');
+
+/* ---------- helpers & persistence ---------- */
+function escapeHtml(s){ s=String(s==null?'':s); return s.replace(/[&<>"']/g,function(m){
+  switch(m){case '&':return '&amp;';case '<':return '&lt;';case '>':return '&gt;';case '"':return '&quot;';default:return '&#39;';}
+}); }
+function saveBasket(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(basket)); }catch(e){} }
+function loadBasket(){ try{ var raw=localStorage.getItem(LS_KEY); if(raw){ var arr=JSON.parse(raw); if(Array.isArray(arr)){ basket=arr; uid=Math.max(0,0||Math.max.apply(null,arr.map(function(x){return +x.id||0;}))); renderBasket(); } } }catch(e){} }
+
+/* ----------  Dark‑mode toggle  ---------- */
+document.getElementById('darkModeToggle').onclick=function(){ document.body.classList.toggle('dark-mode'); };
+
+/* ----------  Load Excel & build tabs  ---------- */
+var statusEl=document.getElementById('status');
+var pickerWrap=document.getElementById('manualLoad');
+var picker=document.getElementById('xlsxPicker');
+function showStatus(html){ if(statusEl){ statusEl.innerHTML=html; } }
+function showPicker(reason){ showStatus('<span style="color:#b00">Couldn\'t load <code>myFile.xlsx</code> ('+reason+').</span> You can upload the workbook manually below.'); if(pickerWrap) pickerWrap.style.display='block'; }
+function whenXLSXReady(cb){ if(window.XLSX){ cb(); return; } var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/xlsx@0.20.3/dist/xlsx.full.min.js'; s.onload=function(){ cb(); }; s.onerror=function(){ showPicker('SheetJS failed'); }; document.head.appendChild(s); }
+function parseAndBuild(buf){ try{ wb=XLSX.read(buf,{type:'array'}); }catch(e){ console.error(e); showPicker('invalid file'); return; }
+  var sheetNames=Object.keys(wb.Sheets||{}); if(!sheetNames.length){ showPicker('workbook has no sheets'); return; }
+  tabs.innerHTML=''; container.innerHTML=''; showStatus(''); if(pickerWrap) pickerWrap.style.display='none';
+  sheetNames.forEach(function(name,i){ var b=document.createElement('button'); b.textContent=name; b.dataset.sheet=name; b.onclick=function(){ active(name); draw(name); };
+    if(i===0){ b.classList.add('active'); draw(name); } tabs.appendChild(b); });
+}
+function active(n){ var children=tabs.children; for(var i=0;i<children.length;i++){ children[i].classList.toggle('active', children[i].dataset.sheet===n); } }
+
+function draw(name){
+  if(!wb || !wb.Sheets || !wb.Sheets[name]){ container.textContent='No such sheet.'; return; }
+  var rows=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:""});
+  if(!rows.length){ container.textContent='Empty sheet.'; return; }
+  var header=rows[0].map(function(h){return String(h).trim();});
+  var catIdx=header.indexOf('Category');
+  if(catIdx===-1){ container.textContent='No "Category" column in this sheet.'; return; }
+  var body=rows.slice(1);
+  container.innerHTML='';
+  var sDiv=document.createElement('div'); sDiv.className='search-container'; sDiv.innerHTML='<label class="search-label">Search items:</label> <input class="search-input" placeholder="Type to filter...">';
+  container.appendChild(sDiv); var inp=sDiv.querySelector('input'); var wrap=document.createElement('div'); container.appendChild(wrap);
+  inp.oninput=render; render();
+  function render(){ var term=(inp.value||'').toLowerCase(); wrap.innerHTML=''; var groups={};
+    body.forEach(function(r){ if(term && !r.some(function(c){return String(c).toLowerCase().indexOf(term)>-1;})) return; var cat=(r[catIdx]||'Uncategorised').toString().trim(); (groups[cat]=groups[cat]||[]).push(r); });
+    Object.keys(groups).sort(function(a,b){ var A=(META[a.toLowerCase()]||FALL).idx, B=(META[b.toLowerCase()]||FALL).idx; return A-B; }).forEach(function(cat){
+      var cls=(META[cat.toLowerCase()]||FALL).cls; var det=document.createElement('details'); det.open=!!term; det.className=cls; var sum=document.createElement('summary'); sum.textContent=cat; det.appendChild(sum);
+      var tbl=document.createElement('table'); var thead='<thead><tr><th></th>'+header.filter(function(_,i){return i!==catIdx;}).map(function(h){return '<th>'+h+'</th>';}).join('')+'</tr></thead>'; tbl.innerHTML=thead; var tbody=document.createElement('tbody'); tbl.appendChild(tbody);
+      groups[cat].forEach(function(r){ var tr=document.createElement('tr'); var tdAdd=document.createElement('td'); var btn=document.createElement('button'); btn.className='add-button'; btn.textContent='+'; btn.onclick=function(){ addItem(r,header); showToast('Item added ✓', undoAdd); }; tdAdd.appendChild(btn); tr.appendChild(tdAdd);
+        r.forEach(function(cell,i){ if(i===catIdx) return; var td=document.createElement('td'); var h=(header[i]||'').toLowerCase(); var txt=/price|gst|rate/.test(h)&&!isNaN(cell)?(+cell).toFixed(2):cell; if(term){ try{ td.innerHTML=String(txt).replace(new RegExp('('+term+')','gi'), '<span class="highlight">$1</span>'); }catch(e){ td.textContent=String(txt); } } else { td.textContent=String(txt); }
+          if(/price|gst|rate/.test(h)) td.style.fontWeight='bold'; td.onclick=function(e){ if(e.target && e.target.tagName==='BUTTON') return; navigator.clipboard.writeText(td.textContent).then(function(){ td.classList.add('copied-cell'); void td.offsetWidth; setTimeout(function(){ td.classList.remove('copied-cell'); },150); }); }; tr.appendChild(td); });
+        tbody.appendChild(tr); });
+      det.appendChild(tbl); wrap.appendChild(det);
+    });
   }
+}
+
+/* ----------  Toast ---------- */
+function showToast(msg,undo){ toast.textContent=msg; toast.classList.add('show'); if(undo){ toast.style.cursor='pointer'; toast.onclick=function(){ undo(); toast.classList.remove('show'); }; } else { toast.style.cursor='default'; toast.onclick=null; } setTimeout(function(){ toast.classList.remove('show'); }, TOAST_MS); }
+
+/* ----------  Basket ---------- */
+var bBody=document.querySelector('#basketTable tbody'), bFoot=document.querySelector('#basketTable tfoot');
+document.getElementById('toggleBasketBtn').onclick=function(e){ var bc=document.getElementById('basketContent'); bc.style.display=bc.style.display==='none'?'block':'none'; e.target.textContent=bc.style.display==='none'?'Show Basket':'Hide Basket'; };
+
+function addItem(row,header){ var catIdx=header.indexOf('Category'); var itemCol=-1; for(var i=0;i<header.length;i++){ if(String(header[i]).toLowerCase()==='item'){ itemCol=i; break; } }
+  var firstNonEmpty=null; for(var j=0;j<row.length;j++){ if(j!==catIdx && String(row[j]).trim()!==''){ firstNonEmpty=row[j]; break; } }
+  var desc=itemCol!==-1?row[itemCol]:firstNonEmpty||'Unnamed Item'; var exIdx=-1; for(var k=0;k<header.length;k++){ if(PRICE_EX.indexOf(header[k])>-1){ exIdx=k; break; } }
+  var ex = exIdx===-1 ? NaN : +row[exIdx]; var newLine={id:++uid,item:desc,qty:1,ex:ex,gst:true,code:'',unit:'',notes:'',hours:0,lineNote:'',open:false}; basket.push(newLine); lastAdded=newLine; renderBasket(); }
+function undoAdd(){ if(lastAdded){ for(var i=0;i<basket.length;i++){ if(basket[i].id===lastAdded.id){ basket.splice(i,1); break; } } lastAdded=null; renderBasket(); } }
+function undoRemove(){ if(lastRemoved){ basket.splice(lastRemoved.i,0,lastRemoved.b); lastRemoved=null; renderBasket(); } }
+
+function renderBasket(){ var cont=document.getElementById('basketContainer'); cont.style.display=basket.length?'block':'block'; // always visible
+  bBody.innerHTML=''; if(!basket.length){ bFoot.innerHTML=''; saveBasket(); return; }
+  var totEx=0, totGst=0;
+  basket.forEach(function(b,i){ var tr=document.createElement('tr'); tr.className='main-row'; tr.dataset.id=String(b.id||'');
+    var tdHandle=document.createElement('td'); tdHandle.className='sort-handle'; tdHandle.textContent='≡'; tr.appendChild(tdHandle);
+    var tdItem=document.createElement('td'); var itemInput=document.createElement('input'); itemInput.type='text'; itemInput.value=b.item; itemInput.className='editable item-input'; itemInput.onchange=function(){ b.item=itemInput.value; saveBasket(); }; tdItem.appendChild(itemInput); tr.appendChild(tdItem);
+    var tdQ=document.createElement('td'); var qc=document.createElement('div'); qc.className='qty-controls'; var minus=document.createElement('button'); minus.textContent='-'; var inp=document.createElement('input'); inp.type='number'; inp.step='0.1'; inp.className='qty-input'; inp.value=b.qty; var plus=document.createElement('button'); plus.textContent='+'; minus.onclick=function(){ b.qty=Math.max(1,b.qty-1); renderBasket(); }; plus.onclick=function(){ b.qty+=1; renderBasket(); }; inp.onchange=function(){ b.qty=Math.max(1,parseFloat(inp.value)||1); renderBasket(); }; qc.appendChild(minus); qc.appendChild(inp); qc.appendChild(plus); tdQ.appendChild(qc); tr.appendChild(tdQ);
+    var tdEx=document.createElement('td'); var exInput=document.createElement('input'); exInput.type='number'; exInput.step='0.01'; exInput.className='editable price-input'; exInput.value=isNaN(b.ex)?'':Number(b.ex).toFixed(2); exInput.onchange=function(){ var v=parseFloat(exInput.value); b.ex=isFinite(v)?v:NaN; renderBasket(); }; tdEx.appendChild(exInput); tr.appendChild(tdEx);
+    var tdGstApply=document.createElement('td'); tdGstApply.className='gst-cell'; var gstInput=document.createElement('input'); gstInput.type='checkbox'; gstInput.className='gst-input'; gstInput.checked=!!b.gst; gstInput.onchange=function(){ b.gst=gstInput.checked; renderBasket(); }; tdGstApply.appendChild(gstInput); tr.appendChild(tdGstApply);
+    var le=isNaN(b.ex)?0:b.qty*b.ex; var gstAmt=b.gst?le*GST_RATE:0; var li=le+gstAmt; totEx+=le; totGst+=gstAmt;
+    var tdLe=document.createElement('td'); tdLe.textContent=isNaN(b.ex)?'N/A':le.toFixed(2); var tdG=document.createElement('td'); tdG.textContent=isNaN(b.ex)?'N/A':gstAmt.toFixed(2); var tdLi=document.createElement('td'); tdLi.textContent=isNaN(b.ex)?'N/A':li.toFixed(2); tr.appendChild(tdLe); tr.appendChild(tdG); tr.appendChild(tdLi);
+    var tdRem=document.createElement('td'); var x=document.createElement('span'); x.className='remove-btn'; x.textContent='X'; x.onclick=function(){ lastRemoved={b:b,i:i}; setTimeout(function(){ basket.splice(i,1); renderBasket(); showToast('Item removed ↩', undoRemove); },150); }; tdRem.appendChild(x); tr.appendChild(tdRem);
+    bBody.appendChild(tr);
+  });
+  var grand=totEx+totGst;
+  bFoot.innerHTML='<tr>'+
+    '<td colspan="5" style="text-align:right;font-weight:bold">Grand Totals:</td>'+
+    '<td style="font-weight:bold">'+totEx.toFixed(2)+'</td>'+
+    '<td style="font-weight:bold">'+totGst.toFixed(2)+'</td>'+
+    '<td style="font-weight:bold">'+grand.toFixed(2)+'</td>'+
+    '<td></td>'+
+  '</tr>';
+  if(window.Sortable){ Sortable.create(bBody,{handle: '.sort-handle', draggable: 'tr.main-row', animation: 150, onEnd: function(){ var rows=bBody.querySelectorAll('tr.main-row'); var order=[]; for(var k=0;k<rows.length;k++){ order.push(rows[k].dataset.id); } basket = order.map(function(id){ for(var j=0;j<basket.length;j++){ if(String(basket[j].id)===id) return basket[j]; } }); saveBasket(); }}); }
+  saveBasket();
+}
+
+// Header controls
+var addCustomBtn=document.getElementById('addCustomBtn'); if(addCustomBtn){ addCustomBtn.onclick=function(){ var nl={id:++uid,item:'Custom item',code:'',unit:'',notes:'',hours:0,qty:1,ex:0,gst:true,lineNote:'',open:true}; basket.push(nl); renderBasket(); }; }
+var clearBasketBtn=document.getElementById('clearBasketBtn'); if(clearBasketBtn){ clearBasketBtn.onclick=function(){ if(!basket.length) return; basket=[]; renderBasket(); showToast('Basket cleared'); }; }
+
+/* ----------  CSV ---------- */
+document.getElementById('exportCsvBtn').onclick=function(){ if(!basket.length) return; var esc=function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }; var lines=[["Item","Quantity","Price Ex. GST","GST Apply","Line Ex","GST","Line Total"].map(esc)]; var totEx=0,totGst=0; basket.forEach(function(b){ var le=isNaN(b.ex)?0:b.qty*b.ex; totEx+=le; var gstAmt=b.gst?le*GST_RATE:0; totGst+=gstAmt; var li=le+gstAmt; lines.push([b.item,b.qty,isNaN(b.ex)?'N/A':Number(b.ex).toFixed(2), b.gst?'Yes':'No', isNaN(b.ex)?'N/A':le.toFixed(2), isNaN(b.ex)?'N/A':gstAmt.toFixed(2), isNaN(b.ex)?'N/A':li.toFixed(2)].map(esc)); }); var grand=(totEx+totGst).toFixed(2); lines.push(['','','','Totals:',totEx.toFixed(2),totGst.toFixed(2),grand].map(esc)); var csv=lines.map(function(r){return r.join(',');}).join('\n'); var blob=new Blob([csv],{type:'text/csv'}); var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='quote_basket.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); };
+
+/* ---------- Basket Window Controller ---------- */
+(function(){
+  var WIN_KEY='iam_basket_window_v1'; var el=document.getElementById('basketContainer'); var header=document.getElementById('basketHeader'); var resizeHandle=document.getElementById('basketResize'); var reopen=document.getElementById('basketReopen'); var btnClose=document.getElementById('closeBasket'), btnMin=document.getElementById('minBasket'), btnMax=document.getElementById('maxBasket');
+  var state={mode:'normal',x:null,y:null,w:window.innerWidth-32,h:Math.max(240,Math.floor(window.innerHeight*0.4))}; try{ var raw=localStorage.getItem(WIN_KEY); if(raw){ var s=JSON.parse(raw)||{}; for(var k in s){ state[k]=s[k]; } } }catch(e){}
+  function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
+  function isMobile(){ return window.innerWidth<768; }
+  function defaultXY(){ return {left:16, top:Math.max(16, window.innerHeight - (state.h||300) - 16)}; }
+  function save(){ try{ localStorage.setItem(WIN_KEY, JSON.stringify(state)); }catch(e){} }
+  function showReopen(v){ if(reopen) reopen.style.display=v?'block':'none'; }
+  function apply(){ if(state.mode==='hidden'){ el.style.display='none'; showReopen(true); return; } showReopen(false); el.style.display='block'; el.classList.remove('min','max','mobile'); if(isMobile()) el.classList.add('mobile'); if(state.mode==='min') el.classList.add('min'); if(state.mode==='max') el.classList.add('max'); if(state.mode!=='max' && !el.classList.contains('mobile')){ if(state.x==null||state.y==null){ var d=defaultXY(); state.x=d.left; state.y=d.top; } el.style.left=state.x+'px'; el.style.top=state.y+'px'; el.style.right='16px'; el.style.width='auto'; el.style.height=(state.mode==='min'?34:state.h)+'px'; } save(); }
   function setMode(m){ state.mode=m; apply(); }
-  function toggleMax(){ setMode(state.mode==='max' ? 'normal' : 'max'); }
-  // Dragging
-  var dragging=false, sx=0, sy=0, sl=0, st=0;
-  header.addEventListener('mousedown', function(e){ if(state.mode!=='normal' || isMobile()) return; dragging=true; document.body.classList.add('dragging'); sx=e.clientX; sy=e.clientY; var r=el.getBoundingClientRect(); sl=r.left; st=r.top; window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp); e.preventDefault(); });
-  function onMove(e){ if(!dragging) return; var nx=clamp(sl+(e.clientX-sx), 0, window.innerWidth - el.offsetWidth); var ny=clamp(st+(e.clientY-sy), 0, window.innerHeight - 34); el.style.left=nx+'px'; el.style.top=ny+'px'; state.x=nx; state.y=ny; }
-  function onUp(){ if(!dragging) return; dragging=false; document.body.classList.remove('dragging'); window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); save(); }
-  // Resizing (bottom-right)
-  var resizing=false, rw=0, rh=0, rsx=0, rsy=0, rl=0, rt=0;
-  resizeHandle.addEventListener('mousedown', function(e){ if(state.mode!=='normal') return; resizing=true; document.body.classList.add('dragging'); var r=el.getBoundingClientRect(); rw=r.width; rh=r.height; rl=r.left; rt=r.top; rsx=e.clientX; rsy=e.clientY; window.addEventListener('mousemove', onResize); window.addEventListener('mouseup', onResizeUp); e.preventDefault(); e.stopPropagation(); });
+  function toggleMax(){ setMode(state.mode==='max'?'normal':'max'); }
+  // drag
+  var dragging=false,sx=0,sy=0,sl=0,st=0; header.addEventListener('mousedown', function(e){ if(state.mode!=='normal'||isMobile()) return; dragging=true; document.body.classList.add('dragging'); sx=e.clientX; sy=e.clientY; var r=el.getBoundingClientRect(); sl=r.left; st=r.top; window.addEventListener('mousemove',onMove); window.addEventListener('mouseup',onUp); e.preventDefault(); });
+  function onMove(e){ if(!dragging) return; var nx=clamp(sl+(e.clientX-sx),0,window.innerWidth-el.offsetWidth); var ny=clamp(st+(e.clientY-sy),0,window.innerHeight-34); el.style.left=nx+'px'; el.style.top=ny+'px'; state.x=nx; state.y=ny; }
+  function onUp(){ if(!dragging) return; dragging=false; document.body.classList.remove('dragging'); window.removeEventListener('mousemove',onMove); window.removeEventListener('mouseup',onUp); save(); }
+  // resize
+  var resizing=false,rw=0,rh=0,rsx=0,rsy=0,rl=0,rt=0; resizeHandle.addEventListener('mousedown', function(e){ if(state.mode!=='normal') return; resizing=true; document.body.classList.add('dragging'); var r=el.getBoundingClientRect(); rw=r.width; rh=r.height; rl=r.left; rt=r.top; rsx=e.clientX; rsy=e.clientY; window.addEventListener('mousemove',onResize); window.addEventListener('mouseup',onResizeUp); e.preventDefault(); e.stopPropagation(); });
   function onResize(e){ if(!resizing) return; var nw=clamp(rw+(e.clientX-rsx), 360, window.innerWidth-rl-8); var nh=clamp(rh+(e.clientY-rsy), 200, window.innerHeight-rt-8); el.style.width=nw+'px'; el.style.height=nh+'px'; state.w=nw; state.h=nh; }
-  function onResizeUp(){ if(!resizing) return; resizing=false; document.body.classList.remove('dragging'); window.removeEventListener('mousemove', onResize); window.removeEventListener('mouseup', onResizeUp); save(); }
-  // Controls
+  function onResizeUp(){ if(!resizing) return; resizing=false; document.body.classList.remove('dragging'); window.removeEventListener('mousemove',onResize); window.removeEventListener('mouseup',onResizeUp); save(); }
   if(btnClose) btnClose.onclick=function(){ setMode('hidden'); };
   if(btnMin) btnMin.onclick=function(){ setMode('min'); };
   if(btnMax) btnMax.onclick=function(){ toggleMax(); };
   if(reopen) reopen.onclick=function(){ setMode('normal'); };
-  // Keyboard shortcuts
-  window.addEventListener('keydown', function(e){ var mod=e.metaKey||e.ctrlKey; if(e.key==='Escape'){ setMode('hidden'); }
-    else if(mod && (e.key==='m' || e.key==='M')){ setMode('min'); e.preventDefault(); }
-    else if(mod && (e.key==='Enter' || e.keyCode===13)){ toggleMax(); e.preventDefault(); }
-  });
-  // Focus trap when maximized
-  document.addEventListener('keydown', function(e){ if(state.mode!=='max') return; if(e.key!=='Tab') return; var focusables=el.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])'); if(!focusables.length) return; var first=focusables[0], last=focusables[focusables.length-1]; var cur=document.activeElement; if(e.shiftKey){ if(cur===first||!el.contains(cur)){ last.focus(); e.preventDefault(); } } else { if(cur===last||!el.contains(cur)){ first.focus(); e.preventDefault(); } } });
-  // Mobile adapt on resize
+  window.addEventListener('keydown', function(e){ var mod=e.metaKey||e.ctrlKey; if(e.key==='Escape'){ setMode('hidden'); } else if(mod && (e.key==='m'||e.key==='M')){ setMode('min'); e.preventDefault(); } else if(mod && (e.key==='Enter'||e.keyCode===13)){ toggleMax(); e.preventDefault(); } });
   window.addEventListener('resize', function(){ apply(); });
-  // Initial apply
   apply();
+})();
+
+// Start
+showStatus('Loading <code>myFile.xlsx</code>…');
+fetch('./myFile.xlsx',{cache:'no-store'}).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.arrayBuffer(); }).then(function(buf){ whenXLSXReady(function(){ parseAndBuild(buf); }); }).catch(function(err){ console.error(err); showPicker(err.message||'network error'); });
+if(picker){ picker.addEventListener('change', function(e){ var f=(e&&e.target&&e.target.files&&e.target.files[0])||null; if(!f) return; if(f.arrayBuffer){ f.arrayBuffer().then(function(ab){ whenXLSXReady(function(){ parseAndBuild(ab); }); }); } else { var reader=new FileReader(); reader.onload=function(ev){ var ab=ev.target.result; whenXLSXReady(function(){ parseAndBuild(ab); }); }; reader.readAsArrayBuffer(f); } }); }
+
+loadBasket();
+console.log('IAM Pricing Tool — script loaded OK');
 })();
 </script>
 </body>
