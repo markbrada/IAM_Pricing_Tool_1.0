@@ -179,7 +179,18 @@ if(basketFab){ basketFab.onclick=function(){ var cont=document.getElementById('b
 var addCustomBtn=document.getElementById('addCustomBtn');var clearBasketBtn=document.getElementById('clearBasketBtn');
 if(addCustomBtn){addCustomBtn.addEventListener('click',function(){var nl={id:++uid,item:'Custom item',qty:1,ex:0,gst:true};basket.push(nl);renderBasket();try{var rows=bBody.querySelectorAll('tr.main-row');if(rows.length){var last=rows[rows.length-1].querySelector('.item-input');if(last)last.focus();}}catch(_){} });}
 if(clearBasketBtn){clearBasketBtn.addEventListener('click',function(){if(!basket.length)return;basket=[];renderBasket();showToast('Basket cleared');});}
-function updateBasketHeaderOffset(){var cont=document.getElementById('basketContainer');var hdr=document.getElementById('basketHeader');if(!cont||!hdr) return;var mb=0;try{mb=parseFloat(getComputedStyle(hdr).marginBottom)||0;}catch(_){mb=0;}var h=hdr.getBoundingClientRect().height+mb;cont.style.setProperty('--bh',h+'px');}
+function updateBasketHeaderOffset(){
+  var cont=document.getElementById('basketContainer');
+  var hdr=document.getElementById('basketHeader');
+  if(!cont||!hdr){return;}
+  var mb=0;
+  try{
+    var cs = window.getComputedStyle ? getComputedStyle(hdr,null) : (hdr.currentStyle||{});
+    mb = parseFloat(cs.marginBottom)||0;
+  }catch(e){ mb = 0; }
+  var h = (hdr.offsetHeight||0) + mb;
+  cont.style.setProperty('--bh', h + 'px');
+}catch(_){mb=0;}var h=hdr.getBoundingClientRect().height+mb;cont.style.setProperty('--bh',h+'px');}
 window.addEventListener('resize',updateBasketHeaderOffset););}
 function addItem(row,header){var catIdx=header.indexOf("Category");var itemCol=-1;for(var i=0;i<header.length;i++){if(String(header[i]).toLowerCase()==='item'){itemCol=i;break;}}var exIdx=-1;for(var i2=0;i2<header.length;i2++){if(PRICE_EX.indexOf(header[i2])>-1){exIdx=i2;break;}}var firstNonEmpty='';for(var j=0;j<row.length;j++){if(j!==catIdx&&String(row[j]).trim()!==''){firstNonEmpty=row[j];break;}}var desc=itemCol!==-1?row[itemCol]:firstNonEmpty||'Unnamed Item';var ex=exIdx===-1?NaN:+row[exIdx];var newLine={id:++uid,item:desc,qty:1,ex:ex,gst:true};basket.push(newLine);lastAdded=newLine;renderBasket();}
 function undoAdd(){if(lastAdded){for(var i=0;i<basket.length;i++){if(basket[i].id===lastAdded.id){basket.splice(i,1);break;}}lastAdded=null;renderBasket();}}
