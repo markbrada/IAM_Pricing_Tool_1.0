@@ -66,16 +66,6 @@ summary:hover{background:var(--btn);color:#fff}
 #basketTable th:nth-child(8),#basketTable td:nth-child(8){width:120px}
 #basketTable th:nth-child(9),#basketTable td:nth-child(9){width:50px}
 .qty-controls button{padding:.15rem .35rem}
-#basketWindow{position:fixed;top:10vh;left:10vw;width:80vw;height:70vh;background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.2);display:none;z-index:2000;overflow:hidden}
-#basketTitlebar{height:36px;display:flex;align-items:center;gap:.5rem;background:var(--header);padding:0 .5rem;cursor:grab;user-select:none}
-#basketTitlebar.grabbing{cursor:grabbing}
-#basketLights{display:flex;gap:.4rem}
-.light{width:12px;height:12px;border-radius:50%;display:inline-block}
-.light.red{background:#ff5f57}.light.yellow{background:#ffbd2e}.light.green{background:#28c940}
-#basketWinActions{margin-left:auto;display:flex;gap:.5rem}
-#basketWinContent{height:calc(100% - 36px);overflow:auto;padding:.75rem}
-#basketDock{position:fixed;right:12px;bottom:12px;background:var(--btn);color:#fff;border-radius:999px;padding:.5rem .75rem;cursor:pointer;z-index:1500;display:none}
-#basketResize{position:absolute;width:14px;height:14px;right:2px;bottom:2px;cursor:nwse-resize}
 </style>
 </head>
 <body>
@@ -118,33 +108,6 @@ summary:hover{background:var(--btn);color:#fff}
     </table>
   </div>
 </div>
-<div id="basketWindow">
-  <div id="basketTitlebar">
-    <div id="basketLights">
-      <span class="light red" id="bwClose"></span>
-      <span class="light yellow" id="bwMin"></span>
-      <span class="light green" id="bwZoom"></span>
-    </div>
-    <div style="font-weight:bold;margin-left:.5rem">Quote Basket</div>
-    <div id="basketWinActions">
-      <button id="addCustomBtnV2">Add custom line</button>
-      <button id="clearBasketBtnV2">Clear</button>
-      <button id="exportCsvBtnV2">Export quote CSV</button>
-    </div>
-  </div>
-  <div id="basketWinContent">
-    <table id="basketTableV2">
-      <thead><tr>
-        <th class="sort-handle">≡</th><th>Item</th><th>Quantity</th>
-        <th>Price Ex. GST</th><th>GST Apply</th>
-        <th>Line Total Ex. GST</th><th>GST</th><th>Line Total</th><th>Remove</th>
-      </tr></thead>
-      <tbody></tbody><tfoot></tfoot>
-    </table>
-  </div>
-  <div id="basketResize"></div>
-</div>
-<div id="basketDock">Quote (0)</div>
 <script src="xlsx.full.min.js"></script>
 <script>if(!window.XLSX){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/xlsx@0.20.3/dist/xlsx.full.min.js';s.setAttribute('data-sheetjs','1');document.head.appendChild(s);}</script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
@@ -155,7 +118,7 @@ var META=(function(){var o={};for(var i=0;i<ORDER.length;i++){o[ORDER[i][0]]={id
 var FALL=META["uncategorised"];
 var PRICE_EX=["Rate Ex. GST","Price Ex. GST"];
 var TOAST_MS=3000,GST_RATE=0.10,LS_KEY='iam_basket_v2';
-var wb=null,basket=[],lastRemoved=null,lastAdded=null,uid=0,USE_V2=true;
+var wb=null,basket=[],lastRemoved=null,lastAdded=null,uid=0;
 var tabs=document.getElementById("sheetTabs"),container=document.getElementById("sheetContainer"),toast=document.getElementById("toast");
 function active(n){if(!tabs)return;var kids=tabs.children;for(var i=0;i<kids.length;i++){var b=kids[i];b.classList.toggle('active',b.dataset&&b.dataset.sheet===n);}}
 function saveBasket(){try{localStorage.setItem(LS_KEY,JSON.stringify(basket));}catch(e){}}
@@ -174,73 +137,20 @@ showStatus('Loading <code>myFile.xlsx</code>…');
 fetch('./myFile.xlsx',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.arrayBuffer();}).then(function(buf){whenXLSXReady(function(){parseAndBuild(buf);});}).catch(function(err){console.error(err);showPicker(err.message||'network error');});
 if(picker){picker.addEventListener('change',function(e){var tgt=e&&e.target;var files=tgt&&tgt.files;var f=files&&files[0];if(!f)return;if(f.arrayBuffer){f.arrayBuffer().then(function(ab){whenXLSXReady(function(){parseAndBuild(ab);});});}else{var reader=new FileReader();reader.onload=function(ev){var ab=ev.target.result;whenXLSXReady(function(){parseAndBuild(ab);});};reader.readAsArrayBuffer(f);}});} 
 function draw(name){if(!wb||!wb.Sheets||!wb.Sheets[name]){container.textContent='No such sheet.';return;}var rows=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:""});if(!rows.length){container.textContent='Empty sheet.';return;}var header=rows[0].map(function(h){return String(h).trim();});var catIdx=header.indexOf("Category");if(catIdx===-1){container.textContent='No "Category" column in this sheet.';return;}var body=rows.slice(1);container.innerHTML="";var sDiv=document.createElement("div");sDiv.className="search-container";sDiv.innerHTML='<label class="search-label">Search items:</label><input class="search-input" placeholder="Type to filter...">';container.appendChild(sDiv);var inp=sDiv.querySelector("input");var wrap=document.createElement("div");container.appendChild(wrap);inp.oninput=render;render();function render(){var term=(inp.value||"").toLowerCase();wrap.innerHTML="";var groups={};for(var i=0;i<body.length;i++){var r=body[i];if(term){var match=false;for(var j=0;j<r.length;j++){if(String(r[j]).toLowerCase().indexOf(term)>-1){match=true;break;}}if(!match)continue;}var cat=(r[catIdx]||"Uncategorised").toString().trim();if(!groups[cat])groups[cat]=[];groups[cat].push(r);}var cats=Object.keys(groups).sort(function(a,b){var A=(META[a.toLowerCase()]||FALL).idx;var B=(META[b.toLowerCase()]||FALL).idx;return A-B;});for(var c=0;c<cats.length;c++){(function(cat){var cls=(META[cat.toLowerCase()]||FALL).cls;var det=document.createElement("details");det.open=!!term;det.className=cls;var sum=document.createElement("summary");sum.textContent=cat;det.appendChild(sum);var tbl=document.createElement("table");var ths=header.filter(function(_,i){return i!==catIdx;}).map(function(h){return '<th>'+h+'</th>';}).join("");tbl.innerHTML='<thead><tr><th></th>'+ths+'</tr></thead>';var tbody=document.createElement("tbody");tbl.appendChild(tbody);var items=groups[cat];for(var r=0;r<items.length;r++){(function(row){var tr=document.createElement("tr");var tdAdd=document.createElement("td");var btn=document.createElement("button");btn.className="add-button";btn.textContent="+";btn.onclick=function(){addItem(row,header);showToast("Item added ✓",undoAdd);};tdAdd.appendChild(btn);tr.appendChild(tdAdd);for(var i2=0;i2<row.length;i2++){if(i2===catIdx)continue;var td=document.createElement("td");var h=(header[i2]||"").toLowerCase();var txt=/price|gst|rate/.test(h)&&!isNaN(row[i2])?(+row[i2]).toFixed(2):row[i2];if(term){try{td.innerHTML=String(txt).replace(new RegExp('('+term+')','gi'),'<span class="highlight">$1</span>');}catch(e){td.textContent=String(txt);}}else{td.textContent=String(txt);}if(/price|gst|rate/.test(h))td.style.fontWeight="bold";td.onclick=function(e){if(e.target&&e.target.tagName==='BUTTON')return;var el=e.currentTarget;navigator.clipboard.writeText(el.textContent).then(function(){el.classList.add("copied-cell");void el.offsetWidth;setTimeout(function(){el.classList.remove("copied-cell");},150);});};tr.appendChild(td);}tbody.appendChild(tr);})(items[r]);}det.appendChild(tbl);wrap.appendChild(det);})(cats[c]);}}}
-function getBasketTableRefs(){
-  if(USE_V2){
-    var b2=document.querySelector('#basketTableV2 tbody');
-    var f2=document.querySelector('#basketTableV2 tfoot');
-    if(b2&&f2) return {body:b2,foot:f2};
-  }
-  return {body:document.querySelector('#basketTable tbody'),foot:document.querySelector('#basketTable tfoot')};
-}
+var bBody=document.querySelector('#basketTable tbody'),bFoot=document.querySelector('#basketTable tfoot');
 document.getElementById('toggleBasketBtn').onclick=function(e){var bc=document.getElementById('basketContent');if(bc.style.display==='none'){bc.style.display='block';e.target.textContent='Hide Basket';}else{bc.style.display='none';e.target.textContent='Show Basket';}};
 var addCustomBtn=document.getElementById('addCustomBtn');var clearBasketBtn=document.getElementById('clearBasketBtn');
-if(addCustomBtn){addCustomBtn.addEventListener('click',function(){var nl={id:++uid,item:'Custom item',qty:1,ex:0,gst:true};basket.push(nl);renderBasket();try{var refs=getBasketTableRefs();var rows=refs.body?refs.body.querySelectorAll('tr.main-row'):[];if(rows.length){var last=rows[rows.length-1].querySelector('.item-input');if(last)last.focus();}}catch(_){} });}
-var addCustomBtnV2=document.getElementById('addCustomBtnV2'); if(addCustomBtnV2){addCustomBtnV2.addEventListener('click',function(){var nl={id:++uid,item:'Custom item',qty:1,ex:0,gst:true};basket.push(nl);renderBasket();});}
-var clearBasketBtnV2=document.getElementById('clearBasketBtnV2'); if(clearBasketBtnV2){clearBasketBtnV2.addEventListener('click',function(){if(!basket.length)return;basket=[];renderBasket();showToast('Basket cleared');});}
+if(addCustomBtn){addCustomBtn.addEventListener('click',function(){var nl={id:++uid,item:'Custom item',qty:1,ex:0,gst:true};basket.push(nl);renderBasket();try{var rows=bBody.querySelectorAll('tr.main-row');if(rows.length){var last=rows[rows.length-1].querySelector('.item-input');if(last)last.focus();}}catch(_){} });}
 if(clearBasketBtn){clearBasketBtn.addEventListener('click',function(){if(!basket.length)return;basket=[];renderBasket();showToast('Basket cleared');});}
 function addItem(row,header){var catIdx=header.indexOf("Category");var itemCol=-1;for(var i=0;i<header.length;i++){if(String(header[i]).toLowerCase()==='item'){itemCol=i;break;}}var exIdx=-1;for(var i2=0;i2<header.length;i2++){if(PRICE_EX.indexOf(header[i2])>-1){exIdx=i2;break;}}var firstNonEmpty='';for(var j=0;j<row.length;j++){if(j!==catIdx&&String(row[j]).trim()!==''){firstNonEmpty=row[j];break;}}var desc=itemCol!==-1?row[itemCol]:firstNonEmpty||'Unnamed Item';var ex=exIdx===-1?NaN:+row[exIdx];var newLine={id:++uid,item:desc,qty:1,ex:ex,gst:true};basket.push(newLine);lastAdded=newLine;renderBasket();}
 function undoAdd(){if(lastAdded){for(var i=0;i<basket.length;i++){if(basket[i].id===lastAdded.id){basket.splice(i,1);break;}}lastAdded=null;renderBasket();}}
 function undoRemove(){if(lastRemoved){basket.splice(lastRemoved.i,0,lastRemoved.b);lastRemoved=null;renderBasket();}}
-function renderBasket(){
-  var refs=getBasketTableRefs(); var bBody=refs.body; var bFoot=refs.foot;
-  var contV1=document.getElementById('basketContainer'); var win=document.getElementById('basketWindow');
-  if(USE_V2){ if(contV1) contV1.style.display='none'; if(win) win.style.display='block'; }
-  var dock=document.getElementById('basketDock'); if(dock){ dock.textContent='Quote ('+basket.length+')'; }
-  if(!bBody||!bFoot){ saveBasket(); return; }
-  if(!basket.length){ bBody.innerHTML=''; bFoot.innerHTML=''; saveBasket(); return; }
-  bBody.innerHTML=''; var totEx=0, totGst=0;
-  for(var i=0;i<basket.length;i++)(function(b,idx){
-    var tr=document.createElement('tr'); tr.className='main-row'; tr.dataset.id=String(b.id||'');
-    var tdHandle=document.createElement('td'); tdHandle.className='sort-handle'; tdHandle.textContent='≡'; tr.appendChild(tdHandle);
-    var tdItem=document.createElement('td'); var itemInput=document.createElement('textarea'); itemInput.rows=2; itemInput.value=b.item||''; itemInput.className='editable item-input'; itemInput.oninput=function(){ b.item=itemInput.value; saveBasket(); }; tdItem.appendChild(itemInput); tr.appendChild(tdItem);
-    var tdQ=document.createElement('td'); var qc=document.createElement('div'); qc.className='qty-controls'; var minus=document.createElement('button'); minus.textContent='-'; var inp=document.createElement('input'); inp.type='number'; inp.step='0.1'; inp.className='qty-input'; inp.value=b.qty||1; var plus=document.createElement('button'); plus.textContent='+'; minus.onclick=function(){ b.qty=Math.max(1,(b.qty||1)-1); renderBasket(); }; plus.onclick=function(){ b.qty=(b.qty||1)+1; renderBasket(); }; inp.onchange=function(){ b.qty=Math.max(1,parseFloat(inp.value)||1); renderBasket(); }; qc.appendChild(minus); qc.appendChild(inp); qc.appendChild(plus); tdQ.appendChild(qc); tr.appendChild(tdQ);
-    var tdEx=document.createElement('td'); var exInput=document.createElement('input'); exInput.type='number'; exInput.step='0.01'; exInput.className='editable price-input'; exInput.value=isNaN(b.ex)?'':Number(b.ex).toFixed(2); exInput.onchange=function(){ var v=parseFloat(exInput.value); b.ex=isFinite(v)?v:NaN; renderBasket(); }; tdEx.appendChild(exInput); tr.appendChild(tdEx);
-    var tdGstApply=document.createElement('td'); tdGstApply.className='gst-cell'; var gstInput=document.createElement('input'); gstInput.type='checkbox'; gstInput.className='gst-input'; gstInput.checked=!!b.gst; gstInput.onchange=function(){ b.gst=gstInput.checked; renderBasket(); }; tdGstApply.appendChild(gstInput); tr.appendChild(tdGstApply);
-    var le=isNaN(b.ex)?0:(b.qty||1)*b.ex; var gstAmt=b.gst?le*GST_RATE:0; var li=le+gstAmt; totEx+=le; totGst+=gstAmt;
-    var tdLe=document.createElement('td'); tdLe.textContent=isNaN(b.ex)?'N/A':le.toFixed(2); var tdG=document.createElement('td'); tdG.textContent=isNaN(b.ex)?'N/A':gstAmt.toFixed(2); var tdLi=document.createElement('td'); tdLi.textContent=isNaN(b.ex)?'N/A':li.toFixed(2); tr.appendChild(tdLe); tr.appendChild(tdG); tr.appendChild(tdLi);
-    var tdRem=document.createElement('td'); var x=document.createElement('span'); x.className='remove-btn'; x.textContent='X'; x.onclick=function(){ lastRemoved={b:b,i:idx}; setTimeout(function(){ basket.splice(idx,1); renderBasket(); showToast('Item removed ↩', undoRemove); },150); }; tdRem.appendChild(x); tr.appendChild(tdRem);
-    bBody.appendChild(tr);
-  })(basket[i],i);
-  var grand=totEx+totGst;
-  bFoot.innerHTML='<tr><td colspan="5" style="text-align:right;font-weight:bold">Grand Totals:</td><td style="font-weight:bold">'+totEx.toFixed(2)+'</td><td style="font-weight:bold">'+totGst.toFixed(2)+'</td><td style="font-weight:bold">'+grand.toFixed(2)+'</td><td></td></tr>';
-  if(window.Sortable&&!bBody.getAttribute('data-sortable')){ Sortable.create(bBody,{handle:'.sort-handle',draggable:'tr.main-row',animation:150,onEnd:function(){ var rows=bBody.querySelectorAll('tr.main-row'); var order=[]; for(var k=0;k<rows.length;k++){ order.push(rows[k].dataset.id); } var newArr=[]; for(var o=0;o<order.length;o++){ for(var j=0;j<basket.length;j++){ if(String(basket[j].id)===order[o]){ newArr.push(basket[j]); break; } } } basket=newArr; saveBasket(); }}); bBody.setAttribute('data-sortable','1'); }
-  saveBasket();
-}bBody.innerHTML='';var totEx=0,totGst=0;for(var i=0;i<basket.length;i++){(function(b,idx){var tr=document.createElement('tr');tr.className='main-row';tr.dataset.id=String(b.id||'');var tdHandle=document.createElement('td');tdHandle.className='sort-handle';tdHandle.textContent='≡';tr.appendChild(tdHandle);var tdItem=document.createElement('td');
+function renderBasket(){var cont=document.getElementById('basketContainer');cont.style.display=basket.length?'block':'none';if(!basket.length){bBody.innerHTML='';bFoot.innerHTML='';saveBasket();return;}bBody.innerHTML='';var totEx=0,totGst=0;for(var i=0;i<basket.length;i++){(function(b,idx){var tr=document.createElement('tr');tr.className='main-row';tr.dataset.id=String(b.id||'');var tdHandle=document.createElement('td');tdHandle.className='sort-handle';tdHandle.textContent='≡';tr.appendChild(tdHandle);var tdItem=document.createElement('td');
     var itemInput=document.createElement('textarea'); itemInput.rows=2; itemInput.value=b.item||''; itemInput.className='editable item-input';
     itemInput.oninput=function(){ b.item=itemInput.value; saveBasket(); };
     tdItem.appendChild(itemInput); tr.appendChild(tdItem);var tdQ=document.createElement('td');var qc=document.createElement('div');qc.className='qty-controls';var minus=document.createElement('button');minus.textContent='-';var inp=document.createElement('input');inp.type='number';inp.step='0.1';inp.className='qty-input';inp.value=b.qty||1;var plus=document.createElement('button');plus.textContent='+';minus.onclick=function(){b.qty=Math.max(1,(b.qty||1)-1);renderBasket();};plus.onclick=function(){b.qty=(b.qty||1)+1;renderBasket();};inp.onchange=function(){b.qty=Math.max(1,parseFloat(inp.value)||1);renderBasket();};qc.appendChild(minus);qc.appendChild(inp);qc.appendChild(plus);tdQ.appendChild(qc);tr.appendChild(tdQ);var tdEx=document.createElement('td');var exInput=document.createElement('input');exInput.type='number';exInput.step='0.01';exInput.className='editable price-input';exInput.value=isNaN(b.ex)?'':Number(b.ex).toFixed(2);exInput.onchange=function(){var v=parseFloat(exInput.value);b.ex=isFinite(v)?v:NaN;renderBasket();};tdEx.appendChild(exInput);tr.appendChild(tdEx);var tdGstApply=document.createElement('td');tdGstApply.className='gst-cell';var gstInput=document.createElement('input');gstInput.type='checkbox';gstInput.className='gst-input';gstInput.checked=!!b.gst;gstInput.onchange=function(){b.gst=gstInput.checked;renderBasket();};tdGstApply.appendChild(gstInput);tr.appendChild(tdGstApply);var le=isNaN(b.ex)?0:(b.qty||1)*b.ex;var gstAmt=b.gst?le*GST_RATE:0;var li=le+gstAmt;totEx+=le;totGst+=gstAmt;var tdLe=document.createElement('td');tdLe.textContent=isNaN(b.ex)?'N/A':le.toFixed(2);var tdG=document.createElement('td');tdG.textContent=isNaN(b.ex)?'N/A':gstAmt.toFixed(2);var tdLi=document.createElement('td');tdLi.textContent=isNaN(b.ex)?'N/A':li.toFixed(2);tr.appendChild(tdLe);tr.appendChild(tdG);tr.appendChild(tdLi);var tdRem=document.createElement('td');var x=document.createElement('span');x.className='remove-btn';x.textContent='X';x.onclick=function(){lastRemoved={b:b,i:idx};tr.classList.add('fade-out');setTimeout(function(){basket.splice(idx,1);renderBasket();showToast('Item removed ↩',undoRemove);},300);};tdRem.appendChild(x);tr.appendChild(tdRem);bBody.appendChild(tr);})(basket[i],i);}var grand=totEx+totGst;bFoot.innerHTML='<tr><td colspan="5" style="text-align:right;font-weight:bold">Grand Totals:</td><td style="font-weight:bold">'+totEx.toFixed(2)+'</td><td style="font-weight:bold">'+totGst.toFixed(2)+'</td><td style="font-weight:bold">'+grand.toFixed(2)+'</td><td></td></tr>';if(window.Sortable&&!bBody.getAttribute('data-sortable')){Sortable.create(bBody,{handle:'.sort-handle',draggable:'tr.main-row',animation:150,onEnd:function(){var rows=bBody.querySelectorAll('tr.main-row');var order=[];for(var k=0;k<rows.length;k++){order.push(rows[k].dataset.id);}var newArr=[];for(var o=0;o<order.length;o++){for(var j=0;j<basket.length;j++){if(String(basket[j].id)===order[o]){newArr.push(basket[j]);break;}}}basket=newArr;saveBasket();}});bBody.setAttribute('data-sortable','1');}saveBasket();}
-function exportCSV(){ if(!basket.length)return; var esc=function(v){return '"'+String(v).replace(/"/g,'""')+'"';}; var lines=[["Item","Quantity","Price Ex. GST","GST Apply","Line Ex","GST","Line Total"]]; var totEx=0,totGst=0; for(var i=0;i<basket.length;i++){ var b=basket[i]; var le=isNaN(b.ex)?0:(b.qty||1)*b.ex; totEx+=le; var gstAmt=b.gst?le*GST_RATE:0; totGst+=gstAmt; var li=le+gstAmt; lines.push([b.item,b.qty,isNaN(b.ex)?"N/A":Number(b.ex).toFixed(2),b.gst?"Yes":"No",isNaN(b.ex)?"N/A":le.toFixed(2),isNaN(b.ex)?"N/A":gstAmt.toFixed(2),isNaN(b.ex)?"N/A":li.toFixed(2)]); } var grand=(totEx+totGst).toFixed(2); lines.push(['','','','Totals:',totEx.toFixed(2),totGst.toFixed(2),grand]); var out=[]; for(var r=0;r<lines.length;r++){ var row=lines[r]; for(var c=0;c<row.length;c++){ row[c]=esc(row[c]); } out.push(row.join(',')); } var csv=out.join("\n"); var blob=new Blob([csv],{type:"text/csv"}); var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="quote_basket.csv"; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
-var exportBtn=document.getElementById('exportCsvBtn'); if(exportBtn){ exportBtn.onclick=exportCSV; }
-var exportBtnV2=document.getElementById('exportCsvBtnV2'); if(exportBtnV2){ exportBtnV2.onclick=exportCSV; }var lines=[["Item","Quantity","Price Ex. GST","GST Apply","Line Ex","GST","Line Total"]];var totEx=0,totGst=0;for(var i=0;i<basket.length;i++){var b=basket[i];var le=isNaN(b.ex)?0:(b.qty||1)*b.ex;totEx+=le;var gstAmt=b.gst?le*GST_RATE:0;totGst+=gstAmt;var li=le+gstAmt;lines.push([b.item,b.qty,isNaN(b.ex)?"N/A":Number(b.ex).toFixed(2),b.gst?"Yes":"No",isNaN(b.ex)?"N/A":le.toFixed(2),isNaN(b.ex)?"N/A":gstAmt.toFixed(2),isNaN(b.ex)?"N/A":li.toFixed(2)]);}var grand=(totEx+totGst).toFixed(2);lines.push(['','','','Totals:',totEx.toFixed(2),totGst.toFixed(2),grand]);var out=[];for(var r=0;r<lines.length;r++){var row=lines[r];for(var c=0;c<row.length;c++){row[c]=esc(row[c]);}out.push(row.join(','));}var csv=out.join("\n");var blob=new Blob([csv],{type:"text/csv"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="quote_basket.csv";document.body.appendChild(a);a.click();document.body.removeChild(a);} 
-function setupBasketWindow(){
-  var win=document.getElementById('basketWindow'); var dock=document.getElementById('basketDock'); if(!win||!dock)return;
-  function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
-  var state={x:Math.round(window.innerWidth*0.1),y:Math.round(window.innerHeight*0.1),w:Math.round(window.innerWidth*0.8),h:Math.round(window.innerHeight*0.7),open:true,min:false,zoom:false};
-  try{ var raw=localStorage.getItem('iam_basket_win'); if(raw){ var s=JSON.parse(raw); if(s&&typeof s==='object'){ for(var k in s){ state[k]=s[k]; } } } }catch(_){ }
-  function apply(){ win.style.left=state.x+'px'; win.style.top=state.y+'px'; win.style.width=state.w+'px'; win.style.height=state.h+'px'; document.getElementById('basketWinContent').style.display=state.min?'none':'block'; win.style.display=state.open?'block':'none'; try{ localStorage.setItem('iam_basket_win',JSON.stringify(state)); }catch(_){ } }
-  apply();
-  var title=document.getElementById('basketTitlebar'); var resizing=false,dragging=false; var startX=0,startY=0,startW=0,startH=0,startLeft=0,startTop=0;
-  title.addEventListener('mousedown',function(e){ if(e.target && (e.target.id==='bwClose'||e.target.id==='bwMin'||e.target.id==='bwZoom')) return; dragging=true; title.classList.add('grabbing'); startX=e.clientX; startY=e.clientY; startLeft=state.x; startTop=state.y; document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp); });
-  function onMove(e){ if(dragging){ var nx=startLeft+(e.clientX-startX); var ny=startTop+(e.clientY-startY); var maxX=window.innerWidth-80; var maxY=window.innerHeight-40; state.x=clamp(nx,0,maxX); state.y=clamp(ny,0,maxY); apply(); } if(resizing){ var nw=clamp(startW+(e.clientX-startX),360,window.innerWidth-20); var nh=clamp(startH+(e.clientY-startY),240,window.innerHeight-20); state.w=nw; state.h=nh; apply(); } }
-  function onUp(){ dragging=false; resizing=false; title.classList.remove('grabbing'); document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); }
-  document.getElementById('basketResize').addEventListener('mousedown',function(e){ resizing=true; startX=e.clientX; startY=e.clientY; startW=state.w; startH=state.h; document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp); });
-  document.getElementById('bwClose').addEventListener('click',function(){ state.open=false; apply(); dock.style.display='inline-block'; });
-  document.getElementById('bwMin').addEventListener('click',function(){ state.min=!state.min; apply(); });
-  document.getElementById('bwZoom').addEventListener('click',function(){ if(!state.zoom){ state.prev={x:state.x,y:state.y,w:state.w,h:state.h}; state.x=10; state.y=10; state.w=window.innerWidth-20; state.h=window.innerHeight-20; state.zoom=true; } else { if(state.prev){ state.x=state.prev.x; state.y=state.prev.y; state.w=state.prev.w; state.h=state.prev.h; } state.zoom=false; } apply(); });
-  dock.addEventListener('click',function(){ state.open=true; apply(); dock.style.display='none'; });
-}
-setupBasketWindow();
-if(USE_V2){ var c=document.getElementById('basketContainer'); if(c) c.style.display='none'; var w=document.getElementById('basketWindow'); if(w) w.style.display='block'; }
+var exportBtn=document.getElementById("exportCsvBtn");
+exportBtn.onclick=function(){if(!basket.length)return;var esc=function(v){return '"'+String(v).replace(/"/g,'""')+'"';};var lines=[["Item","Quantity","Price Ex. GST","GST Apply","Line Ex","GST","Line Total"]];var totEx=0,totGst=0;for(var i=0;i<basket.length;i++){var b=basket[i];var le=isNaN(b.ex)?0:(b.qty||1)*b.ex;totEx+=le;var gstAmt=b.gst?le*GST_RATE:0;totGst+=gstAmt;var li=le+gstAmt;lines.push([b.item,b.qty,isNaN(b.ex)?"N/A":Number(b.ex).toFixed(2),b.gst?"Yes":"No",isNaN(b.ex)?"N/A":le.toFixed(2),isNaN(b.ex)?"N/A":gstAmt.toFixed(2),isNaN(b.ex)?"N/A":li.toFixed(2)]);}var grand=(totEx+totGst).toFixed(2);lines.push(['','','','Totals:',totEx.toFixed(2),totGst.toFixed(2),grand]);var out=[];for(var r=0;r<lines.length;r++){var row=lines[r];for(var c=0;c<row.length;c++){row[c]=esc(row[c]);}out.push(row.join(','));}var csv=out.join("\n");var blob=new Blob([csv],{type:"text/csv"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="quote_basket.csv";document.body.appendChild(a);a.click();document.body.removeChild(a);} 
 window.__iam_main_ok__=true;
 })();
 </script>
