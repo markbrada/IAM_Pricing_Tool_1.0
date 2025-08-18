@@ -5,17 +5,14 @@
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
 <meta charset="UTF-8">
-<title>In A Minnit Pricing Tool 2.1.3</title>
+<title>In A Minnit Pricing Tool 2.1.4</title>
 <style>
-/* === Theme & base === */
-:root{--bg:#f7f7f7;--fg:#333;--header:#e0e0e0;--btn:#007bff;--btnh:#0056b3;--add:#28a745;--addh:#218838;--border:#aaa;--alt:#f9f9f9;--panel:#fff;--toast:#007bff;--toastfg:#fff}
-.dark-mode{--bg:#222;--fg:#eee;--header:#444;--btn:#0d6efd;--btnh:#0a58ca;--add:#198754;--addh:#157347;--border:#555;--alt:#2a2a2a;--panel:#333;--toast:#0d6efd;--toastfg:#fff}
+:root{--bg:#f7f7f7;--fg:#333;--header:#e0e0e0;--btn:#007bff;--btnh:#0056b3;--add:#28a745;--addh:#218838;--border:#aaa;--alt:#f9f9f9;--panel:#fff;--toast:#007bff;--toastfg:#fff;--rowHover:#e9f1ff}
+.dark-mode{--bg:#222;--fg:#eee;--header:#444;--btn:#0d6efd;--btnh:#0a58ca;--add:#198754;--addh:#157347;--border:#555;--alt:#2a2a2a;--panel:#333;--toast:#0d6efd;--toastfg:#fff;--rowHover:#383838}
 body{font-family:sans-serif;margin:1rem;background:var(--bg);color:var(--fg);transition:.3s}
 h1{margin:.2rem 0}p{margin:0 0 2rem}
 #darkModeToggle{position:fixed;top:10px;right:10px;z-index:3000;background:var(--btn);color:#fff;border:none;padding:.5rem .75rem;border-radius:4px;cursor:pointer}
 #darkModeToggle:hover{background:var(--btnh)}
-
-/* Tabs & search */
 #sheetTabs{border-bottom:1px solid var(--border);margin-bottom:1rem}
 #sheetTabs button{background:none;border:none;padding:.5rem 1rem;margin-right:.5rem;cursor:pointer;font-size:1rem;color:var(--fg)}
 #sheetTabs button.active{border-bottom:2px solid var(--btn);font-weight:bold}
@@ -23,100 +20,65 @@ h1{margin:.2rem 0}p{margin:0 0 2rem}
 .search-label{font-weight:bold;margin-right:.5rem}
 .search-input{padding:.4rem;border:1px solid var(--border);border-radius:4px;width:200px;background:var(--panel);color:var(--fg)}
 .highlight{background:yellow}
-
-/* Tables */
 table{border-collapse:collapse;width:100%}
 thead th{position:sticky;top:0;background:var(--header);border:1px solid var(--border);padding:.5rem;text-align:center;z-index:2}
 tbody td{border:1px solid var(--border);padding:.5rem}
-tbody tr:nth-child(even){background:var(--alt)!important}
-tbody tr:hover{background:#ccc}
+tbody tr{background:transparent}
+tbody tr:hover{background:var(--rowHover)}
 .add-button{background:var(--add);color:#fff;border:none;padding:.3rem .6rem;border-radius:4px;font-weight:bold;cursor:pointer}
 .add-button:hover{background:var(--addh)}
 .copied-cell{background:#c8e6c9!important;transition:.15s}
-
-/* Category colours */
 details{margin-bottom:1rem}
 summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:.5rem;padding:.4rem .6rem;border-radius:4px;background:var(--header);font-weight:bold}
 summary::-webkit-details-marker{display:none}
 summary:hover{background:var(--btn);color:#fff}
+.dark-mode summary{color:#000}
+.dark-mode summary:hover{color:#fff}
 .cat-orange summary{background:#ffe9d6}.cat-orange summary:hover{background:#ffc999;color:#000}
-.cat-blue   summary{background:#d8ebff}.cat-blue   summary:hover{background:#add6ff;color:#000}
-.cat-brown  summary{background:#f2e6d9}.cat-brown  summary:hover{background:#e0cbb9;color:#000}
-.cat-red    summary{background:#ffdede}.cat-red    summary:hover{background:#ffb7b7;color:#000}
+.cat-blue summary{background:#d8ebff}.cat-blue summary:hover{background:#add6ff;color:#000}
+.cat-brown summary{background:#f2e6d9}.cat-brown summary:hover{background:#e0cbb9;color:#000}
+.cat-red summary{background:#ffdede}.cat-red summary:hover{background:#ffb7b7;color:#000}
 .cat-yellow summary{background:#fff8d6}.cat-yellow summary:hover{background:#ffea9f;color:#000}
-
-/* ===== Floating macOS-style Quote Window ===== */
-#basketContainer{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border:1px solid var(--border);border-top-left-radius:12px;border-top-right-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.2);z-index:1000;overflow:hidden;display:flex;flex-direction:column}
-#basketContainer.floating{bottom:auto;right:auto}
-#basketContainer.minimized{height:38px!important}
-#basketContainer.minimized #basketContent{display:none}
-#basketTitlebar{display:flex;align-items:center;justify-content:space-between;background:var(--header);padding:6px 8px;cursor:grab;user-select:none;border-top-left-radius:12px;border-top-right-radius:12px}
-#basketTitlebar .title{font-weight:bold}
-.macos-lights{display:flex;gap:8px;align-items:center}
-.macos-lights button{width:12px;height:12px;border-radius:50%;border:none;cursor:pointer}
-.macos-lights .close{background:#ff5f57}
-.macos-lights .min{background:#ffbd2e}
-.macos-lights .zoom{background:#28c840}
-#basketContent{flex:1;overflow:auto;padding:8px}
-#quoteDock{position:fixed;right:12px;bottom:12px;z-index:1100;background:var(--panel);border:1px solid var(--border);box-shadow:0 6px 16px rgba(0,0,0,.18);border-radius:18px;padding:.35rem .6rem;display:none}
-#winResizeBR{position:absolute;right:4px;bottom:4px;width:14px;height:14px;cursor:nwse-resize;opacity:.6;background:linear-gradient(135deg,transparent 50%,var(--border) 50%)}
-/* hide any legacy header if still present */
-#basketHeader{display:none!important}
-
-/* Basket table specifics */
-#basketTable th,#basketTable td{border:1px solid var(--border);padding:.5rem}
-#basketTable tbody tr:nth-child(even){background:var(--alt)!important}
-.sort-handle{cursor:move;user-select:none;text-align:center;font-size:1.2rem;width:2em}
-.qty-input{width:60px;text-align:center}
+#basketContainer{position:fixed;bottom:0;left:0;right:0;max-height:40%;background:var(--panel);border-top:1px solid var(--border);padding:1rem;box-shadow:0 -2px 5px rgba(0,0,0,.1);z-index:1000;overflow-y:auto}
+#basketHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem}
+#basketHeader h3{margin:0}
+#basketHeader button{background:var(--btn);color:#fff;border:none;padding:.3rem .6rem;border-radius:4px;cursor:pointer}
+#basketHeader button:hover{background:var(--btnh)}
+#basketTable{table-layout:fixed}
+#basketTable th,#basketTable td{border:1px solid var(--border);padding:.28rem;box-sizing:border-box;vertical-align:middle}
+#basketTable tbody tr:hover{background:var(--rowHover)}
+.sort-handle{cursor:move;user-select:none;text-align:left;font-size:1.1rem;min-width:2em}
+.qty-input{width:48px;text-align:center}
 .remove-btn{color:red;font-weight:bold;cursor:pointer}
-
-/* Inputs (white) */
-.editable{background:#fff;border:1px solid var(--border);padding:.2rem .3rem;border-radius:4px}
-.item-input{width:100%}
-.price-input{max-width:110px;text-align:right}
-.gst-cell{text-align:center}
-.gst-input{width:18px;height:18px}
-
-/* Details panel */
-.details-row td{background:var(--panel)}
-.details-panel{padding:.75rem;border-top:1px dashed var(--border);background:var(--alt)}
-.details-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem}
-.details-grid .notes{grid-column:1/-1}
-.details-grid .line-note{grid-column:1/-1}
-.details-panel label{font-weight:bold;font-size:.85rem;display:block;margin-bottom:.25rem}
-.details-panel .ro{padding:.45rem .6rem;border:1px solid var(--border);border-radius:4px;background:var(--panel)}
-.hours-input,.line-note-input{width:100%;border:1px solid var(--border);border-radius:4px;padding:.3rem;background:#fff}
-.dup-btn{background:var(--btn);color:#fff;border:none;padding:.3rem .6rem;border-radius:4px;cursor:pointer}
-.dup-btn:hover{background:var(--btnh)}
-
-/* Toast */
 #toast{margin-left:1rem;background:var(--toast);color:var(--toastfg);padding:.3rem .6rem;border-radius:4px;opacity:0;transition:.3s}
 #toast.show{opacity:1}
+.editable{background:#fff;border:1px solid var(--border);padding:.2rem .3rem;border-radius:4px}
+.item-input{display:block;width:100%;min-height:2.4em;max-height:6.5em;resize:vertical;overflow:auto;white-space:pre-wrap;line-height:1.22}
+.price-input{max-width:90px;text-align:right}
+.gst-cell{text-align:center}
+.gst-input{width:18px;height:18px}
+#basketTable th:nth-child(1),#basketTable td:nth-child(1){width:36px}
+#basketTable th:nth-child(3),#basketTable td:nth-child(3){width:140px}
+#basketTable th:nth-child(4),#basketTable td:nth-child(4){width:120px}
+#basketTable th:nth-child(5),#basketTable td:nth-child(5){width:70px;text-align:center}
+#basketTable th:nth-child(6),#basketTable td:nth-child(6){width:120px}
+#basketTable th:nth-child(7),#basketTable td:nth-child(7){width:100px}
+#basketTable th:nth-child(8),#basketTable td:nth-child(8){width:120px}
+#basketTable th:nth-child(9),#basketTable td:nth-child(9){width:50px}
+.qty-controls button{padding:.15rem .35rem}
 </style>
 </head>
 <body>
-<h1>In A Minnit Pricing Tool 2.1.3</h1>
+<h1>In A Minnit Pricing Tool 2.1.4</h1>
 <p><em>Beta version – features subject to change. Always check your work. Report bugs to marco@inaminnit.com.au</em></p>
 <button id="darkModeToggle">Toggle Dark Mode</button>
 <div id="sheetTabs"></div>
 <div id="status" style="margin:.5rem 0;font-size:.9rem"></div>
 <div id="manualLoad" style="display:none;margin:.5rem 0"><label class="search-label">Load workbook:</label><input type="file" id="xlsxPicker" accept=".xlsx"></div>
 <div id="sheetContainer"></div>
-<button id="quoteDock" class="dockchip" type="button">Quote (0)</button>
 <div id="basketContainer">
-  <div id="basketTitlebar" class="titlebar">
-    <div class="macos-lights">
-      <button class="light close" id="winClose" title="Close" aria-label="Close"></button>
-      <button class="light min" id="winMin" title="Minimize" aria-label="Minimize"></button>
-      <button class="light zoom" id="winZoom" title="Zoom" aria-label="Zoom"></button>
-    </div>
-    <div class="title">Quote Basket <span id="toast"></span></div>
-    <div class="win-actions">
-      <button id="addCustomBtn">Add custom line</button>
-      <button id="clearBasketBtn">Clear</button>
-      <button id="exportCsvBtn">Export quote CSV</button>
-    </div>
-  </div>
+  <div id="basketHeader">
+    <div style="display:flex;align-items:center;gap:.5rem"><h3>Quote Basket</h3><span id="toast"></span></div>
     <div>
       <button id="addCustomBtn">Add custom line</button>
       <button id="clearBasketBtn">Clear</button>
@@ -124,8 +86,27 @@ summary:hover{background:var(--btn);color:#fff}
       <button id="toggleBasketBtn">Hide Basket</button>
     </div>
   </div>
-  <div id="basketContent">$1</div>
-  <div id="winResizeBR" aria-hidden="true"></div>
+  <div id="basketContent">
+    <table id="basketTable">
+      <colgroup>
+        <col style="width:36px">
+        <col id="col-item">
+        <col style="width:120px">
+        <col style="width:100px">
+        <col style="width:70px">
+        <col style="width:110px">
+        <col style="width:90px">
+        <col style="width:120px">
+        <col style="width:50px">
+      </colgroup>
+      <thead><tr>
+        <th class="sort-handle">≡</th><th>Item</th><th>Quantity</th>
+        <th>Price Ex. GST</th><th>GST Apply</th>
+        <th>Line Total Ex. GST</th><th>GST</th><th>Line Total</th><th>Remove</th>
+      </tr></thead>
+      <tbody></tbody><tfoot></tfoot>
+    </table>
+  </div>
 </div>
 <script src="xlsx.full.min.js"></script>
 <script>if(!window.XLSX){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/xlsx@0.20.3/dist/xlsx.full.min.js';s.setAttribute('data-sheetjs','1');document.head.appendChild(s);}</script>
@@ -141,8 +122,8 @@ var wb=null,basket=[],lastRemoved=null,lastAdded=null,uid=0;
 var tabs=document.getElementById("sheetTabs"),container=document.getElementById("sheetContainer"),toast=document.getElementById("toast");
 function active(n){if(!tabs)return;var kids=tabs.children;for(var i=0;i<kids.length;i++){var b=kids[i];b.classList.toggle('active',b.dataset&&b.dataset.sheet===n);}}
 function saveBasket(){try{localStorage.setItem(LS_KEY,JSON.stringify(basket));}catch(e){}}
-function loadBasket(){try{var raw=localStorage.getItem(LS_KEY);if(raw){var arr=JSON.parse(raw);if(Array.isArray(arr)){basket=arr;uid=Math.max(0,0).valueOf();for(var i=0;i<arr.length;i++){var id=+arr[i].id||0;if(id>uid)uid=id;}renderBasket();}}}catch(e){} }
-function showToast(msg,undo){var el=toast;el.textContent=msg;el.classList.add("show");if(undo){el.style.cursor="pointer";el.onclick=function(){undo();el.classList.remove("show");};}else{el.style.cursor="default";el.onclick=null;}setTimeout(function(){el.classList.remove("show");},TOAST_MS);}
+function loadBasket(){try{var raw=localStorage.getItem(LS_KEY);if(raw){var arr=JSON.parse(raw);if(Array.isArray(arr)){basket=arr;uid=0;for(var i=0;i<arr.length;i++){var id=+arr[i].id||0;if(id>uid)uid=id;}renderBasket();}}}catch(e){} }
+function showToast(msg,undo){var el=toast;el.textContent=msg;el.classList.add("show");if(undo){el.style.cursor="pointer";el.onclick=function(){undo();el.classList.remove("show");};}else{el.style.cursor="default";el.onclick=null;}setTimeout(function(){el.classList.remove("show");},TOAST_MS);} 
 function escapeHtml(s){s=String(s==null?'':s);return s.replace(/[&<>"']/g,function(m){switch(m){case'&':return'&amp;';case'<':return'&lt;';case'>':return'&gt;';case'"':return'&quot;';default:return'&#39;';}});} 
 loadBasket();
 document.getElementById("darkModeToggle").onclick=function(){document.body.classList.toggle("dark-mode")};
@@ -154,104 +135,28 @@ function parseAndBuild(buf){try{wb=XLSX.read(buf,{type:'array'});}catch(e){conso
 window.addEventListener('error',function(e){showStatus("<span style='color:#b00'>Error:</span> "+e.message)});
 showStatus('Loading <code>myFile.xlsx</code>…');
 fetch('./myFile.xlsx',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.arrayBuffer();}).then(function(buf){whenXLSXReady(function(){parseAndBuild(buf);});}).catch(function(err){console.error(err);showPicker(err.message||'network error');});
-if(picker){picker.addEventListener('change',function(e){var tgt=e&&e.target;var files=tgt&&tgt.files;var f=files&&files[0];if(!f)return;if(f.arrayBuffer){f.arrayBuffer().then(function(ab){whenXLSXReady(function(){parseAndBuild(ab);});});}else{var reader=new FileReader();reader.onload=function(ev){var ab=ev.target.result;whenXLSXReady(function(){parseAndBuild(ab);});};reader.readAsArrayBuffer(f);}});}
-function draw(name){if(!wb||!wb.Sheets||!wb.Sheets[name]){container.textContent='No such sheet.';return;}var rows=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:""});if(!rows.length){container.textContent='Empty sheet.';return;}var header=rows[0].map(function(h){return String(h).trim();});var catIdx=header.indexOf("Category");if(catIdx===-1){container.textContent='No "Category" column in this sheet.';return;}var body=rows.slice(1);container.innerHTML="";var sDiv=document.createElement("div");sDiv.className="search-container";sDiv.innerHTML='<label class="search-label">Search items:</label><input class="search-input" placeholder="Type to filter...">';container.appendChild(sDiv);var inp=sDiv.querySelector("input");var wrap=document.createElement("div");container.appendChild(wrap);inp.oninput=render;render();function render(){var term=(inp.value||"").toLowerCase();wrap.innerHTML="";var groups={};for(var i=0;i<body.length;i++){var r=body[i];if(term){var match=false;for(var j=0;j<r.length;j++){if(String(r[j]).toLowerCase().indexOf(term)>-1){match=true;break;}}if(!match)continue;}var cat=(r[catIdx]||"Uncategorised").toString().trim();if(!groups[cat])groups[cat]=[];groups[cat].push(r);}var cats=Object.keys(groups).sort(function(a,b){var A=(META[a.toLowerCase()]||FALL).idx;var B=(META[b.toLowerCase()]||FALL).idx;return A-B;});for(var c=0;c<cats.length;c++){(function(cat){var cls=(META[cat.toLowerCase()]||FALL).cls;var det=document.createElement("details");det.open=!!term;det.className=cls;var sum=document.createElement("summary");sum.textContent=cat;det.appendChild(sum);var tbl=document.createElement("table");var ths=header.filter(function(_,i){return i!==catIdx;}).map(function(h){return '<th>'+h+'</th>';}).join("");tbl.innerHTML='<thead><tr><th></th>'+ths+'</tr></thead>';var tbody=document.createElement("tbody");tbl.appendChild(tbody);var items=groups[cat];for(var r=0;r<items.length;r++){(function(row){var tr=document.createElement("tr");var tdAdd=document.createElement("td");var btn=document.createElement("button");btn.className="add-button";btn.textContent="+";btn.onclick=function(){addItem(row,header);showToast("Item added ✓",undoAdd);};tdAdd.appendChild(btn);tr.appendChild(tdAdd);for(var i2=0;i2<row.length;i2++){if(i2===catIdx)continue;let td=document.createElement("td");var h=(header[i2]||"").toLowerCase();var txt=/price|gst|rate/.test(h)&&!isNaN(row[i2])?(+row[i2]).toFixed(2):row[i2];if(term){try{td.innerHTML=String(txt).replace(new RegExp('('+term+')','gi'),'<span class="highlight">$1</span>');}catch(e){td.textContent=String(txt);}}else{td.textContent=String(txt);}if(/price|gst|rate/.test(h))td.style.fontWeight="bold";td.onclick=function(e){if(e.target&&e.target.tagName==='BUTTON')return;var el=e.currentTarget;navigator.clipboard.writeText(el.textContent).then(function(){el.classList.add("copied-cell");void el.offsetWidth;setTimeout(function(){el.classList.remove("copied-cell");},150);});};tr.appendChild(td);}tbody.appendChild(tr);})(items[r]);}det.appendChild(tbl);wrap.appendChild(det);})(cats[c]);}}}
+if(picker){picker.addEventListener('change',function(e){var tgt=e&&e.target;var files=tgt&&tgt.files;var f=files&&files[0];if(!f)return;if(f.arrayBuffer){f.arrayBuffer().then(function(ab){whenXLSXReady(function(){parseAndBuild(ab);});});}else{var reader=new FileReader();reader.onload=function(ev){var ab=ev.target.result;whenXLSXReady(function(){parseAndBuild(ab);});};reader.readAsArrayBuffer(f);}});} 
+function draw(name){if(!wb||!wb.Sheets||!wb.Sheets[name]){container.textContent='No such sheet.';return;}var rows=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:""});if(!rows.length){container.textContent='Empty sheet.';return;}var header=rows[0].map(function(h){return String(h).trim();});var catIdx=header.indexOf("Category");if(catIdx===-1){container.textContent='No "Category" column in this sheet.';return;}var body=rows.slice(1);container.innerHTML="";var sDiv=document.createElement("div");sDiv.className="search-container";sDiv.innerHTML='<label class="search-label">Search items:</label><input class="search-input" placeholder="Type to filter...">';container.appendChild(sDiv);var inp=sDiv.querySelector("input");var wrap=document.createElement("div");container.appendChild(wrap);inp.oninput=render;render();function render(){var term=(inp.value||"").toLowerCase();wrap.innerHTML="";var groups={};for(var i=0;i<body.length;i++){var r=body[i];if(term){var match=false;for(var j=0;j<r.length;j++){if(String(r[j]).toLowerCase().indexOf(term)>-1){match=true;break;}}if(!match)continue;}var cat=(r[catIdx]||"Uncategorised").toString().trim();if(!groups[cat])groups[cat]=[];groups[cat].push(r);}var cats=Object.keys(groups).sort(function(a,b){var A=(META[a.toLowerCase()]||FALL).idx;var B=(META[b.toLowerCase()]||FALL).idx;return A-B;});for(var c=0;c<cats.length;c++){(function(cat){var cls=(META[cat.toLowerCase()]||FALL).cls;var det=document.createElement("details");det.open=!!term;det.className=cls;var sum=document.createElement("summary");sum.textContent=cat;det.appendChild(sum);var tbl=document.createElement("table");var ths=header.filter(function(_,i){return i!==catIdx;}).map(function(h){return '<th>'+h+'</th>';}).join("");tbl.innerHTML='<thead><tr><th></th>'+ths+'</tr></thead>';var tbody=document.createElement("tbody");tbl.appendChild(tbody);var items=groups[cat];for(var r=0;r<items.length;r++){(function(row){var tr=document.createElement("tr");var tdAdd=document.createElement("td");var btn=document.createElement("button");btn.className="add-button";btn.textContent="+";btn.onclick=function(){addItem(row,header);showToast("Item added ✓",undoAdd);};tdAdd.appendChild(btn);tr.appendChild(tdAdd);for(var i2=0;i2<row.length;i2++){if(i2===catIdx)continue;var td=document.createElement("td");var h=(header[i2]||"").toLowerCase();var txt=/price|gst|rate/.test(h)&&!isNaN(row[i2])?(+row[i2]).toFixed(2):row[i2];if(term){try{td.innerHTML=String(txt).replace(new RegExp('('+term+')','gi'),'<span class="highlight">$1</span>');}catch(e){td.textContent=String(txt);}}else{td.textContent=String(txt);}if(/price|gst|rate/.test(h))td.style.fontWeight="bold";td.onclick=function(e){if(e.target&&e.target.tagName==='BUTTON')return;var el=e.currentTarget;navigator.clipboard.writeText(el.textContent).then(function(){el.classList.add("copied-cell");void el.offsetWidth;setTimeout(function(){el.classList.remove("copied-cell");},150);});};tr.appendChild(td);}tbody.appendChild(tr);})(items[r]);}det.appendChild(tbl);wrap.appendChild(det);})(cats[c]);}}}
 var bBody=document.querySelector('#basketTable tbody'),bFoot=document.querySelector('#basketTable tfoot');
-
-/* ===== Floating "macOS" Quote Window ===== */
-var winEl=document.getElementById('basketContainer');
-var titlebar=document.getElementById('basketTitlebar');
-var dockBtn=document.getElementById('quoteDock');
-var btnClose=document.getElementById('winClose');
-var btnMin=document.getElementById('winMin');
-var btnZoom=document.getElementById('winZoom');
-var resizeBR=document.getElementById('winResizeBR');
-var LS_WIN='iam_quote_window_v1';
-
-function vw(n){return Math.round(window.innerWidth*n);} function vh(n){return Math.round(window.innerHeight*n);} function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
-function saveWin(){try{var st={x:parseInt(winEl.style.left)||0,y:parseInt(winEl.style.top)||0,w:winEl.offsetWidth,h:winEl.offsetHeight,min:winEl.classList.contains('minimized'),open:winEl.style.display!=='none',zoom:winEl.classList.contains('zoomed')};localStorage.setItem(LS_WIN,JSON.stringify(st));}catch(e){}}
-function loadWin(){try{var raw=localStorage.getItem(LS_WIN);return raw?JSON.parse(raw):null;}catch(e){return null}}
-function applyRect(r){ if(r){ winEl.style.left=r.x+'px';winEl.style.top=r.y+'px';winEl.style.width=r.w+'px';winEl.style.height=r.h+'px'; winEl.style.right='auto'; winEl.style.bottom='auto'; winEl.classList.add('floating'); }}
-function ensureMin(r){ var minW=Math.max(vw(0.8),420), minH=Math.max(vh(0.8),300); r.w=Math.max(r.w,minW); r.h=Math.max(r.h,minH); r.x=clamp(r.x,0,Math.max(0,window.innerWidth-r.w)); r.y=clamp(r.y,0,Math.max(0,window.innerHeight-r.h)); return r; }
-function initWin(){ var st=loadWin(); if(st){ var rect={x:st.x,y:st.y,w:st.w,h:st.h}; applyRect(rect); if(st.min){winEl.classList.add('minimized');} if(st.open===false){winEl.style.display='none'; if(dockBtn) dockBtn.style.display='inline-block';} if(st.zoom){winEl.classList.add('zoomed');} } else { winEl.classList.remove('floating'); winEl.style.left=''; winEl.style.top=''; winEl.style.right='0'; winEl.style.bottom='0'; winEl.style.width='auto'; winEl.style.height='80vh'; } }
-initWin();
-
-function setDockCount(){ if(!dockBtn) return; var n=basket.length||0; dockBtn.textContent='Quote ('+n+')'; }
-
-if(btnClose){btnClose.onclick=function(){ winEl.style.display='none'; if(dockBtn) dockBtn.style.display='inline-block'; saveWin(); }}
-if(btnMin){btnMin.onclick=function(){ winEl.classList.toggle('minimized'); saveWin(); }}
-if(btnZoom){btnZoom.onclick=function(){ var z=winEl.classList.toggle('zoomed'); if(z){ winEl.dataset.prev=JSON.stringify({x:parseInt(winEl.style.left)||0,y:parseInt(winEl.style.top)||0,w:winEl.offsetWidth,h:winEl.offsetHeight}); winEl.style.left='10px'; winEl.style.top='10px'; winEl.style.width=(window.innerWidth-20)+'px'; winEl.style.height=(window.innerHeight-20)+'px'; winEl.classList.add('floating'); winEl.style.right='auto'; winEl.style.bottom='auto'; } else { try{ var prev=JSON.parse(winEl.dataset.prev||'null'); if(prev){ applyRect(prev);} }catch(e){} } saveWin(); }}
-if(dockBtn){dockBtn.onclick=function(){ winEl.style.display='block'; winEl.classList.remove('minimized'); dockBtn.style.display='none'; saveWin(); }}
-
-// convert to floating when dragging or resizing from bottom-sheet mode
-function convertToFloating(){ if(winEl.classList.contains('floating')) return; var h=winEl.offsetHeight; var w=winEl.offsetWidth; var y=window.innerHeight-h; var x=0; winEl.classList.add('floating'); winEl.style.left=x+'px'; winEl.style.top=y+'px'; winEl.style.width=w+'px'; winEl.style.height=h+'px'; winEl.style.right='auto'; winEl.style.bottom='auto'; }
-if(titlebar){ titlebar.addEventListener('mousedown', function(e){ if(e.target.closest('.macos-lights')||e.target.closest('.win-actions')) return; convertToFloating(); }); }
-if(resizeBR){ resizeBR.addEventListener('mousedown', function(){ convertToFloating(); }); }
-
-window.addEventListener('resize',function(){ var r={x:parseInt(winEl.style.left)||0,y:parseInt(winEl.style.top)||0,w:winEl.offsetWidth,h:winEl.offsetHeight}; if(winEl.classList.contains('floating')){ r=ensureMin(r); r.w=Math.min(r.w, window.innerWidth-r.x); r.h=Math.min(r.h, window.innerHeight-r.y); applyRect(r); } else { winEl.style.height='80vh'; } saveWin();});
-
-// Hide any legacy toggle button if present
-var legacyToggle=document.getElementById('toggleBasketBtn'); if(legacyToggle){ legacyToggle.style.display='none'; }
-
-/* ===== Floating "macOS" Quote Window ===== */
-var winEl=document.getElementById('basketContainer');
-var titlebar=document.getElementById('basketTitlebar');
-var dockBtn=document.getElementById('quoteDock');
-var btnClose=document.getElementById('winClose');
-var btnMin=document.getElementById('winMin');
-var btnZoom=document.getElementById('winZoom');
-var resizeBR=document.getElementById('winResizeBR');
-var LS_WIN='iam_quote_window_v1';
-
-function vw(n){return Math.round(window.innerWidth*n);} function vh(n){return Math.round(window.innerHeight*n);}
-function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
-function saveWin(){try{var st={x:parseInt(winEl.style.left)||0,y:parseInt(winEl.style.top)||0,w:winEl.offsetWidth,h:winEl.offsetHeight,min:winEl.classList.contains('minimized'),open:winEl.style.display!=='none',zoom:winEl.classList.contains('zoomed')};localStorage.setItem(LS_WIN,JSON.stringify(st));}catch(e){}}
-function loadWin(){try{var raw=localStorage.getItem(LS_WIN);return raw?JSON.parse(raw):null;}catch(e){return null}}
-function applyRect(r){ if(r){ winEl.style.left=r.x+'px';winEl.style.top=r.y+'px';winEl.style.width=r.w+'px';winEl.style.height=r.h+'px'; winEl.style.right='auto'; winEl.style.bottom='auto'; winEl.classList.add('floating'); }}
-function defaultRect(){ var h=vh(0.8); return {x:0,y:window.innerHeight-h,w:window.innerWidth,h:h}; }
-function ensureMin(r){ var minW=vw(0.8), minH=vh(0.8); r.w=Math.max(r.w,minW); r.h=Math.max(r.h,minH); r.x=clamp(r.x,0,window.innerWidth-r.w); r.y=clamp(r.y,0,window.innerHeight-r.h); return r; }
-function initWin(){ var st=loadWin(); var rect=st?{x:st.x,y:st.y,w:st.w,h:st.h}:defaultRect(); rect=ensureMin(rect); applyRect(rect); if(st&&st.min){winEl.classList.add('minimized');} if(st&&st.open===false){winEl.style.display='none'; if(dockBtn) dockBtn.style.display='inline-block';} }
-initWin();
-
-function setDockCount(){ if(!dockBtn) return; var n=basket.length||0; dockBtn.textContent='Quote ('+n+')'; }
-
-if(btnClose){btnClose.onclick=function(){ winEl.style.display='none'; if(dockBtn) dockBtn.style.display='inline-block'; saveWin(); }}
-if(btnMin){btnMin.onclick=function(){ winEl.classList.toggle('minimized'); saveWin(); }}
-if(btnZoom){btnZoom.onclick=function(){ var z=winEl.classList.toggle('zoomed'); if(z){ winEl.dataset.prev=JSON.stringify({x:parseInt(winEl.style.left)||0,y:parseInt(winEl.style.top)||0,w:winEl.offsetWidth,h:winEl.offsetHeight}); winEl.style.left='10px'; winEl.style.top='10px'; winEl.style.width=(window.innerWidth-20)+'px'; winEl.style.height=(window.innerHeight-20)+'px'; } else { try{ var prev=JSON.parse(winEl.dataset.prev||'null'); if(prev){ applyRect(prev);} }catch(e){} } saveWin(); }}
-if(dockBtn){dockBtn.onclick=function(){ winEl.style.display='block'; winEl.classList.remove('minimized'); dockBtn.style.display='none'; saveWin(); }}
-
-// Dragging
-if(titlebar){
-  var drag=false,sx=0,sy=0,sl=0,stp=0;
-  titlebar.addEventListener('mousedown',function(e){ if(e.target.closest('.macos-lights')||e.target.closest('.win-actions')) return; drag=true; sx=e.clientX; sy=e.clientY; sl=parseInt(winEl.style.left)||0; stp=parseInt(winEl.style.top)||0; titlebar.style.cursor='grabbing'; document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp,{once:true}); });
-  function onMove(e){ if(!drag) return; var nx=clamp(sl+(e.clientX-sx),0,window.innerWidth-winEl.offsetWidth); var ny=clamp(stp+(e.clientY-sy),0,window.innerHeight-winEl.offsetHeight); winEl.style.left=nx+'px'; winEl.style.top=ny+'px'; }
-  function onUp(){ drag=false; titlebar.style.cursor='grab'; document.removeEventListener('mousemove',onMove); saveWin(); }
-}
-// Resize bottom-right
-if(resizeBR){
-  var rs=false,sw=0,sh=0,sx2=0,sy2=0;
-  resizeBR.addEventListener('mousedown',function(e){ rs=true; sw=winEl.offsetWidth; sh=winEl.offsetHeight; sx2=e.clientX; sy2=e.clientY; document.addEventListener('mousemove',onR); document.addEventListener('mouseup',onRU,{once:true}); e.preventDefault(); });
-  function onR(e){ if(!rs) return; var dw=e.clientX-sx2; var dh=e.clientY-sy2; var r={x:parseInt(winEl.style.left)||0,y:parseInt(winEl.style.top)||0,w:sw+dw,h:sh+dh}; r=ensureMin(r); r.w=Math.min(r.w, window.innerWidth-r.x); r.h=Math.min(r.h, window.innerHeight-r.y); applyRect(r); }
-  function onRU(){ rs=false; document.removeEventListener('mousemove',onR); saveWin(); }
-}
-window.addEventListener('resize',function(){ var r={x:parseInt(winEl.style.left)||0,y:parseInt(winEl.style.top)||0,w:winEl.offsetWidth,h:winEl.offsetHeight}; r=ensureMin(r); r.w=Math.min(r.w, window.innerWidth-r.x); r.h=Math.min(r.h, window.innerHeight-r.y); applyRect(r); saveWin();});
+document.getElementById('toggleBasketBtn').onclick=function(e){var bc=document.getElementById('basketContent');if(bc.style.display==='none'){bc.style.display='block';e.target.textContent='Hide Basket';}else{bc.style.display='none';e.target.textContent='Show Basket';}};
 var addCustomBtn=document.getElementById('addCustomBtn');var clearBasketBtn=document.getElementById('clearBasketBtn');
 if(addCustomBtn){addCustomBtn.addEventListener('click',function(){var nl={id:++uid,item:'Custom item',qty:1,ex:0,gst:true};basket.push(nl);renderBasket();try{var rows=bBody.querySelectorAll('tr.main-row');if(rows.length){var last=rows[rows.length-1].querySelector('.item-input');if(last)last.focus();}}catch(_){} });}
 if(clearBasketBtn){clearBasketBtn.addEventListener('click',function(){if(!basket.length)return;basket=[];renderBasket();showToast('Basket cleared');});}
-function addItem(row,header){var catIdx=header.indexOf("Category");var itemCol=-1;for(var i=0;i<header.length;i++){if(String(header[i]).toLowerCase()==='item'){itemCol=i;break;}}var hL=header.map(function(h){return String(h).toLowerCase();});var exIdx=-1;for(var i2=0;i2<header.length;i2++){if(PRICE_EX.indexOf(header[i2])>-1){exIdx=i2;break;}}var firstNonEmpty='';for(var j=0;j<row.length;j++){if(j!==catIdx&&String(row[j]).trim()!==''){firstNonEmpty=row[j];break;}}var desc=itemCol!==-1?row[itemCol]:firstNonEmpty||'Unnamed Item';var ex=exIdx===-1?NaN:+row[exIdx];var newLine={id:++uid,item:desc,qty:1,ex:ex,gst:true};basket.push(newLine);lastAdded=newLine;renderBasket();}
+function addItem(row,header){var catIdx=header.indexOf("Category");var itemCol=-1;for(var i=0;i<header.length;i++){if(String(header[i]).toLowerCase()==='item'){itemCol=i;break;}}var exIdx=-1;for(var i2=0;i2<header.length;i2++){if(PRICE_EX.indexOf(header[i2])>-1){exIdx=i2;break;}}var firstNonEmpty='';for(var j=0;j<row.length;j++){if(j!==catIdx&&String(row[j]).trim()!==''){firstNonEmpty=row[j];break;}}var desc=itemCol!==-1?row[itemCol]:firstNonEmpty||'Unnamed Item';var ex=exIdx===-1?NaN:+row[exIdx];var newLine={id:++uid,item:desc,qty:1,ex:ex,gst:true};basket.push(newLine);lastAdded=newLine;renderBasket();}
 function undoAdd(){if(lastAdded){for(var i=0;i<basket.length;i++){if(basket[i].id===lastAdded.id){basket.splice(i,1);break;}}lastAdded=null;renderBasket();}}
 function undoRemove(){if(lastRemoved){basket.splice(lastRemoved.i,0,lastRemoved.b);lastRemoved=null;renderBasket();}}
-function renderBasket(){var cont=document.getElementById('basketContainer');if(!basket.length){bBody.innerHTML='';bFoot.innerHTML='';setDockCount();saveBasket();return;}bBody.innerHTML='';var totEx=0,totGst=0;for(var i=0;i<basket.length;i++){(function(b,idx){var tr=document.createElement('tr');tr.className='main-row';tr.dataset.id=String(b.id||'');var tdHandle=document.createElement('td');tdHandle.className='sort-handle';tdHandle.textContent='≡';tr.appendChild(tdHandle);var tdItem=document.createElement('td');
+function renderBasket(){var cont=document.getElementById('basketContainer');cont.style.display=basket.length?'block':'none';if(!basket.length){bBody.innerHTML='';bFoot.innerHTML='';saveBasket();return;}bBody.innerHTML='';var totEx=0,totGst=0;for(var i=0;i<basket.length;i++){(function(b,idx){var tr=document.createElement('tr');tr.className='main-row';tr.dataset.id=String(b.id||'');var tdHandle=document.createElement('td');tdHandle.className='sort-handle';tdHandle.textContent='≡';tr.appendChild(tdHandle);var tdItem=document.createElement('td');
     var itemInput=document.createElement('textarea'); itemInput.rows=2; itemInput.value=b.item||''; itemInput.className='editable item-input';
     itemInput.oninput=function(){ b.item=itemInput.value; saveBasket(); };
-    tdItem.appendChild(itemInput); tr.appendChild(tdItem);var tdQ=document.createElement('td');var qc=document.createElement('div');qc.className='qty-controls';var minus=document.createElement('button');minus.textContent='-';var inp=document.createElement('input');inp.type='number';inp.step='0.1';inp.className='qty-input';inp.value=b.qty||1;var plus=document.createElement('button');plus.textContent='+';minus.onclick=function(){b.qty=Math.max(1,(b.qty||1)-1);renderBasket();};plus.onclick=function(){b.qty=(b.qty||1)+1;renderBasket();};inp.onchange=function(){b.qty=Math.max(1,parseFloat(inp.value)||1);renderBasket();};qc.appendChild(minus);qc.appendChild(inp);qc.appendChild(plus);tdQ.appendChild(qc);tr.appendChild(tdQ);var tdEx=document.createElement('td');var exInput=document.createElement('input');exInput.type='number';exInput.step='0.01';exInput.className='editable price-input';exInput.value=isNaN(b.ex)?'':Number(b.ex).toFixed(2);exInput.onchange=function(){var v=parseFloat(exInput.value);b.ex=isFinite(v)?v:NaN;renderBasket();};tdEx.appendChild(exInput);tr.appendChild(tdEx);var tdGstApply=document.createElement('td');tdGstApply.className='gst-cell';var gstInput=document.createElement('input');gstInput.type='checkbox';gstInput.className='gst-input';gstInput.checked=!!b.gst;gstInput.onchange=function(){b.gst=gstInput.checked;renderBasket();};tdGstApply.appendChild(gstInput);tr.appendChild(tdGstApply);var le=isNaN(b.ex)?0:(b.qty||1)*b.ex;var gstAmt=b.gst?le*GST_RATE:0;var li=le+gstAmt;totEx+=le;totGst+=gstAmt;var tdLe=document.createElement('td');tdLe.textContent=isNaN(b.ex)?'N/A':le.toFixed(2);var tdG=document.createElement('td');tdG.textContent=isNaN(b.ex)?'N/A':gstAmt.toFixed(2);var tdLi=document.createElement('td');tdLi.textContent=isNaN(b.ex)?'N/A':li.toFixed(2);tr.appendChild(tdLe);tr.appendChild(tdG);tr.appendChild(tdLi);var tdRem=document.createElement('td');var x=document.createElement('span');x.className='remove-btn';x.textContent='X';x.onclick=function(){lastRemoved={b:b,i:idx};tr.classList.add('fade-out');setTimeout(function(){basket.splice(idx,1);renderBasket();showToast('Item removed ↩',undoRemove);},300);};tdRem.appendChild(x);tr.appendChild(tdRem);bBody.appendChild(tr);})(basket[i],i);}var grand=totEx+totGst;bFoot.innerHTML='<tr><td colspan="5" style="text-align:right;font-weight:bold">Grand Totals:</td><td style="font-weight:bold">'+totEx.toFixed(2)+'</td><td style="font-weight:bold">'+totGst.toFixed(2)+'</td><td style="font-weight:bold">'+grand.toFixed(2)+'</td><td></td></tr>';if(window.Sortable&&!bBody.getAttribute('data-sortable')){Sortable.create(bBody,{handle:'.sort-handle',draggable:'tr.main-row',animation:150,onEnd:function(){var rows=bBody.querySelectorAll('tr.main-row');var order=[];for(var k=0;k<rows.length;k++){order.push(rows[k].dataset.id);}var newArr=[];for(var o=0;o<order.length;o++){for(var j=0;j<basket.length;j++){if(String(basket[j].id)===order[o]){newArr.push(basket[j]);break;}}}basket=newArr;setDockCount(); saveBasket();}});bBody.setAttribute('data-sortable','1');}saveBasket();}
+    tdItem.appendChild(itemInput); tr.appendChild(tdItem);var tdQ=document.createElement('td');var qc=document.createElement('div');qc.className='qty-controls';var minus=document.createElement('button');minus.textContent='-';var inp=document.createElement('input');inp.type='number';inp.step='0.1';inp.className='qty-input';inp.value=b.qty||1;var plus=document.createElement('button');plus.textContent='+';minus.onclick=function(){b.qty=Math.max(1,(b.qty||1)-1);renderBasket();};plus.onclick=function(){b.qty=(b.qty||1)+1;renderBasket();};inp.onchange=function(){b.qty=Math.max(1,parseFloat(inp.value)||1);renderBasket();};qc.appendChild(minus);qc.appendChild(inp);qc.appendChild(plus);tdQ.appendChild(qc);tr.appendChild(tdQ);var tdEx=document.createElement('td');var exInput=document.createElement('input');exInput.type='number';exInput.step='0.01';exInput.className='editable price-input';exInput.value=isNaN(b.ex)?'':Number(b.ex).toFixed(2);exInput.onchange=function(){var v=parseFloat(exInput.value);b.ex=isFinite(v)?v:NaN;renderBasket();};tdEx.appendChild(exInput);tr.appendChild(tdEx);var tdGstApply=document.createElement('td');tdGstApply.className='gst-cell';var gstInput=document.createElement('input');gstInput.type='checkbox';gstInput.className='gst-input';gstInput.checked=!!b.gst;gstInput.onchange=function(){b.gst=gstInput.checked;renderBasket();};tdGstApply.appendChild(gstInput);tr.appendChild(tdGstApply);var le=isNaN(b.ex)?0:(b.qty||1)*b.ex;var gstAmt=b.gst?le*GST_RATE:0;var li=le+gstAmt;totEx+=le;totGst+=gstAmt;var tdLe=document.createElement('td');tdLe.textContent=isNaN(b.ex)?'N/A':le.toFixed(2);var tdG=document.createElement('td');tdG.textContent=isNaN(b.ex)?'N/A':gstAmt.toFixed(2);var tdLi=document.createElement('td');tdLi.textContent=isNaN(b.ex)?'N/A':li.toFixed(2);tr.appendChild(tdLe);tr.appendChild(tdG);tr.appendChild(tdLi);var tdRem=document.createElement('td');var x=document.createElement('span');x.className='remove-btn';x.textContent='X';x.onclick=function(){lastRemoved={b:b,i:idx};tr.classList.add('fade-out');setTimeout(function(){basket.splice(idx,1);renderBasket();showToast('Item removed ↩',undoRemove);},300);};tdRem.appendChild(x);tr.appendChild(tdRem);bBody.appendChild(tr);})(basket[i],i);}var grand=totEx+totGst;bFoot.innerHTML='<tr><td colspan="5" style="text-align:right;font-weight:bold">Grand Totals:</td><td style="font-weight:bold">'+totEx.toFixed(2)+'</td><td style="font-weight:bold">'+totGst.toFixed(2)+'</td><td style="font-weight:bold">'+grand.toFixed(2)+'</td><td></td></tr>';if(window.Sortable&&!bBody.getAttribute('data-sortable')){Sortable.create(bBody,{handle:'.sort-handle',draggable:'tr.main-row',animation:150,onEnd:function(){var rows=bBody.querySelectorAll('tr.main-row');var order=[];for(var k=0;k<rows.length;k++){order.push(rows[k].dataset.id);}var newArr=[];for(var o=0;o<order.length;o++){for(var j=0;j<basket.length;j++){if(String(basket[j].id)===order[o]){newArr.push(basket[j]);break;}}}basket=newArr;saveBasket();}});bBody.setAttribute('data-sortable','1');}saveBasket();}
 var exportBtn=document.getElementById("exportCsvBtn");
-exportBtn.onclick=function(){if(!basket.length)return;var esc=function(v){return '"'+String(v).replace(/"/g,'""')+'"';};var lines=[["Item","Quantity","Price Ex. GST","GST","Line Ex","GST","Line Total"]];var totEx=0,totGst=0;for(var i=0;i<basket.length;i++){var b=basket[i];var le=isNaN(b.ex)?0:(b.qty||1)*b.ex;totEx+=le;var gstAmt=b.gst?le*GST_RATE:0;totGst+=gstAmt;var li=le+gstAmt;lines.push([b.item,b.qty,isNaN(b.ex)?"N/A":Number(b.ex).toFixed(2),b.gst?"Yes":"No",isNaN(b.ex)?"N/A":le.toFixed(2),isNaN(b.ex)?"N/A":gstAmt.toFixed(2),isNaN(b.ex)?"N/A":li.toFixed(2)]);}var grand=(totEx+totGst).toFixed(2);lines.push(['','','','Totals:',totEx.toFixed(2),totGst.toFixed(2),grand]);var out=[];for(var r=0;r<lines.length;r++){var row=lines[r];for(var c=0;c<row.length;c++){row[c]=esc(row[c]);}out.push(row.join(','));}var csv=out.join("\n");var blob=new Blob([csv],{type:"text/csv"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="quote_basket.csv";document.body.appendChild(a);a.click();document.body.removeChild(a);} 
+exportBtn.onclick=function(){if(!basket.length)return;var esc=function(v){return '"'+String(v).replace(/"/g,'""')+'"';};var lines=[["Item","Quantity","Price Ex. GST","GST Apply","Line Ex","GST","Line Total"]];var totEx=0,totGst=0;for(var i=0;i<basket.length;i++){var b=basket[i];var le=isNaN(b.ex)?0:(b.qty||1)*b.ex;totEx+=le;var gstAmt=b.gst?le*GST_RATE:0;totGst+=gstAmt;var li=le+gstAmt;lines.push([b.item,b.qty,isNaN(b.ex)?"N/A":Number(b.ex).toFixed(2),b.gst?"Yes":"No",isNaN(b.ex)?"N/A":le.toFixed(2),isNaN(b.ex)?"N/A":gstAmt.toFixed(2),isNaN(b.ex)?"N/A":li.toFixed(2)]);}var grand=(totEx+totGst).toFixed(2);lines.push(['','','','Totals:',totEx.toFixed(2),totGst.toFixed(2),grand]);var out=[];for(var r=0;r<lines.length;r++){var row=lines[r];for(var c=0;c<row.length;c++){row[c]=esc(row[c]);}out.push(row.join(','));}var csv=out.join("\n");var blob=new Blob([csv],{type:"text/csv"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="quote_basket.csv";document.body.appendChild(a);a.click();document.body.removeChild(a);} 
 window.__iam_main_ok__=true;
 })();
 </script>
 <script>
-(function(){try{if(!window.__iam_main_ok__){var status=document.getElementById('status');if(status){status.innerHTML='<span style="color:#b00">Main script did not finish loading. Check Console for the first error above.</span>';}if(window.XLSX){fetch('./myFile.xlsx',{cache:'no-store'}).then(function(r){return r.arrayBuffer();}).then(function(buf){var wb=XLSX.read(buf,{type:'array'});var names=Object.keys(wb.Sheets||{});if(!names.length)return;var html=XLSX.utils.sheet_to_html(wb.Sheets[names[0]]);document.getElementById('sheetContainer').innerHTML=html;}).catch(function(){});}}}catch(e){} })();
+(function(){try{if(!window.__iam_main_ok__){var status=document.getElementById('status');if(status){status.innerHTML='<span style="color:#b00">Main script did not finish loading. Check Console for the first error above.</span>';}
+if(window.XLSX){fetch('./myFile.xlsx',{cache:'no-store'}).then(function(r){return r.arrayBuffer();}).then(function(buf){var wb=XLSX.read(buf,{type:'array'});var names=Object.keys(wb.Sheets||{});if(!names.length)return;var html=XLSX.utils.sheet_to_html(wb.Sheets[names[0]]);document.getElementById('sheetContainer').innerHTML=html;}).catch(function(){});}}}catch(e){} })();
 </script>
 </body>
 </html>
