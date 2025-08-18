@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
 <meta charset="UTF-8">
-<title>In A Minnit Pricing Tool 2.2.3</title>
+<title>In A Minnit Pricing Tool 2.2.4</title>
 <style>
 :root{--bg:#f7f7f7;--fg:#333;--header:#e0e0e0;--btn:#007bff;--btnh:#0056b3;--add:#28a745;--addh:#218838;--border:#aaa;--alt:#f9f9f9;--panel:#fff;--toast:#007bff;--toastfg:#fff;--rowHover:#e9f1ff}
 .dark-mode{--bg:#222;--fg:#eee;--header:#444;--btn:#0d6efd;--btnh:#0a58ca;--add:#198754;--addh:#157347;--border:#555;--alt:#2a2a2a;--panel:#333;--toast:#0d6efd;--toastfg:#fff;--rowHover:#383838}
@@ -40,12 +40,12 @@ summary:hover{background:var(--btn);color:#fff}
 .cat-red summary{background:#ffdede}.cat-red summary:hover{background:#ffb7b7;color:#000}
 .cat-yellow summary{background:#fff8d6}.cat-yellow summary:hover{background:#ffea9f;color:#000}
 #basketContainer{position:fixed;bottom:0;left:0;right:0;max-height:40%;background:var(--panel);border-top:1px solid var(--border);padding:1rem;box-shadow:0 -2px 5px rgba(0,0,0,.1);z-index:9999;overflow-y:auto;transform:translateZ(0);isolation:isolate}
-#basketHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;position:sticky;top:0;z-index:3;background:var(--panel);box-shadow:0 2px 4px rgba(0,0,0,.06)}
+#basketHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem}
 #basketHeader h3{margin:0}
 #basketHeader button{background:var(--btn);color:#fff;border:none;padding:.3rem .6rem;border-radius:4px;cursor:pointer}
 #basketHeader button:hover{background:var(--btnh)}
 #basketTable{table-layout:fixed;background:var(--panel)}
-#basketContent{padding-top:var(--bh,0px);background:var(--panel)}
+#basketContent{background:var(--panel)}
 #basketTable th,#basketTable td{border:1px solid var(--border);padding:.28rem;box-sizing:border-box;vertical-align:middle;overflow:hidden}
 #basketContainer thead th{position:static}
 #basketTable tbody tr:hover{background:var(--rowHover)}
@@ -71,17 +71,17 @@ summary:hover{background:var(--btn);color:#fff}
 .qty-controls button{padding:.2rem .45rem;line-height:1}
 #basketFab{position:fixed;right:16px;bottom:16px;background:var(--btn);color:#fff;border:none;border-radius:999px;padding:.6rem .9rem;box-shadow:0 6px 16px rgba(0,0,0,.2);cursor:pointer;z-index:1200;display:none}
 #basketFab:hover{background:var(--btnh)}
-input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-input[type=number]{-moz-appearance:textfield}
 #basketSticky{position:sticky;top:0;z-index:4;background:var(--panel);box-shadow:0 2px 4px rgba(0,0,0,.06)}
 #basketStickyHead{background:var(--panel)}
 #basketStickyHead table{width:100%;table-layout:fixed;border-collapse:collapse}
 #basketStickyHead thead th{background:var(--header);border:1px solid var(--border);padding:.28rem;text-align:center}
 #basketTable thead{display:none}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield}
 </style>
 </head>
 <body>
-<h1>In A Minnit Pricing Tool 2.2.3</h1>
+<h1>In A Minnit Pricing Tool 2.2.4</h1>
 <p><em>Beta version – features subject to change. Always check your work. Report bugs to marco@inaminnit.com.au</em></p>
 <button id="darkModeToggle">Toggle Dark Mode</button>
 <div id="sheetTabs"></div>
@@ -90,29 +90,37 @@ input[type=number]{-moz-appearance:textfield}
 <div id="sheetContainer"></div>
 <div id="basketContainer">
   <div id="basketSticky">
-  <div id="basketHeader">$1</div>
-  <div id="basketStickyHead">
-    <table id="basketHead">
-      <colgroup>
-        <col style="width:36px">
-        <col id="col-item">
-        <col style="width:120px">
-        <col style="width:100px">
-        <col style="width:70px">
-        <col style="width:110px">
-        <col style="width:90px">
-        <col style="width:120px">
-        <col style="width:50px">
-      </colgroup>
-      <thead><tr>
-        <th class="sort-handle">≡</th><th>Item</th><th>Quantity</th>
-        <th>Price Ex. GST</th><th>GST Apply</th>
-        <th>Line Total Ex. GST</th><th>GST</th><th>Line Total</th><th></th>
-      </tr></thead>
-    </table>
+    <div id="basketHeader">
+      <div style="display:flex;align-items:center;gap:.5rem"><h3>Quote Basket</h3><span id="toast"></span></div>
+      <div>
+        <button id="addCustomBtn">Add custom line</button>
+        <button id="clearBasketBtn">Clear</button>
+        <button id="exportCsvBtn">Export quote CSV</button>
+        <button id="toggleBasketBtn">Hide Basket</button>
+      </div>
+    </div>
+    <div id="basketStickyHead">
+      <table id="basketHead">
+        <colgroup>
+          <col style="width:36px">
+          <col id="col-item">
+          <col style="width:120px">
+          <col style="width:100px">
+          <col style="width:70px">
+          <col style="width:110px">
+          <col style="width:90px">
+          <col style="width:120px">
+          <col style="width:50px">
+        </colgroup>
+        <thead><tr>
+          <th class="sort-handle">≡</th><th>Item</th><th>Quantity</th>
+          <th>Price Ex. GST</th><th>GST Apply</th>
+          <th>Line Total Ex. GST</th><th>GST</th><th>Line Total</th><th></th>
+        </tr></thead>
+      </table>
+    </div>
   </div>
-</div>
-<div id="basketContent">
+  <div id="basketContent">
     <table id="basketTable">
       <colgroup>
         <col style="width:36px">
@@ -198,12 +206,9 @@ if(addCustomBtn){addCustomBtn.addEventListener('click',function(){var nl={id:++u
 if(clearBasketBtn){clearBasketBtn.addEventListener('click',function(){if(!basket.length)return;basket=[];renderBasket();showToast('Basket cleared');});}
 function updateBasketHeaderOffset(){
   var cont=document.getElementById('basketContainer');
-  var hdr=document.getElementById('basketHeader');
-  if(!cont||!hdr) return;
-  var mb=0, cs=null;
-  if(window.getComputedStyle){ cs=getComputedStyle(hdr,null); if(cs&&cs.marginBottom){ mb=parseFloat(cs.marginBottom)||0; } }
-  else if(hdr.currentStyle&&hdr.currentStyle.marginBottom){ mb=parseFloat(hdr.currentStyle.marginBottom)||0; }
-  var h=(hdr.offsetHeight||0)+mb;
+  var sticky=document.getElementById('basketSticky');
+  if(!cont||!sticky) return;
+  var h=(sticky.offsetHeight||0);
   cont.style.setProperty('--bh', h+'px');
 }
 window.addEventListener('resize',updateBasketHeaderOffset);
