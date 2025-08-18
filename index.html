@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
 <meta charset="UTF-8">
-<title>In A Minnit Pricing Tool 2.2.0</title>
+<title>In A Minnit Pricing Tool 2.2.1</title>
 <style>
 :root{--bg:#f7f7f7;--fg:#333;--header:#e0e0e0;--btn:#007bff;--btnh:#0056b3;--add:#28a745;--addh:#218838;--border:#aaa;--alt:#f9f9f9;--panel:#fff;--toast:#007bff;--toastfg:#fff;--rowHover:#e9f1ff}
 .dark-mode{--bg:#222;--fg:#eee;--header:#444;--btn:#0d6efd;--btnh:#0a58ca;--add:#198754;--addh:#157347;--border:#555;--alt:#2a2a2a;--panel:#333;--toast:#0d6efd;--toastfg:#fff;--rowHover:#383838}
@@ -23,7 +23,7 @@ h1{margin:.2rem 0}p{margin:0 0 2rem}
 table{border-collapse:collapse;width:100%}
 thead th{position:sticky;top:0;background:var(--header);border:1px solid var(--border);padding:.5rem;text-align:center;z-index:2}
 tbody td{border:1px solid var(--border);padding:.5rem}
-tbody tr{background:transparent}
+tbody tr{background:var(--panel)}
 tbody tr:hover{background:var(--rowHover)}
 .add-button{background:var(--add);color:#fff;border:none;padding:.3rem .6rem;border-radius:4px;font-weight:bold;cursor:pointer}
 .add-button:hover{background:var(--addh)}
@@ -39,12 +39,12 @@ summary:hover{background:var(--btn);color:#fff}
 .cat-brown summary{background:#f2e6d9}.cat-brown summary:hover{background:#e0cbb9;color:#000}
 .cat-red summary{background:#ffdede}.cat-red summary:hover{background:#ffb7b7;color:#000}
 .cat-yellow summary{background:#fff8d6}.cat-yellow summary:hover{background:#ffea9f;color:#000}
-#basketContainer{position:fixed;bottom:0;left:0;right:0;max-height:40%;background:var(--panel);border-top:1px solid var(--border);padding:1rem;box-shadow:0 -2px 5px rgba(0,0,0,.1);z-index:1000;overflow-y:auto}
+#basketContainer{position:fixed;bottom:0;left:0;right:0;max-height:40%;background:var(--panel);border-top:1px solid var(--border);padding:1rem;box-shadow:0 -2px 5px rgba(0,0,0,.1);z-index:9999;overflow-y:auto;transform:translateZ(0);isolation:isolate}
 #basketHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;position:sticky;top:0;z-index:3;background:var(--panel);box-shadow:0 2px 4px rgba(0,0,0,.06)}
 #basketHeader h3{margin:0}
 #basketHeader button{background:var(--btn);color:#fff;border:none;padding:.3rem .6rem;border-radius:4px;cursor:pointer}
 #basketHeader button:hover{background:var(--btnh)}
-#basketTable{table-layout:fixed}
+#basketTable{table-layout:fixed;background:var(--panel)}
 #basketTable th,#basketTable td{border:1px solid var(--border);padding:.28rem;box-sizing:border-box;vertical-align:middle;overflow:hidden}
 #basketContainer thead th{top:var(--bh,0px);z-index:2}
 #basketTable tbody tr:hover{background:var(--rowHover)}
@@ -75,7 +75,7 @@ input[type=number]{-moz-appearance:textfield}
 </style>
 </head>
 <body>
-<h1>In A Minnit Pricing Tool 2.2.0</h1>
+<h1>In A Minnit Pricing Tool 2.2.1</h1>
 <p><em>Beta version – features subject to change. Always check your work. Report bugs to marco@inaminnit.com.au</em></p>
 <button id="darkModeToggle">Toggle Dark Mode</button>
 <div id="sheetTabs"></div>
