@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
 <meta charset="UTF-8">
-<title>In A Minnit Pricing Tool 2.2.2</title>
+<title>In A Minnit Pricing Tool 2.2.3</title>
 <style>
 :root{--bg:#f7f7f7;--fg:#333;--header:#e0e0e0;--btn:#007bff;--btnh:#0056b3;--add:#28a745;--addh:#218838;--border:#aaa;--alt:#f9f9f9;--panel:#fff;--toast:#007bff;--toastfg:#fff;--rowHover:#e9f1ff}
 .dark-mode{--bg:#222;--fg:#eee;--header:#444;--btn:#0d6efd;--btnh:#0a58ca;--add:#198754;--addh:#157347;--border:#555;--alt:#2a2a2a;--panel:#333;--toast:#0d6efd;--toastfg:#fff;--rowHover:#383838}
@@ -47,7 +47,7 @@ summary:hover{background:var(--btn);color:#fff}
 #basketTable{table-layout:fixed;background:var(--panel)}
 #basketContent{padding-top:var(--bh,0px);background:var(--panel)}
 #basketTable th,#basketTable td{border:1px solid var(--border);padding:.28rem;box-sizing:border-box;vertical-align:middle;overflow:hidden}
-#basketContainer thead th{top:0;z-index:2}
+#basketContainer thead th{position:static}
 #basketTable tbody tr:hover{background:var(--rowHover)}
 .sort-handle{cursor:move;user-select:none;text-align:left;font-size:1.1rem;min-width:2em}
 .qty-input{width:48px;text-align:center}
@@ -73,10 +73,15 @@ summary:hover{background:var(--btn);color:#fff}
 #basketFab:hover{background:var(--btnh)}
 input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 input[type=number]{-moz-appearance:textfield}
+#basketSticky{position:sticky;top:0;z-index:4;background:var(--panel);box-shadow:0 2px 4px rgba(0,0,0,.06)}
+#basketStickyHead{background:var(--panel)}
+#basketStickyHead table{width:100%;table-layout:fixed;border-collapse:collapse}
+#basketStickyHead thead th{background:var(--header);border:1px solid var(--border);padding:.28rem;text-align:center}
+#basketTable thead{display:none}
 </style>
 </head>
 <body>
-<h1>In A Minnit Pricing Tool 2.2.2</h1>
+<h1>In A Minnit Pricing Tool 2.2.3</h1>
 <p><em>Beta version – features subject to change. Always check your work. Report bugs to marco@inaminnit.com.au</em></p>
 <button id="darkModeToggle">Toggle Dark Mode</button>
 <div id="sheetTabs"></div>
@@ -84,16 +89,30 @@ input[type=number]{-moz-appearance:textfield}
 <div id="manualLoad" style="display:none;margin:.5rem 0"><label class="search-label">Load workbook:</label><input type="file" id="xlsxPicker" accept=".xlsx"></div>
 <div id="sheetContainer"></div>
 <div id="basketContainer">
-  <div id="basketHeader">
-    <div style="display:flex;align-items:center;gap:.5rem"><h3>Quote Basket</h3><span id="toast"></span></div>
-    <div>
-      <button id="addCustomBtn">Add custom line</button>
-      <button id="clearBasketBtn">Clear</button>
-      <button id="exportCsvBtn">Export quote CSV</button>
-      <button id="toggleBasketBtn">Hide Basket</button>
-    </div>
+  <div id="basketSticky">
+  <div id="basketHeader">$1</div>
+  <div id="basketStickyHead">
+    <table id="basketHead">
+      <colgroup>
+        <col style="width:36px">
+        <col id="col-item">
+        <col style="width:120px">
+        <col style="width:100px">
+        <col style="width:70px">
+        <col style="width:110px">
+        <col style="width:90px">
+        <col style="width:120px">
+        <col style="width:50px">
+      </colgroup>
+      <thead><tr>
+        <th class="sort-handle">≡</th><th>Item</th><th>Quantity</th>
+        <th>Price Ex. GST</th><th>GST Apply</th>
+        <th>Line Total Ex. GST</th><th>GST</th><th>Line Total</th><th></th>
+      </tr></thead>
+    </table>
   </div>
-  <div id="basketContent">
+</div>
+<div id="basketContent">
     <table id="basketTable">
       <colgroup>
         <col style="width:36px">
