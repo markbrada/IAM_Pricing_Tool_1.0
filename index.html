@@ -81,6 +81,29 @@ body{font-family:sans-serif;margin:1rem;background:var(--bg);color:var(--fg);tra
 #basketReopen:hover{background:var(--btnh)}
 /* hide basket in print */
 @media print{#basketContainer,#basketReopen{display:none!important}}
+/* basket window states */
+#basketContainer.bwin{position:fixed;z-index:2000;border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.25);background:var(--panel);overflow:hidden}
+#basketContainer.min{height:34px!important;overflow:hidden}
+#basketContainer.max{top:5%!important;left:5%!important;width:90%!important;height:90%!important;right:auto!important;bottom:auto!important}
+#basketContainer.mobile{left:0!important;right:0!important;bottom:0!important;top:auto!important;width:auto!important;height:70%!important;border-radius:14px 14px 0 0}
+#basketContainer.dragging{opacity:.98}
+#basketContainer .resize-handle{position:absolute;right:6px;bottom:6px;width:14px;height:14px;cursor:nwse-resize;opacity:.6}
+#basketContainer .resize-handle:before{content:"";position:absolute;right:2px;bottom:2px;width:10px;height:10px;border-right:2px solid var(--border);border-bottom:2px solid var(--border);transform:skew(-10deg)}
+#basketHeader{user-select:none}
+.dragging *{user-select:none!important}
+/* title bar & traffic lights */
+#basketHeader.titlebar{display:flex;align-items:center;justify-content:space-between;background:var(--header);padding:.35rem .5rem;border-bottom:1px solid var(--border)}
+#basketHeader .title-left{display:flex;align-items:center;gap:.5rem}
+#basketHeader .tl{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:.35rem;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25);cursor:pointer}
+#basketHeader .tl.red{background:#ff5f57}
+#basketHeader .tl.yellow{background:#febc2e}
+#basketHeader .tl.green{background:#28c840}
+#basketHeader .title-actions button{margin-left:.35rem}
+/* reopen FAB */
+#basketReopen{position:fixed;right:18px;bottom:18px;z-index:1999;background:var(--btn);color:#fff;border:none;border-radius:999px;padding:.55rem .9rem;box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer;display:none}
+#basketReopen:hover{background:var(--btnh)}
+/* hide basket in print */
+@media print{#basketContainer,#basketReopen{display:none!important}}
 </style>
 </head>
 <body>
@@ -92,15 +115,21 @@ body{font-family:sans-serif;margin:1rem;background:var(--bg);color:var(--fg);tra
 <div id="manualLoad" style="display:none;margin:.5rem 0"><label class="search-label">Load workbook:</label><input type="file" id="xlsxPicker" accept=".xlsx"></div>
 <div id="sheetContainer"></div>
 
-<div id="basketContainer" class="bwin" style="display:none;">
+<div id="basketContainer" class="bwin" style="display:none; left:16px; top:auto; right:16px; bottom:16px; width:auto; height:auto;">
   <div class="resize-handle" id="basketResize"></div>
-  <div id="basketHeader">
-    <div id="macControls">
-      <span class="mac-btn mac-close" id="closeBasket"></span>
-      <span class="mac-btn mac-min" id="minBasket"></span>
-      <span class="mac-btn mac-max" id="maxBasket"></span>
+  <div id="basketHeader" class="titlebar">
+    <div class="title-left">
+      <span class="tl red" id="closeBasket" aria-label="Close" title="Close"></span>
+      <span class="tl yellow" id="minBasket" aria-label="Minimise" title="Minimise"></span>
+      <span class="tl green" id="maxBasket" aria-label="Full screen" title="Full screen"></span>
+      <h3 style="margin:0">Quote Basket</h3><span id="toast"></span>
     </div>
-    <h3>Quote Basket</h3>
+    <div class="title-actions">
+      <button id="addCustomBtn">Add custom line</button>
+      <button id="clearBasketBtn">Clear</button>
+      <button id="exportCsvBtn">Export quote CSV</button>
+      <button id="toggleBasketBtn">Hide Basket</button>
+    </div>
   </div>
   <div id="basketContent">
     <table id="basketTable">
@@ -136,31 +165,34 @@ window.addEventListener('keydown',e=>{if(e.key==='b'){basket.style.display='bloc
   var btnMax=document.getElementById('maxBasket');
   var reopen=document.getElementById('basketReopen');
   var resizeHandle=document.getElementById('basketResize');
-  var state={mode:'normal',x:null,y:null,w:Math.max(560,Math.min(720,Math.floor(window.innerWidth*0.45))),h:Math.floor(window.innerHeight*0.6)};
+  var state={mode:'normal',x:null,y:null,w:Math.max(420, window.innerWidth - 32),h:Math.max(240, Math.floor(window.innerHeight*0.4))};
   // Load state
   try{ var raw=localStorage.getItem(WIN_KEY); if(raw){ var s=JSON.parse(raw); if(s && typeof s==='object'){ for(var k in s){ state[k]=s[k]; } } } }catch(e){}
   function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
   function isMobile(){ return window.innerWidth < 768; }
-  function defaultXY(){ var left=Math.max(16, window.innerWidth - state.w - 40); var top=Math.max(16, window.innerHeight - state.h - 40); return {left:left, top:top}; }
+  function defaultXY(){ var top = Math.max(16, window.innerHeight - state.h - 16); var left = 16; return {left:left, top:top}; }; }
   function save(){ try{ localStorage.setItem(WIN_KEY, JSON.stringify(state)); }catch(e){} }
   function showReopen(v){ reopen.style.display = v?'block':'none'; }
   function apply(){
     if(state.mode==='hidden'){ el.style.display='none'; showReopen(true); return; }
     showReopen(false); el.style.display='block';
-    // geometry & classes
+    // stretch to full width by default (unless maximized/minimized/mobile)
     el.classList.remove('min','max','mobile');
-    if(isMobile()){ el.classList.add('mobile'); }
-    if(state.mode==='min'){ el.classList.add('min'); }
-    else if(state.mode==='max'){ el.classList.add('max'); }
+    if(isMobile()) el.classList.add('mobile');
+    if(state.mode==='min') el.classList.add('min');
+    if(state.mode==='max') el.classList.add('max');
     if(state.mode==='max'){
-      // full-screen-ish handled by CSS class
+      // handled by CSS
+    } else if(el.classList.contains('mobile')){
+      // bottom sheet by CSS; width auto
     } else {
-      // ensure left/top are set (override any bottom/right)
-      el.style.right='auto'; el.style.bottom='auto';
       if(state.x==null || state.y==null){ var d=defaultXY(); state.x=d.left; state.y=d.top; }
       el.style.left=state.x+'px'; el.style.top=state.y+'px';
-      if(state.w) el.style.width=state.w+'px';
-      if(state.h) el.style.height=(state.mode==='min'?34:state.h)+'px';
+      // full width: use right instead of fixed width when near full stretch
+      var wantFull = Math.abs(state.w - (window.innerWidth-32)) < 24; // heuristic
+      if(wantFull){ el.style.right='16px'; el.style.left='16px'; el.style.width='auto'; }
+      else { el.style.right='auto'; el.style.width=state.w+'px'; }
+      el.style.height=(state.mode==='min'?34:state.h)+'px';
     }
     save();
   }
@@ -177,10 +209,10 @@ window.addEventListener('keydown',e=>{if(e.key==='b'){basket.style.display='bloc
   function onResize(e){ if(!resizing) return; var nw=clamp(rw+(e.clientX-rsx), 360, window.innerWidth-rl-8); var nh=clamp(rh+(e.clientY-rsy), 200, window.innerHeight-rt-8); el.style.width=nw+'px'; el.style.height=nh+'px'; state.w=nw; state.h=nh; }
   function onResizeUp(){ if(!resizing) return; resizing=false; document.body.classList.remove('dragging'); window.removeEventListener('mousemove', onResize); window.removeEventListener('mouseup', onResizeUp); save(); }
   // Controls
-  btnClose.onclick=function(){ setMode('hidden'); };
-  btnMin.onclick=function(){ setMode('min'); };
-  btnMax.onclick=function(){ toggleMax(); };
-  reopen.onclick=function(){ setMode('normal'); };
+  if(btnClose) btnClose.onclick=function(){ setMode('hidden'); };
+  if(btnMin) btnMin.onclick=function(){ setMode('min'); };
+  if(btnMax) btnMax.onclick=function(){ toggleMax(); };
+  if(reopen) reopen.onclick=function(){ setMode('normal'); };
   // Keyboard shortcuts
   window.addEventListener('keydown', function(e){ var mod=e.metaKey||e.ctrlKey; if(e.key==='Escape'){ setMode('hidden'); }
     else if(mod && (e.key==='m' || e.key==='M')){ setMode('min'); e.preventDefault(); }
